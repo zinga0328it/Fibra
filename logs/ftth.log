@@ -1,6 +1,0 @@
-2025-12-02 00:45:41,609 - httpx - INFO - HTTP Request: POST http://testserver/teams/?nome=TeamTest "HTTP/1.1 200 OK"
-2025-12-02 00:45:41,626 - httpx - INFO - HTTP Request: POST http://testserver/technicians/?nome=Test&cognome=User&telefono=12345&squadra_id=1 "HTTP/1.1 200 OK"
-2025-12-02 00:45:41,665 - httpx - INFO - HTTP Request: POST http://testserver/works/upload "HTTP/1.1 200 OK"
-2025-12-02 00:45:41,695 - httpx - INFO - HTTP Request: PUT http://testserver/works/1/assign/1 "HTTP/1.1 200 OK"
-2025-12-02 00:45:41,717 - httpx - INFO - HTTP Request: PUT http://testserver/works/1/status?status=chiuso "HTTP/1.1 200 OK"
-2025-12-02 00:45:41,726 - httpx - INFO - HTTP Request: GET http://testserver/works/ "HTTP/1.1 200 OK"

@@ -1,0 +1,14 @@
+# Python
+__pycache__/ *.pyc *.pyo *.pyd
+# Virtual env
+venv/ .env/ .venv/
+# Logs
+logs/ *.log
+# DB and secrets
+*.db tmp_wr.json *.sqlite *.sqlite3
+# Cache
+.cache/ *.egg-info/
+# OS junk
+.DS_Store
+Thumbs.db
+

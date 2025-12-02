@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-multipart
+python-telegram-bot
+pytesseract
+pillow
+pdfplumber
+jinja2
+python-dotenv

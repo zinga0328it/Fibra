@@ -260,7 +260,7 @@ class StatsService:
                 total_works=work_stats.get(team_id, (0, 0))[0],
                 completed=work_stats.get(team_id, (0, 0))[1],
                 completion_rate=(
-                    (work_stats.get(team_id, (0, 0))[1] / work_stats.get(team_id, (1, 0))[0] * 100)
+                    (work_stats.get(team_id, (0, 0))[1] / work_stats.get(team_id, (0, 0))[0] * 100)
                     if work_stats.get(team_id, (0, 0))[0] > 0
                     else 0.0
                 ),

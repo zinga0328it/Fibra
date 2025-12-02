@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Carica Ordini - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-upload"></i> Carica Ordini di Lavoro</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-file-earmark-pdf"></i> Carica File</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Carica un file PDF, WR o TXT contenente gli ordini di lavoro. 
+                    Il sistema estrarrà automaticamente le informazioni dei clienti.
+                </p>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="workorderFile" class="form-label">Seleziona File</label>
+                        <input class="form-control" type="file" id="workorderFile" accept=".pdf,.wr,.txt" required>
+                        <small class="text-muted">Formati supportati: PDF, WR, TXT</small>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary w-100" onclick="uploadWorkOrder()" id="uploadBtn">
+                        <i class="bi bi-upload"></i> Carica e Importa
+                    </button>
+                </form>
+                
+                <div id="uploadProgress" class="mt-3 d-none">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                    <p class="text-center mt-2">Elaborazione in corso...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Istruzioni</h5>
+            </div>
+            <div class="card-body">
+                <h6>Formati supportati:</h6>
+                <ul>
+                    <li><strong>PDF</strong> - Documenti PDF con ordini di lavoro</li>
+                    <li><strong>WR</strong> - File work request</li>
+                    <li><strong>TXT</strong> - File di testo con dati strutturati</li>
+                </ul>
+                
+                <h6>Campi riconosciuti:</h6>
+                <ul>
+                    <li>Numero ordine (Ordine, Order, WO, WR, Pratica)</li>
+                    <li>Nome cliente (Cliente, Customer, Nome)</li>
+                    <li>Indirizzo (Indirizzo, Address, Via)</li>
+                    <li>Telefono (Telefono, Phone, Tel)</li>
+                    <li>Descrizione (Descrizione, Description, Lavoro)</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i>
+                    I lavori importati verranno creati con stato "Aperto" e potranno essere assegnati ai tecnici dalla pagina Lavori.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div class="row mt-4" id="resultsSection" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-check-circle"></i> Lavori Importati</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ordine</th>
+                                <th>Cliente</th>
+                                <th>Indirizzo</th>
+                                <th>Telefono</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="importedJobs">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function uploadWorkOrder() {
+    const fileInput = document.getElementById('workorderFile');
+    if (!fileInput.files.length) {
+        alert('Seleziona un file');
+        return;
+    }
+    
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    
+    uploadBtn.disabled = true;
+    progressDiv.classList.remove('d-none');
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    try {
+        const response = await fetch('/api/upload/workorder', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const jobs = await response.json();
+            displayResults(jobs);
+        } else {
+            const error = await response.json();
+            alert('Errore: ' + (error.detail || 'Errore nel caricamento'));
+        }
+    } catch (error) {
+        console.error('Error uploading:', error);
+        alert('Errore nel caricamento del file');
+    } finally {
+        uploadBtn.disabled = false;
+        progressDiv.classList.add('d-none');
+        fileInput.value = '';
+    }
+}
+
+function displayResults(jobs) {
+    const resultsSection = document.getElementById('resultsSection');
+    const tbody = document.getElementById('importedJobs');
+    
+    if (jobs.length === 0) {
+        resultsSection.style.display = 'none';
+        alert('Nessun lavoro trovato nel file');
+        return;
+    }
+    
+    tbody.innerHTML = jobs.map(job => `
+        <tr>
+            <td><a href="/job/${job.id}">#${job.id}</a></td>
+            <td>${job.work_order_number || '-'}</td>
+            <td>${job.customer_name || '-'}</td>
+            <td>${job.customer_address || '-'}</td>
+            <td>${job.customer_phone || '-'}</td>
+            <td>
+                <a href="/job/${job.id}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> Visualizza
+                </a>
+            </td>
+        </tr>
+    `).join('');
+    
+    resultsSection.style.display = 'block';
+    resultsSection.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

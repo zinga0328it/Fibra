@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Team - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-diagram-3"></i> Gestione Team</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teamModal">
+            <i class="bi bi-plus-circle"></i> Nuovo Team
+        </button>
+    </div>
+</div>
+
+<!-- Teams Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Descrizione</th>
+                                <th>Data Creazione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teams-table">
+                            <tr><td colspan="5" class="text-center">Caricamento...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Modal -->
+<div class="modal fade" id="teamModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teamModalTitle">Nuovo Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="teamForm">
+                    <input type="hidden" id="teamId">
+                    <div class="mb-3">
+                        <label for="teamName" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="teamName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="teamDescription" class="form-label">Descrizione</label>
+                        <textarea class="form-control" id="teamDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveTeam()">Salva</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadTeams();
+    
+    document.getElementById('teamModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('teamForm').reset();
+        document.getElementById('teamId').value = '';
+        document.getElementById('teamModalTitle').textContent = 'Nuovo Team';
+    });
+});
+
+async function loadTeams() {
+    try {
+        const response = await fetch('/api/teams/');
+        const teams = await response.json();
+        
+        const tbody = document.getElementById('teams-table');
+        
+        if (teams.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nessun team trovato</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = teams.map(team => {
+            const createdAt = new Date(team.created_at).toLocaleDateString('it-IT');
+            
+            return `
+                <tr>
+                    <td>${team.id}</td>
+                    <td><strong>${team.name}</strong></td>
+                    <td>${team.description || '-'}</td>
+                    <td>${createdAt}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editTeam(${team.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTeam(${team.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading teams:', error);
+    }
+}
+
+async function editTeam(id) {
+    try {
+        const response = await fetch(`/api/teams/${id}`);
+        const team = await response.json();
+        
+        document.getElementById('teamId').value = team.id;
+        document.getElementById('teamName').value = team.name;
+        document.getElementById('teamDescription').value = team.description || '';
+        
+        document.getElementById('teamModalTitle').textContent = 'Modifica Team';
+        
+        const modal = new bootstrap.Modal(document.getElementById('teamModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading team:', error);
+        alert('Errore nel caricamento del team');
+    }
+}
+
+async function saveTeam() {
+    const teamId = document.getElementById('teamId').value;
+    
+    const data = {
+        name: document.getElementById('teamName').value,
+        description: document.getElementById('teamDescription').value || null
+    };
+    
+    try {
+        let response;
+        if (teamId) {
+            response = await fetch(`/api/teams/${teamId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        } else {
+            response = await fetch('/api/teams/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('teamModal')).hide();
+            loadTeams();
+        } else {
+            const error = await response.json();
+            alert('Errore: ' + (error.detail || 'Errore sconosciuto'));
+        }
+    } catch (error) {
+        console.error('Error saving team:', error);
+        alert('Errore nel salvataggio del team');
+    }
+}
+
+async function deleteTeam(id) {
+    if (!confirm('Sei sicuro di voler eliminare questo team?')) return;
+    
+    try {
+        const response = await fetch(`/api/teams/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+            loadTeams();
+        } else {
+            alert('Errore nell\'eliminazione del team');
+        }
+    } catch (error) {
+        console.error('Error deleting team:', error);
+        alert('Errore nell\'eliminazione del team');
+    }
+}
+</script>
+{% endblock %}

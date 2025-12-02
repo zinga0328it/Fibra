@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Tecnici - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-people"></i> Gestione Tecnici</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#technicianModal">
+            <i class="bi bi-plus-circle"></i> Nuovo Tecnico
+        </button>
+    </div>
+</div>
+
+<!-- Technicians Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Cognome</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
+                                <th>Team</th>
+                                <th>Telegram</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="technicians-table">
+                            <tr><td colspan="8" class="text-center">Caricamento...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technician Modal -->
+<div class="modal fade" id="technicianModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="technicianModalTitle">Nuovo Tecnico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="technicianForm">
+                    <input type="hidden" id="technicianId">
+                    <div class="mb-3">
+                        <label for="techName" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="techName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="techSurname" class="form-label">Cognome *</label>
+                        <input type="text" class="form-control" id="techSurname" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="techPhone" class="form-label">Telefono</label>
+                        <input type="text" class="form-control" id="techPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="techEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="techEmail">
+                    </div>
+                    <div class="mb-3">
+                        <label for="techTeam" class="form-label">Team</label>
+                        <select class="form-select" id="techTeam">
+                            <option value="">Nessun team</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="techTelegram" class="form-label">Telegram Chat ID</label>
+                        <input type="text" class="form-control" id="techTelegram">
+                        <small class="text-muted">Il tecnico può ottenere il proprio Chat ID dal bot Telegram</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveTechnician()">Salva</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let teams = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTeams();
+    loadTechnicians();
+    
+    document.getElementById('technicianModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('technicianForm').reset();
+        document.getElementById('technicianId').value = '';
+        document.getElementById('technicianModalTitle').textContent = 'Nuovo Tecnico';
+    });
+});
+
+async function loadTeams() {
+    try {
+        const response = await fetch('/api/teams/');
+        teams = await response.json();
+        
+        const select = document.getElementById('techTeam');
+        teams.forEach(team => {
+            select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+        });
+    } catch (error) {
+        console.error('Error loading teams:', error);
+    }
+}
+
+async function loadTechnicians() {
+    try {
+        const response = await fetch('/api/technicians/');
+        const technicians = await response.json();
+        
+        const tbody = document.getElementById('technicians-table');
+        
+        if (technicians.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Nessun tecnico trovato</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = technicians.map(tech => {
+            const teamName = getTeamName(tech.team_id);
+            const telegramBadge = tech.telegram_chat_id 
+                ? '<span class="badge bg-success"><i class="bi bi-telegram"></i> Connesso</span>'
+                : '<span class="badge bg-secondary">Non connesso</span>';
+            
+            return `
+                <tr>
+                    <td>${tech.id}</td>
+                    <td>${tech.name}</td>
+                    <td>${tech.surname}</td>
+                    <td>${tech.phone || '-'}</td>
+                    <td>${tech.email || '-'}</td>
+                    <td>${teamName}</td>
+                    <td>${telegramBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading technicians:', error);
+    }
+}
+
+function getTeamName(id) {
+    if (!id) return '<span class="text-muted">-</span>';
+    const team = teams.find(t => t.id === id);
+    return team ? team.name : '-';
+}
+
+async function editTechnician(id) {
+    try {
+        const response = await fetch(`/api/technicians/${id}`);
+        const tech = await response.json();
+        
+        document.getElementById('technicianId').value = tech.id;
+        document.getElementById('techName').value = tech.name;
+        document.getElementById('techSurname').value = tech.surname;
+        document.getElementById('techPhone').value = tech.phone || '';
+        document.getElementById('techEmail').value = tech.email || '';
+        document.getElementById('techTeam').value = tech.team_id || '';
+        document.getElementById('techTelegram').value = tech.telegram_chat_id || '';
+        
+        document.getElementById('technicianModalTitle').textContent = 'Modifica Tecnico';
+        
+        const modal = new bootstrap.Modal(document.getElementById('technicianModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading technician:', error);
+        alert('Errore nel caricamento del tecnico');
+    }
+}
+
+async function saveTechnician() {
+    const techId = document.getElementById('technicianId').value;
+    
+    const data = {
+        name: document.getElementById('techName').value,
+        surname: document.getElementById('techSurname').value,
+        phone: document.getElementById('techPhone').value || null,
+        email: document.getElementById('techEmail').value || null,
+        team_id: document.getElementById('techTeam').value || null,
+        telegram_chat_id: document.getElementById('techTelegram').value || null
+    };
+    
+    try {
+        let response;
+        if (techId) {
+            response = await fetch(`/api/technicians/${techId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        } else {
+            response = await fetch('/api/technicians/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('technicianModal')).hide();
+            loadTechnicians();
+        } else {
+            const error = await response.json();
+            alert('Errore: ' + (error.detail || 'Errore sconosciuto'));
+        }
+    } catch (error) {
+        console.error('Error saving technician:', error);
+        alert('Errore nel salvataggio del tecnico');
+    }
+}
+
+async function deleteTechnician(id) {
+    if (!confirm('Sei sicuro di voler eliminare questo tecnico?')) return;
+    
+    try {
+        const response = await fetch(`/api/technicians/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+            loadTechnicians();
+        } else {
+            alert('Errore nell\'eliminazione del tecnico');
+        }
+    } catch (error) {
+        console.error('Error deleting technician:', error);
+        alert('Errore nell\'eliminazione del tecnico');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+    </div>
+</div>
+
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-briefcase"></i> Totale Lavori</h5>
+                <h2 class="card-text" id="total-jobs">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-door-open"></i> Aperti</h5>
+                <h2 class="card-text" id="open-jobs">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-hourglass-split"></i> In Corso</h5>
+                <h2 class="card-text" id="in-progress-jobs">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle"></i> Chiusi</h5>
+                <h2 class="card-text" id="closed-jobs">-</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-graph-up"></i> Lavori per Giorno (Ultimi 30 giorni)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="jobsPerDayChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-pie-chart"></i> Stato Lavori</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-person-badge"></i> Lavori per Operatore</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Operatore</th>
+                            <th>Lavori</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operator-stats">
+                        <tr><td colspan="2" class="text-center">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-diagram-3"></i> Lavori per Team</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Lavori</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-stats">
+                        <tr><td colspan="2" class="text-center">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+});
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/statistics/?days=30');
+        const stats = await response.json();
+        
+        // Update status cards
+        document.getElementById('total-jobs').textContent = stats.total_jobs;
+        document.getElementById('open-jobs').textContent = stats.open_jobs;
+        document.getElementById('in-progress-jobs').textContent = stats.in_progress_jobs;
+        document.getElementById('closed-jobs').textContent = stats.closed_jobs;
+        
+        // Jobs per day chart
+        const jobsPerDayCtx = document.getElementById('jobsPerDayChart').getContext('2d');
+        new Chart(jobsPerDayCtx, {
+            type: 'line',
+            data: {
+                labels: stats.jobs_per_day.map(d => d.date),
+                datasets: [{
+                    label: 'Lavori',
+                    data: stats.jobs_per_day.map(d => d.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Status pie chart
+        const statusPieCtx = document.getElementById('statusPieChart').getContext('2d');
+        new Chart(statusPieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Aperti', 'In Corso', 'In Pausa', 'Chiusi'],
+                datasets: [{
+                    data: [stats.open_jobs, stats.in_progress_jobs, stats.paused_jobs, stats.closed_jobs],
+                    backgroundColor: [
+                        'rgb(40, 167, 69)',
+                        'rgb(255, 193, 7)',
+                        'rgb(108, 117, 125)',
+                        'rgb(23, 162, 184)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+        
+        // Operator stats table
+        const operatorTbody = document.getElementById('operator-stats');
+        if (stats.jobs_per_operator.length > 0) {
+            operatorTbody.innerHTML = stats.jobs_per_operator.map(op => `
+                <tr>
+                    <td>${op.technician_name}</td>
+                    <td><span class="badge bg-primary">${op.job_count}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            operatorTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Nessun dato</td></tr>';
+        }
+        
+        // Team stats table
+        const teamTbody = document.getElementById('team-stats');
+        if (stats.jobs_per_team.length > 0) {
+            teamTbody.innerHTML = stats.jobs_per_team.map(t => `
+                <tr>
+                    <td>${t.team_name}</td>
+                    <td><span class="badge bg-info">${t.job_count}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            teamTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Nessun dato</td></tr>';
+        }
+        
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+</script>
+{% endblock %}

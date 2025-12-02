@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Dettaglio Lavoro - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-briefcase"></i> Lavoro #<span id="job-id">{{ job_id }}</span></h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="/jobs" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Torna alla lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Job Details -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-info-circle"></i> Dettagli Lavoro</h5>
+                <span id="job-status-badge"></span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Numero Ordine:</strong>
+                        <p id="job-wo">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Cliente:</strong>
+                        <p id="job-customer">-</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <strong>Indirizzo:</strong>
+                        <p id="job-address">-</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Telefono:</strong>
+                        <p id="job-phone">-</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <strong>Descrizione:</strong>
+                        <p id="job-description">-</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Tecnico Assegnato:</strong>
+                        <p id="job-technician">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Data Creazione:</strong>
+                        <p id="job-created">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-success" onclick="updateStatus('open')">
+                        <i class="bi bi-door-open"></i> Aperto
+                    </button>
+                    <button class="btn btn-warning" onclick="updateStatus('in_progress')">
+                        <i class="bi bi-hourglass-split"></i> In Corso
+                    </button>
+                    <button class="btn btn-secondary" onclick="updateStatus('paused')">
+                        <i class="bi bi-pause-circle"></i> Pausa
+                    </button>
+                    <button class="btn btn-info" onclick="updateStatus('closed')">
+                        <i class="bi bi-check-circle"></i> Chiuso
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-sticky"></i> Note</h5>
+            </div>
+            <div class="card-body">
+                <div id="notes-list" class="mb-3">
+                    <p class="text-muted">Caricamento note...</p>
+                </div>
+                <form id="noteForm" onsubmit="addNote(event)">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="noteContent" placeholder="Aggiungi una nota..." required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-plus"></i> Aggiungi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Photos Section -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-images"></i> Foto</h5>
+            </div>
+            <div class="card-body">
+                <div id="photos-gallery" class="row g-2 mb-3">
+                    <p class="text-muted">Caricamento foto...</p>
+                </div>
+                <form id="photoForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" id="photoFile" accept="image/*" required>
+                    </div>
+                    <button class="btn btn-primary w-100" type="button" onclick="uploadPhoto()">
+                        <i class="bi bi-upload"></i> Carica Foto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const jobId = {{ job_id }};
+let currentJob = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadJobDetail();
+    loadNotes();
+    loadPhotos();
+});
+
+async function loadJobDetail() {
+    try {
+        const response = await fetch(`/api/jobs/${jobId}`);
+        if (!response.ok) {
+            alert('Lavoro non trovato');
+            window.location.href = '/jobs';
+            return;
+        }
+        
+        currentJob = await response.json();
+        
+        document.getElementById('job-wo').textContent = currentJob.work_order_number || '-';
+        document.getElementById('job-customer').textContent = currentJob.customer_name || '-';
+        document.getElementById('job-address').textContent = currentJob.customer_address || '-';
+        document.getElementById('job-phone').textContent = currentJob.customer_phone || '-';
+        document.getElementById('job-description').textContent = currentJob.description || '-';
+        document.getElementById('job-created').textContent = new Date(currentJob.created_at).toLocaleString('it-IT');
+        
+        // Status badge
+        const statusBadges = {
+            'open': '<span class="badge bg-success">Aperto</span>',
+            'in_progress': '<span class="badge bg-warning text-dark">In Corso</span>',
+            'paused': '<span class="badge bg-secondary">In Pausa</span>',
+            'closed': '<span class="badge bg-info">Chiuso</span>'
+        };
+        document.getElementById('job-status-badge').innerHTML = statusBadges[currentJob.status] || currentJob.status;
+        
+        // Load technician name
+        if (currentJob.technician_id) {
+            const techResponse = await fetch(`/api/technicians/${currentJob.technician_id}`);
+            if (techResponse.ok) {
+                const tech = await techResponse.json();
+                document.getElementById('job-technician').textContent = `${tech.name} ${tech.surname}`;
+            }
+        } else {
+            document.getElementById('job-technician').textContent = 'Non assegnato';
+        }
+        
+    } catch (error) {
+        console.error('Error loading job:', error);
+    }
+}
+
+async function updateStatus(status) {
+    try {
+        const response = await fetch(`/api/jobs/${jobId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status: status})
+        });
+        
+        if (response.ok) {
+            loadJobDetail();
+        } else {
+            alert('Errore nell\'aggiornamento dello stato');
+        }
+    } catch (error) {
+        console.error('Error updating status:', error);
+        alert('Errore nell\'aggiornamento dello stato');
+    }
+}
+
+async function loadNotes() {
+    try {
+        const response = await fetch(`/api/jobs/${jobId}/notes`);
+        const notes = await response.json();
+        
+        const notesList = document.getElementById('notes-list');
+        
+        if (notes.length === 0) {
+            notesList.innerHTML = '<p class="text-muted">Nessuna nota</p>';
+            return;
+        }
+        
+        notesList.innerHTML = notes.map(note => `
+            <div class="card mb-2">
+                <div class="card-body py-2">
+                    <small class="text-muted">${new Date(note.created_at).toLocaleString('it-IT')}</small>
+                    <p class="mb-0">${note.content}</p>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading notes:', error);
+    }
+}
+
+async function addNote(event) {
+    event.preventDefault();
+    
+    const content = document.getElementById('noteContent').value;
+    
+    try {
+        const response = await fetch(`/api/jobs/${jobId}/notes`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content: content, job_id: jobId})
+        });
+        
+        if (response.ok) {
+            document.getElementById('noteContent').value = '';
+            loadNotes();
+        } else {
+            alert('Errore nell\'aggiunta della nota');
+        }
+    } catch (error) {
+        console.error('Error adding note:', error);
+        alert('Errore nell\'aggiunta della nota');
+    }
+}
+
+async function loadPhotos() {
+    try {
+        const response = await fetch(`/api/jobs/${jobId}/photos`);
+        const photos = await response.json();
+        
+        const gallery = document.getElementById('photos-gallery');
+        
+        if (photos.length === 0) {
+            gallery.innerHTML = '<p class="text-muted">Nessuna foto</p>';
+            return;
+        }
+        
+        gallery.innerHTML = photos.map(photo => `
+            <div class="col-6">
+                <a href="/uploads/${photo.filename}" target="_blank">
+                    <img src="/uploads/${photo.filename}" class="img-fluid img-thumbnail" alt="${photo.original_filename || 'Foto'}">
+                </a>
+                <small class="text-muted d-block">${photo.uploaded_via}</small>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading photos:', error);
+    }
+}
+
+async function uploadPhoto() {
+    const fileInput = document.getElementById('photoFile');
+    if (!fileInput.files.length) {
+        alert('Seleziona un file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    try {
+        const response = await fetch(`/api/jobs/${jobId}/photos`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            fileInput.value = '';
+            loadPhotos();
+        } else {
+            const error = await response.json();
+            alert('Errore: ' + (error.detail || 'Errore nel caricamento'));
+        }
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        alert('Errore nel caricamento della foto');
+    }
+}
+</script>
+{% endblock %}

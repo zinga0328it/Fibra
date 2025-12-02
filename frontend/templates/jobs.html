@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Lavori - Gestionale Fibra{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-briefcase"></i> Gestione Lavori</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#jobModal">
+            <i class="bi bi-plus-circle"></i> Nuovo Lavoro
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="filterStatus" class="form-label">Stato</label>
+                        <select class="form-select" id="filterStatus">
+                            <option value="">Tutti</option>
+                            <option value="open">Aperti</option>
+                            <option value="in_progress">In Corso</option>
+                            <option value="paused">In Pausa</option>
+                            <option value="closed">Chiusi</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterTechnician" class="form-label">Tecnico</label>
+                        <select class="form-select" id="filterTechnician">
+                            <option value="">Tutti</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-secondary" onclick="loadJobs()">
+                            <i class="bi bi-funnel"></i> Filtra
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Jobs Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ordine</th>
+                                <th>Cliente</th>
+                                <th>Indirizzo</th>
+                                <th>Stato</th>
+                                <th>Tecnico</th>
+                                <th>Data Creazione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-table">
+                            <tr><td colspan="8" class="text-center">Caricamento...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Modal -->
+<div class="modal fade" id="jobModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobModalTitle">Nuovo Lavoro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="jobForm">
+                    <input type="hidden" id="jobId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="workOrderNumber" class="form-label">Numero Ordine</label>
+                            <input type="text" class="form-control" id="workOrderNumber">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="customerName" class="form-label">Nome Cliente</label>
+                            <input type="text" class="form-control" id="customerName">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="customerAddress" class="form-label">Indirizzo</label>
+                            <input type="text" class="form-control" id="customerAddress">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="customerPhone" class="form-label">Telefono</label>
+                            <input type="text" class="form-control" id="customerPhone">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="jobStatus" class="form-label">Stato</label>
+                            <select class="form-select" id="jobStatus">
+                                <option value="open">Aperto</option>
+                                <option value="in_progress">In Corso</option>
+                                <option value="paused">In Pausa</option>
+                                <option value="closed">Chiuso</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="jobTechnician" class="form-label">Tecnico Assegnato</label>
+                            <select class="form-select" id="jobTechnician">
+                                <option value="">Non assegnato</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="jobDescription" class="form-label">Descrizione</label>
+                        <textarea class="form-control" id="jobDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="saveJob()">Salva</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let technicians = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTechnicians();
+    loadJobs();
+    
+    // Reset form when modal is closed
+    document.getElementById('jobModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('jobForm').reset();
+        document.getElementById('jobId').value = '';
+        document.getElementById('jobModalTitle').textContent = 'Nuovo Lavoro';
+    });
+});
+
+async function loadTechnicians() {
+    try {
+        const response = await fetch('/api/technicians/');
+        technicians = await response.json();
+        
+        const filterSelect = document.getElementById('filterTechnician');
+        const jobSelect = document.getElementById('jobTechnician');
+        
+        technicians.forEach(tech => {
+            const option = `<option value="${tech.id}">${tech.name} ${tech.surname}</option>`;
+            filterSelect.innerHTML += option;
+            jobSelect.innerHTML += option;
+        });
+    } catch (error) {
+        console.error('Error loading technicians:', error);
+    }
+}
+
+async function loadJobs() {
+    try {
+        let url = '/api/jobs/';
+        const params = new URLSearchParams();
+        
+        const status = document.getElementById('filterStatus').value;
+        const technicianId = document.getElementById('filterTechnician').value;
+        
+        if (status) params.append('status', status);
+        if (technicianId) params.append('technician_id', technicianId);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        const response = await fetch(url);
+        const jobs = await response.json();
+        
+        const tbody = document.getElementById('jobs-table');
+        
+        if (jobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Nessun lavoro trovato</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = jobs.map(job => {
+            const techName = getTechnicianName(job.technician_id);
+            const statusBadge = getStatusBadge(job.status);
+            const createdAt = new Date(job.created_at).toLocaleDateString('it-IT');
+            
+            return `
+                <tr>
+                    <td><a href="/job/${job.id}">#${job.id}</a></td>
+                    <td>${job.work_order_number || '-'}</td>
+                    <td>${job.customer_name || '-'}</td>
+                    <td>${job.customer_address || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${techName}</td>
+                    <td>${createdAt}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editJob(${job.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteJob(${job.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading jobs:', error);
+    }
+}
+
+function getTechnicianName(id) {
+    if (!id) return '<span class="text-muted">Non assegnato</span>';
+    const tech = technicians.find(t => t.id === id);
+    return tech ? `${tech.name} ${tech.surname}` : '-';
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'open': '<span class="badge bg-success">Aperto</span>',
+        'in_progress': '<span class="badge bg-warning text-dark">In Corso</span>',
+        'paused': '<span class="badge bg-secondary">In Pausa</span>',
+        'closed': '<span class="badge bg-info">Chiuso</span>'
+    };
+    return badges[status] || status;
+}
+
+async function editJob(id) {
+    try {
+        const response = await fetch(`/api/jobs/${id}`);
+        const job = await response.json();
+        
+        document.getElementById('jobId').value = job.id;
+        document.getElementById('workOrderNumber').value = job.work_order_number || '';
+        document.getElementById('customerName').value = job.customer_name || '';
+        document.getElementById('customerAddress').value = job.customer_address || '';
+        document.getElementById('customerPhone').value = job.customer_phone || '';
+        document.getElementById('jobStatus').value = job.status;
+        document.getElementById('jobTechnician').value = job.technician_id || '';
+        document.getElementById('jobDescription').value = job.description || '';
+        
+        document.getElementById('jobModalTitle').textContent = 'Modifica Lavoro #' + job.id;
+        
+        const modal = new bootstrap.Modal(document.getElementById('jobModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading job:', error);
+        alert('Errore nel caricamento del lavoro');
+    }
+}
+
+async function saveJob() {
+    const jobId = document.getElementById('jobId').value;
+    
+    const data = {
+        work_order_number: document.getElementById('workOrderNumber').value || null,
+        customer_name: document.getElementById('customerName').value || null,
+        customer_address: document.getElementById('customerAddress').value || null,
+        customer_phone: document.getElementById('customerPhone').value || null,
+        status: document.getElementById('jobStatus').value,
+        technician_id: document.getElementById('jobTechnician').value || null,
+        description: document.getElementById('jobDescription').value || null
+    };
+    
+    try {
+        let response;
+        if (jobId) {
+            response = await fetch(`/api/jobs/${jobId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        } else {
+            response = await fetch('/api/jobs/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('jobModal')).hide();
+            loadJobs();
+        } else {
+            const error = await response.json();
+            alert('Errore: ' + (error.detail || 'Errore sconosciuto'));
+        }
+    } catch (error) {
+        console.error('Error saving job:', error);
+        alert('Errore nel salvataggio del lavoro');
+    }
+}
+
+async function deleteJob(id) {
+    if (!confirm('Sei sicuro di voler eliminare questo lavoro?')) return;
+    
+    try {
+        const response = await fetch(`/api/jobs/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+            loadJobs();
+        } else {
+            alert('Errore nell\'eliminazione del lavoro');
+        }
+    } catch (error) {
+        console.error('Error deleting job:', error);
+        alert('Errore nell\'eliminazione del lavoro');
+    }
+}
+</script>
+{% endblock %}

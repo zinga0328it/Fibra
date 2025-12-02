@@ -96,6 +96,14 @@
 <script>
 let teams = [];
 
+// HTML escape helper to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '-';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadTeams();
     loadTechnicians();
@@ -114,7 +122,10 @@ async function loadTeams() {
         
         const select = document.getElementById('techTeam');
         teams.forEach(team => {
-            select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+            const option = document.createElement('option');
+            option.value = team.id;
+            option.textContent = team.name;
+            select.appendChild(option);
         });
     } catch (error) {
         console.error('Error loading teams:', error);
@@ -142,10 +153,10 @@ async function loadTechnicians() {
             return `
                 <tr>
                     <td>${tech.id}</td>
-                    <td>${tech.name}</td>
-                    <td>${tech.surname}</td>
-                    <td>${tech.phone || '-'}</td>
-                    <td>${tech.email || '-'}</td>
+                    <td>${escapeHtml(tech.name)}</td>
+                    <td>${escapeHtml(tech.surname)}</td>
+                    <td>${escapeHtml(tech.phone)}</td>
+                    <td>${escapeHtml(tech.email)}</td>
                     <td>${teamName}</td>
                     <td>${telegramBadge}</td>
                     <td>
@@ -167,7 +178,7 @@ async function loadTechnicians() {
 function getTeamName(id) {
     if (!id) return '<span class="text-muted">-</span>';
     const team = teams.find(t => t.id === id);
-    return team ? team.name : '-';
+    return team ? escapeHtml(team.name) : '-';
 }
 
 async function editTechnician(id) {

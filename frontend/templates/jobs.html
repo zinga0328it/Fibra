@@ -143,6 +143,14 @@
 <script>
 let technicians = [];
 
+// HTML escape helper to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '-';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadTechnicians();
     loadJobs();
@@ -164,9 +172,16 @@ async function loadTechnicians() {
         const jobSelect = document.getElementById('jobTechnician');
         
         technicians.forEach(tech => {
-            const option = `<option value="${tech.id}">${tech.name} ${tech.surname}</option>`;
-            filterSelect.innerHTML += option;
-            jobSelect.innerHTML += option;
+            // Use DOM methods to prevent XSS
+            const filterOption = document.createElement('option');
+            filterOption.value = tech.id;
+            filterOption.textContent = `${tech.name} ${tech.surname}`;
+            filterSelect.appendChild(filterOption);
+            
+            const jobOption = document.createElement('option');
+            jobOption.value = tech.id;
+            jobOption.textContent = `${tech.name} ${tech.surname}`;
+            jobSelect.appendChild(jobOption);
         });
     } catch (error) {
         console.error('Error loading technicians:', error);
@@ -206,9 +221,9 @@ async function loadJobs() {
             return `
                 <tr>
                     <td><a href="/job/${job.id}">#${job.id}</a></td>
-                    <td>${job.work_order_number || '-'}</td>
-                    <td>${job.customer_name || '-'}</td>
-                    <td>${job.customer_address || '-'}</td>
+                    <td>${escapeHtml(job.work_order_number)}</td>
+                    <td>${escapeHtml(job.customer_name)}</td>
+                    <td>${escapeHtml(job.customer_address)}</td>
                     <td>${statusBadge}</td>
                     <td>${techName}</td>
                     <td>${createdAt}</td>

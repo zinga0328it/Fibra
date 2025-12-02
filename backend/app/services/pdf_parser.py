@@ -1,10 +1,13 @@
 import re
+import logging
 from typing import List, Dict, Any
 
 try:
     from PyPDF2 import PdfReader
 except ImportError:
     PdfReader = None
+
+logger = logging.getLogger(__name__)
 
 
 def parse_pdf_work_order(file_path: str) -> List[Dict[str, Any]]:
@@ -39,7 +42,7 @@ def parse_pdf_work_order(file_path: str) -> List[Dict[str, Any]]:
         
     except Exception as e:
         # If PDF parsing fails, return empty list
-        print(f"Error parsing PDF: {e}")
+        logger.error(f"Error parsing PDF: {e}")
         return []
     
     return jobs

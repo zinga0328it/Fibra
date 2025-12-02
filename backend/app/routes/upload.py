@@ -22,7 +22,9 @@ async def upload_work_order(
     
     # Validate file type
     allowed_extensions = [".pdf", ".wr", ".txt"]
-    file_ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
+    if file.filename is None:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    file_ext = os.path.splitext(file.filename)[1].lower()
     
     if file_ext not in allowed_extensions:
         raise HTTPException(
@@ -60,9 +62,14 @@ async def upload_work_order(
                 extra_fields=str(job_data.get("extra_fields", {}))
             )
             db.add(db_job)
-            db.commit()
-            db.refresh(db_job)
             created_jobs.append(db_job)
+        
+        # Single commit for all jobs
+        db.commit()
+        
+        # Refresh all jobs to get their IDs
+        for db_job in created_jobs:
+            db.refresh(db_job)
         
         return created_jobs
     

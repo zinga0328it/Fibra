@@ -36,12 +36,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        pass
+def get_db_session():
+    """Get a database session. Caller is responsible for closing it."""
+    return SessionLocal()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -492,7 +489,9 @@ async def send_job_notification(chat_id: str, job: Job):
     if not settings.telegram_bot_token:
         return
     
-    app = Application.builder().token(settings.telegram_bot_token).build()
+    from telegram import Bot
+    
+    bot = Bot(token=settings.telegram_bot_token)
     
     message = (
         f"🆕 Nuovo lavoro assegnato!\n\n"
@@ -511,7 +510,7 @@ async def send_job_notification(chat_id: str, job: Job):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     try:
-        await app.bot.send_message(
+        await bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=reply_markup

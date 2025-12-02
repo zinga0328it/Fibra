@@ -72,6 +72,14 @@
 
 {% block extra_js %}
 <script>
+// HTML escape helper to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '-';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadTeams();
     
@@ -100,8 +108,8 @@ async function loadTeams() {
             return `
                 <tr>
                     <td>${team.id}</td>
-                    <td><strong>${team.name}</strong></td>
-                    <td>${team.description || '-'}</td>
+                    <td><strong>${escapeHtml(team.name)}</strong></td>
+                    <td>${escapeHtml(team.description)}</td>
                     <td>${createdAt}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="editTeam(${team.id})">

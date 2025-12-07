@@ -1,0 +1,16 @@
+[Unit]
+Description=FTTH Telegram Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=aaa
+Group=www-data
+WorkingDirectory=/home/aaa/fibra
+Environment=PATH=/home/aaa/fibra/venv/bin
+ExecStart=/home/aaa/fibra/venv/bin/python -m app.bot
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

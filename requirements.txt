@@ -9,3 +9,7 @@ pillow
 pdfplumber
 jinja2
 python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+python-json-logger
+httpx

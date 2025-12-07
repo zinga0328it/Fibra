@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from datetime import datetime
 
 class TeamCreate(BaseModel):
@@ -59,11 +59,12 @@ class WorkCreate(BaseModel):
 class WorkOut(BaseModel):
     id: int
     numero_wr: str
-    operatore: str
-    indirizzo: str
-    nome_cliente: str
-    tipo_lavoro: str
-    stato: str
+    operatore: Optional[str]
+    indirizzo: Optional[str]
+    nome_cliente: Optional[str]
+    tipo_lavoro: Optional[str]
+    note: Optional[str] = None
+    stato: Optional[str]
     data_apertura: Optional[datetime]
     data_chiusura: Optional[datetime]
     tecnico_assegnato: Optional[TechnicianOut]
@@ -72,19 +73,42 @@ class WorkOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class WorkStatusUpdate(BaseModel):
-    status: str
+    stato: str
 
-    @field_validator('status')
+    @field_validator('stato')
     @classmethod
-    def validate_status(cls, v: str):
-        if v not in {"aperto", "in_corso", "sospeso", "chiuso"}:
-            raise ValueError('Invalid status')
+    def validate_stato(cls, v: str):
+        allowed = {"aperto", "in_corso", "sospeso", "chiuso", "attivato", "non attivato", "non_attivato", "assegnata", "assegnato"}
+        if v not in allowed:
+            raise ValueError('Invalid stato')
+        return v
+
+
+class WorkUpdate(BaseModel):
+    numero_wr: Optional[str] = None
+    operatore: Optional[str] = None
+    indirizzo: Optional[str] = None
+    nome_cliente: Optional[str] = None
+    tipo_lavoro: Optional[str] = None
+    stato: Optional[str] = None
+    note: Optional[str] = None
+    tecnico_assegnato_id: Optional[int] = None
+
+    @field_validator('stato')
+    @classmethod
+    def validate_stato(cls, v: Optional[str]):
+        if v is None:
+            return v
+        allowed = {"aperto", "in_corso", "sospeso", "chiuso", "attivato", "non attivato", "non_attivato", "assegnata", "assegnato"}
+        if v not in allowed:
+            raise ValueError('Invalid stato')
         return v
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     expires_in: int
+    refresh_token: Optional[str] = None
 
 class TokenPayload(BaseModel):
     sub: str
@@ -106,3 +130,40 @@ class RegisterRequest(BaseModel):
         if v not in {"admin", "tecnico", "backoffice"}:
             raise ValueError('Invalid role')
         return v
+
+
+class StatsWeeklyOut(BaseModel):
+    closed_this_week: int
+    suspended: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OperatorStatOut(BaseModel):
+    operatore: str
+    closed: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TechnicianStatOut(BaseModel):
+    tecnico: str
+    closed: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DailyClosedOut(BaseModel):
+    date: str
+    closed: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentOut(BaseModel):
+    id: int
+    filename: str
+    mime: Optional[str]
+    uploaded_at: Optional[datetime]
+    parsed: bool
+    parsed_data: Optional[Dict[str, Any]]
+    applied_work_id: Optional[int]
+    model_config = ConfigDict(from_attributes=True)
+

@@ -5,6 +5,7 @@ from app.models.models import Technician, Team
 from typing import List
 from app.utils.security import verify_api_key
 from app.schemas import TechnicianCreate, TechnicianOut
+from app.utils.auth import auth_required
 
 router = APIRouter(prefix="/technicians", tags=["technicians"])
 
@@ -21,7 +22,7 @@ def get_technicians(db: Session = Depends(get_db)):
     return techs
 
 @router.post("/", response_model=TechnicianOut)
-def create_technician(payload: TechnicianCreate, db: Session = Depends(get_db), api_key=Depends(verify_api_key)):
+def create_technician(payload: TechnicianCreate, db: Session = Depends(get_db), current_user = Depends(auth_required(['admin']))):
     tech = Technician(nome=payload.nome, cognome=payload.cognome, telefono=payload.telefono, squadra_id=payload.squadra_id)
     db.add(tech)
     db.commit()

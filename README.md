@@ -198,3 +198,78 @@ Notes:
 - In production, the backend should be reached via Apache and bound to `127.0.0.1` to prevent direct network exposure of sensitive APIs.
 
 Per la produzione raccomando di abilitare logging su file (ad esempio `logs/ftth.log`) e un jail `fail2ban` per monitorare tentativi ripetuti sospetti. Ho aggiunto un semplice logger rotante all'app (`logs/ftth.log`) che può essere usato per questo scopo.
+
+## Guida Utente
+
+Questa guida spiega come utilizzare il sistema di gestione FTTH per operatori backoffice e tecnici sul campo.
+
+### Per Operatori Backoffice
+
+#### Accesso al Sistema
+- Apri il browser e vai all'URL pubblico del sistema (es. `http://93.57.240.131:6031/static/index.html`)
+- Il sistema dovrebbe mostrare "API: ok" in alto a destra. Se mostra "API: unreachable", contatta l'amministratore.
+
+#### Caricamento Lavori
+1. **Da CSV**: Usa il form "Carica Bolla (CSV)" per caricare file CSV con i lavori. Il sistema aggiornerà automaticamente i record esistenti.
+2. **Da PDF**: Carica file PDF nella sezione "Importa PDF". Il sistema analizzerà automaticamente il contenuto e estrarrà i dati dei lavori.
+   - Dopo il caricamento, clicca "Parse" per analizzare il PDF.
+   - Usa "Preview" per vedere i dati estratti e modificarli se necessario.
+   - Clicca "Apply" per creare o aggiornare i lavori nel database.
+
+#### Gestione Lavori
+- Nella lista "Lavori", puoi vedere tutti i lavori attivi.
+- **Modifica**: Clicca "Modifica" per cambiare inline i dettagli del lavoro (numero WR, cliente, indirizzo, operatore, tipo, tecnico, stato).
+- **Dettagli**: Mostra informazioni complete del lavoro.
+- **Cancella**: Rimuovi un lavoro (con conferma).
+- **Avvisa Tecnico**: Invia notifica Telegram al tecnico assegnato.
+
+#### Assegnazione Tecnici
+1. Nella sezione "Tecnici", collega l'ID Telegram di ogni tecnico usando il form "Collega Telegram ID".
+2. Nella lista lavori, assegna un tecnico modificando il campo corrispondente.
+
+#### Statistiche
+- Visualizza grafici per: lavori per operatore, per tecnico, installazioni giornaliere, sospesi vs chiusi settimanali, chiusure mensili.
+
+#### Inserimento Manuale
+- Usa il link "Inserimento Manuale" per aggiungere lavori manualmente quando necessario.
+
+### Per Tecnici (via Telegram Bot)
+
+#### Configurazione Iniziale
+- Assicurati che il tuo ID Telegram sia collegato nel sistema backoffice.
+- Avvia una chat con il bot Telegram del sistema.
+
+#### Comandi Disponibili
+- `/start`: Avvia l'interazione con il bot
+- `/help`: Mostra tutti i comandi disponibili
+- `/accetta <numero_WR>`: Accetta un lavoro assegnato (es. `/accetta 12345`)
+- `/rifiuta <numero_WR>`: Rifiuta un lavoro assegnato
+- `/chiudi <numero_WR>`: Chiudi un lavoro completato
+
+#### Ricezione Notifiche
+- Quando ti viene assegnato un lavoro, ricevi automaticamente una notifica con i dettagli.
+- Rispondi con i comandi appropriati per aggiornare lo stato.
+
+### Risoluzione Problemi Comuni
+
+#### Errore "API: unreachable"
+- Verifica la connessione internet.
+- Se sei in locale, usa il toggle "Forza backend locale" se disponibile.
+- Contatta l'amministratore di sistema.
+
+#### PDF non analizzato correttamente
+- Usa "Preview" per vedere i dati estratti.
+- Modifica manualmente i campi nella preview prima di applicare.
+- Se il PDF è di bassa qualità, potrebbe richiedere OCR manuale.
+
+#### Bot non risponde
+- Verifica che il tuo ID Telegram sia correttamente collegato nel sistema.
+- Usa `/help` per confermare che i comandi sono registrati.
+
+#### Chart non si aggiornano
+- Ricarica la pagina per aggiornare i grafici.
+
+### Sicurezza
+- Le API sensibili richiedono autenticazione tramite header X-API-Key (gestito automaticamente dal server).
+- Non condividere token o chiavi API.
+- Usa connessioni sicure (HTTPS quando disponibile).

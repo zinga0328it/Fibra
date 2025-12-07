@@ -2,53 +2,1011 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FTTH Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Make primary action buttons full-width on mobile, normal on larger screens */
+        .btn-mobile { width: 100%; margin-bottom: 0.5rem; }
+        @media (min-width: 768px) {
+            .btn-mobile { width: auto; margin-bottom: 0; }
+        }
+    /* Force canvases to be responsive and set reasonable heights */
+    canvas { max-width: 100% !important; height: auto !important; }
+    .chart-responsive { width: 100%; height: 220px !important; }
+    @media (min-width: 768px) { .chart-responsive { height: 300px !important; } }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Gestione Lavori FTTH</h1>
+        <div class="container mt-5">
+        <div class="d-flex align-items-center justify-content-between">
+            <h1 class="mb-0">Gestione Lavori FTTH <span id="apiStatus" class="badge bg-secondary ms-2">API: unknown</span></h1>
+                            <div>
+                                <a href="http://93.57.240.131:6031/static/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm me-2">Index Pubblico</a>
+                                <a href="http://127.0.0.1:6030/static/manual_entry.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm me-2">Manual Entry (local)</a>
+                                <a href="/static/manual_entry.html" class="btn btn-outline-primary btn-sm me-2">Inserimento Manuale</a>
+                                <a href="/static/db_viewer.html" class="btn btn-outline-secondary btn-sm">Visualizza DB</a>
+                                <button id="toggleForceDirectBtn" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
+                            </div>
+        </div>
         <div class="row">
-            <div class="col-md-6">
-                <h2>Carica Bolla</h2>
+            <div class="col-12 col-md-6">
+                <h2>Carica Bolla (CSV)</h2>
                 <form id="uploadForm" enctype="multipart/form-data">
-                    <input type="file" name="file" class="form-control mb-2" required>
-                    <button type="submit" class="btn btn-primary">Carica</button>
+                    <input type="file" name="file" class="form-control mb-2" accept=".csv,text/csv" required>
+                    <button type="submit" class="btn btn-primary btn-mobile">Carica CSV</button>
                 </form>
             </div>
-            <div class="col-md-6">
-                <h2>Lavori</h2>
+            <div class="col-12 col-md-6">
+                <h2>Lavori <button class="btn btn-sm btn-outline-secondary ms-2" onclick="mergeDuplicates()">Unisci duplicati</button></h2>
                 <ul id="worksList" class="list-group"></ul>
+            </div>
+        </div>
+        <hr />
+        <div class="row mt-4">
+            <div class="col-12 col-md-6">
+                <h2>Importa PDF</h2>
+                <small class="text-muted">Solo PDF: le immagini e i file CSV/JSON non sono supportati dall'upload</small>
+                <form id="docsUploadForm" enctype="multipart/form-data">
+                    <input type="file" name="files" id="files" class="form-control mb-2" multiple accept="application/pdf">
+                    <button type="submit" class="btn btn-primary btn-mobile">Importa PDF</button>
+                </form>
+            </div>
+            <div class="col-12 col-md-6">
+                <h2>Documenti</h2>
+                <ul id="documentsList" class="list-group"></ul>
+            </div>
+        </div>
+        <div class="row mt-4">
+                <div class="col-12 col-md-6">
+                <h3>Lavori per operatore</h3>
+                <canvas id="operatorChart" class="chart-responsive"></canvas>
+            </div>
+            <div class="col-12 col-md-6">
+                <h3>Lavori per tecnico</h3>
+                <canvas id="technicianChart" class="chart-responsive"></canvas>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12 col-md-6">
+                <h3>Installazioni per giorno</h3>
+                <canvas id="dailyChart" class="chart-responsive"></canvas>
+            </div>
+            <div class="col-12 col-md-6">
+                <h3>Sospesi vs Chiusi (sett.)</h3>
+                <canvas id="statusChart" class="chart-responsive"></canvas>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Chiusure / Mese (ultimo anno)</h3>
+                <canvas id="yearlyChart" class="chart-responsive"></canvas>
+            </div>
+        </div>
+        <hr />
+        <div class="row mt-4">
+            <div class="col-12 col-md-6">
+                <h2>Tecnici</h2>
+                <ul id="techniciansList" class="list-group"></ul>
+            </div>
+            <div class="col-12 col-md-6">
+                <h3>Collega Telegram ID</h3>
+                <form id="linkTelegramForm">
+                    <select id="techSelect" class="form-control mb-2" required>
+                        <option value="">Seleziona Tecnico</option>
+                    </select>
+                    <input type="text" id="telegramId" class="form-control mb-2" placeholder="Telegram ID" required>
+                    <button type="submit" class="btn btn-primary btn-mobile">Collega</button>
+                </form>
             </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const response = await fetch('/works/upload', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            alert(result.message);
-            loadWorks();
-        });
+    let currentPreviewDocId = null;
+    let previewEntries = [];
+    let previewIndex = 0;
+    let currentEditWorkId = null;
+    let previewDocParseDebug = null;
+
+        const _loc = window.location;
+        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
+        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+        function toggleForceDirectApi() {
+            if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
+            const cur = sessionStorage.getItem('FORCE_DIRECT_API');
+            if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
+            else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
+            location.reload();
+        }
+        function apiFetch(path, opts) {
+            const base = window.__API_BASE__ || API_BASE;
+            const url = base ? base + path : path;
+            return fetch(url, opts);
+        }
+                // Set the API status badge for debugging (don't leak secrets)
+                try {
+                    const apiStatus = document.getElementById('apiStatus');
+                    if (apiStatus) apiStatus.textContent = 'API: ' + (API_BASE ? API_BASE : 'same-origin (via proxy)');
+                } catch(e) {}
+                try {
+                    const btn = document.getElementById('toggleForceDirectBtn');
+                    if (btn) {
+                        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
+                            btn.style.display = 'inline-block';
+                            const updateLabel = () => {
+                                const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+                                btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
+                            };
+                            updateLabel();
+                            btn.addEventListener('click', () => { toggleForceDirectApi(); });
+                        }
+                    }
+                } catch(e) {}
 
         async function loadWorks() {
-            const response = await fetch('/works/');
+            const response = await apiFetch('/works/');
             const works = await response.json();
             const list = document.getElementById('worksList');
             list.innerHTML = '';
             works.forEach(work => {
                 const li = document.createElement('li');
                 li.className = 'list-group-item';
-                li.textContent = `${work.numero_wr} - ${work.stato}`;
+                li.setAttribute('data-work-id', work.id);
+                li.innerHTML = `<div class="d-flex justify-content-between">
+                    <div class="work-display">
+                        <strong>${work.numero_wr}</strong> - ${work.stato}<br>
+                        <small>Cliente: ${work.nome_cliente || 'N/A'} | Indirizzo: ${work.indirizzo || 'N/A'}</small><br>
+                        <small>Operatore: ${work.operatore || 'N/A'} | Tipo: ${work.tipo_lavoro || 'N/A'}</small><br>
+                        <small>Tecnico: ${work.tecnico_assegnato ? (work.tecnico_assegnato.nome + ' ' + work.tecnico_assegnato.cognome) : 'N/A'}</small>
+                    </div>
+                    <div class="work-edit" style="display:none;min-width:320px;">
+                        <div class="mb-1">
+                            <input class="form-control form-control-sm" id="inline_numero_wr_${work.id}" value="${work.numero_wr || ''}" />
+                        </div>
+                        <div class="mb-1 d-flex gap-1">
+                            <input class="form-control form-control-sm" id="inline_nome_cliente_${work.id}" value="${work.nome_cliente || ''}" placeholder="Nome Cliente" />
+                            <input class="form-control form-control-sm" id="inline_indirizzo_${work.id}" value="${work.indirizzo || ''}" placeholder="Indirizzo" />
+                        </div>
+                        <div class="mb-1 d-flex gap-1">
+                            <input class="form-control form-control-sm" id="inline_operatore_${work.id}" value="${work.operatore || ''}" placeholder="Operatore" />
+                            <input class="form-control form-control-sm" id="inline_tipo_lavoro_${work.id}" value="${work.tipo_lavoro || ''}" placeholder="Tipo" />
+                        </div>
+                        <div class="mb-1 d-flex gap-1">
+                            <select class="form-control form-select form-select-sm" id="inline_tecnico_${work.id}">
+                                <option value="">Nessun tecnico</option>
+                            </select>
+                            <select class="form-control form-select form-select-sm" id="inline_stato_${work.id}">
+                                <option value="aperto" ${work.stato === 'aperto' ? 'selected' : ''}>aperto</option>
+                                <option value="in_corso" ${work.stato === 'in_corso' ? 'selected' : ''}>in_corso</option>
+                                <option value="sospeso" ${work.stato === 'sospeso' ? 'selected' : ''}>sospeso</option>
+                                <option value="chiuso" ${work.stato === 'chiuso' ? 'selected' : ''}>chiuso</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-success" onclick="saveInlineWork(${work.id})">Salva</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cancelInlineEdit(${work.id})">Annulla</button>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-danger me-1" onclick="deleteWork(${work.id})">Cancella</button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewWorkDetails(${work.id})">Dettagli</button>
+                        <button class="btn btn-sm btn-warning me-1" onclick="startInlineEdit(${work.id})">Modifica</button>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editWork(${work.id})">Modifica (Modal)</button>
+                        <button class="btn btn-sm btn-success" onclick="notifyTech(${work.id})" ${work.tecnico_assegnato ? '' : 'disabled'}>Avvisa Tecnico</button>
+                    </div>
+                </div>`;
                 list.appendChild(li);
             });
         }
+
+        async function mergeDuplicates() {
+            if (!confirm('Sei sicuro di voler unire i duplicati per numero WR?')) return;
+            const resp = await apiFetch('/works/merge_duplicates', { method: 'POST' });
+            const data = await resp.json();
+            if (!resp.ok) { alert('Merge failed: ' + (data.detail || 'Unknown error')); return; }
+            alert('Merge completato. Voci unite: ' + (data.merged.length || 0));
+            loadWorks();
+            loadDocuments();
+        }
+
+        async function drawChart(canvasId, labels, data, type='bar') {
+            const canvasEl = document.getElementById(canvasId);
+            if (!canvasEl) return;
+            const ctx = canvasEl.getContext('2d');
+            // Keep a global map of charts so we can destroy any existing instance before creating a new one
+            try { window._charts = window._charts || {}; } catch(e) { window._charts = {}; }
+            // Try to use Chart.getChart (v3+) to reliably find any chart already attached to the canvas
+            try {
+                if (typeof Chart !== 'undefined' && Chart.getChart) {
+                    const existing = Chart.getChart(canvasEl);
+                    if (existing) {
+                        try { existing.destroy(); } catch (e) { /* ignore */ }
+                        try { canvasEl.getContext('2d').clearRect(0, 0, canvasEl.width, canvasEl.height); } catch (e) {}
+                    }
+                }
+            } catch (e) { /* Chart:getChart might not exist on some versions */ }
+            if (window._charts[canvasId]) {
+                try { window._charts[canvasId].destroy(); } catch (e) { /* ignore */ }
+                try { canvasEl.getContext('2d').clearRect(0, 0, canvasEl.width, canvasEl.height); } catch (e) {}
+                window._charts[canvasId] = null;
+            }
+            window._charts[canvasId] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+    async function loadStats() {
+            try {
+                const op = await apiFetch('/stats/closed_by_operator');
+                const opData = await op.json();
+                try { await drawChart('operatorChart', opData.map(o => o.operatore), opData.map(o => o.closed)); } catch (e) { console.error('Failed to draw operatorChart', e); }
+
+                const tech = await apiFetch('/stats/closed_by_technician');
+                const techData = await tech.json();
+                try { await drawChart('technicianChart', techData.map(t => t.tecnico), techData.map(t => t.closed)); } catch (e) { console.error('Failed to draw technicianChart', e); }
+
+                const daily = await apiFetch('/stats/daily_closed');
+                const dailyData = await daily.json();
+                try { await drawChart('dailyChart', dailyData.map(d => d.date), dailyData.map(d => d.closed), 'line'); } catch (e) { console.error('Failed to draw dailyChart', e); }
+                const yearly = await apiFetch('/stats/yearly');
+                const yearlyData = await yearly.json();
+                try { await drawChart('yearlyChart', yearlyData.map(d => d.date), yearlyData.map(d => d.closed), 'bar'); } catch (e) { console.error('Failed to draw yearlyChart', e); }
+
+                const weekly = await apiFetch('/stats/weekly');
+                const weeklyData = await weekly.json();
+                try { await drawChart('statusChart', ['closed', 'suspended'], [weeklyData.closed_this_week, weeklyData.suspended], 'bar'); } catch (e) { console.error('Failed to draw statusChart', e); }
+            } catch (e) {
+                console.error('Failed to load stats', e);
+            }
+        }
+
+        async function loadDocuments() {
+            const response = await apiFetch('/documents/');
+            if (!response.ok) {
+                console.error('docs load failed');
+                return;
+            }
+            const docs = await response.json();
+            const list = document.getElementById('documentsList');
+            list.innerHTML = '';
+            docs.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                // Show applied_count if present
+                let appliedCountBadge = '';
+                try {
+                    const pd = d.parsed_data || {};
+                    if (pd && pd.applied_work_ids && pd.applied_work_ids.length) {
+                        appliedCountBadge = `<span class="badge bg-info ms-2">Applied: ${pd.applied_work_ids.length}</span>`;
+                    } else if (d.applied_work_id) {
+                        appliedCountBadge = `<span class="badge bg-info ms-2">Applied</span>`;
+                    }
+                    // Show incomplete badge if any parsed entry lacks numero_wr
+                    try {
+                        let entries = [];
+                        if (Array.isArray(pd)) entries = pd;
+                        else if (pd && pd.entries && Array.isArray(pd.entries)) entries = pd.entries;
+                        else if (pd && Object.keys(pd).length) entries = [pd];
+                        if (entries && entries.length && entries.some(e => !e.numero_wr)) {
+                            appliedCountBadge += `<span class="badge bg-warning ms-2">Incomplete</span>`;
+                        }
+                    } catch (e) {}
+                } catch (e) {}
+                li.innerHTML = `<div><strong>${d.filename}</strong> <span class="badge bg-${d.parsed ? 'success' : 'secondary'} ms-2">${d.parsed ? 'Parsed' : 'Raw'}</span> ${appliedCountBadge}</div>
+                    <div>
+                        <button class='btn btn-sm btn-primary me-1 btn-mobile' onclick='parseDoc(${d.id})'>Parse</button>
+                        <button class='btn btn-sm btn-secondary me-1 btn-mobile' onclick='previewDoc(${d.id})'>Preview</button>
+                        <button class='btn btn-sm btn-success me-1 btn-mobile' onclick='applyDoc(${d.id})'>Apply</button>
+                        <button class='btn btn-sm btn-danger me-1 btn-mobile' onclick='deleteDoc(${d.id})'>Cancella</button>
+                        <a class='btn btn-sm btn-outline-dark btn-mobile' href='/documents/${d.id}/download' target='_blank'>Download</a>
+                    </div>`;
+                list.appendChild(li);
+            });
+        }
+
+        async function parseDoc(id) {
+            const url = `/documents/${id}/parse`;
+            let response;
+            try {
+                console.log('parseDoc: POST', url);
+                response = await apiFetch(url, { method: 'POST' });
+            } catch (e) {
+                console.error('parseDoc network error', e, url);
+                alert('Errore di rete durante il parse. Controlla che il server sia in ascolto e raggiungibile. URL: ' + url + '\n' + (e && e.message));
+                return;
+            }
+            let data;
+            try { data = await response.json(); } catch (e) { data = { detail: 'Invalid JSON response' }; }
+            if (!response.ok) { alert('Parse failed: ' + (data.detail || 'error')); return; }
+            const parsed = data.parsed_data || {};
+            let entriesArr = [];
+            if (Array.isArray(parsed)) entriesArr = parsed;
+            else if (parsed && parsed.entries && Array.isArray(parsed.entries)) entriesArr = parsed.entries;
+            else if (parsed && Object.keys(parsed).length) entriesArr = [parsed];
+            const hasNumero = entriesArr.some(e => e && e.numero_wr);
+            if (!entriesArr.length || !hasNumero) {
+                alert('Parsed data vuota o incompleta. Testo estratto: ' + (parsed.raw_text || 'N/A'));
+            } else {
+                if (entriesArr.length > 1) {
+                    alert('Parsed: ' + entriesArr.length + ' entries');
+                } else {
+                    alert('Parsed: ' + JSON.stringify(entriesArr[0]));
+                }
+            }
+            loadDocuments();
+        }
+
+        async function previewDoc(id) {
+            currentPreviewDocId = id;
+            const url = `/documents/${id}`;
+            let response;
+            try {
+                console.log('previewDoc: GET', url);
+                response = await apiFetch(url);
+            } catch (e) {
+                console.error('previewDoc network error', e, url);
+                alert('Errore di rete durante la preview. Controlla che il server sia in ascolto e raggiungibile. URL: ' + url + '\n' + (e && e.message));
+                return;
+            }
+            let data;
+            try { data = await response.json(); } catch (e) { data = {}; }
+            if (!response.ok) { alert('Preview failed'); return; }
+            const parsed = data.parsed_data || {};
+            // Normalize parsed entries into an array
+            if (Array.isArray(parsed)) {
+                previewEntries = parsed;
+            } else if (parsed && parsed.entries && Array.isArray(parsed.entries)) {
+                previewEntries = parsed.entries;
+                previewDocParseDebug = parsed.parse_debug || null;
+            } else if (parsed && Object.keys(parsed).length > 0) {
+                previewEntries = [parsed];
+            } else {
+                previewEntries = [];
+            }
+            previewIndex = 0;
+            window.previewSelections = {};
+            document.getElementById('preview_numero_wr').value = parsed.numero_wr || '';
+            document.getElementById('preview_operatore').value = parsed.operatore || '';
+            document.getElementById('preview_indirizzo').value = parsed.indirizzo || '';
+            document.getElementById('preview_nome_cliente').value = parsed.nome_cliente || '';
+            document.getElementById('preview_tipo_lavoro').value = parsed.tipo_lavoro || '';
+            renderPreviewEntry(previewIndex);
+            // show extracted raw text for debugging
+            try {
+                document.getElementById('previewRawText').textContent = parsed.raw_text || '';
+            } catch(e) {}
+            var previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            previewModal.show();
+        }
+
+        function renderPreviewEntry(idx) {
+            const entry = previewEntries && previewEntries.length > 0 ? previewEntries[idx] : {};
+            document.getElementById('preview_numero_wr').value = entry.numero_wr || '';
+            document.getElementById('preview_operatore').value = entry.operatore || '';
+            document.getElementById('preview_indirizzo').value = entry.indirizzo || '';
+            document.getElementById('preview_nome_cliente').value = entry.nome_cliente || '';
+            document.getElementById('preview_tipo_lavoro').value = entry.tipo_lavoro || '';
+            document.getElementById('previewCount').textContent = (idx + 1) + '/' + Math.max(previewEntries.length, 1);
+            // Enable/disable navigation
+            document.getElementById('previewPrevBtn').disabled = (idx <= 0);
+            document.getElementById('previewNextBtn').disabled = (idx >= previewEntries.length - 1);
+            // persist checkbox state between navigation
+            if (!window.previewSelections) window.previewSelections = {};
+            const cb = document.getElementById('preview_select_entry');
+            if (cb) {
+                cb.checked = !!window.previewSelections[idx];
+                cb.onchange = () => { window.previewSelections[idx] = cb.checked; };
+            }
+            // Show parse debug info if present
+            try {
+                const dbgEl = document.getElementById('previewDebug');
+                let dbgLines = [];
+                if (!entry || !entry.numero_wr) dbgLines.push('⚠️ Numero WR non trovato in questa entry');
+                if (entry && entry._parse_debug && entry._parse_debug.methods && entry._parse_debug.methods.length) {
+                    dbgLines.push('Metodo: ' + entry._parse_debug.methods.join(', '));
+                } else if (previewDocParseDebug && previewDocParseDebug.methods && previewDocParseDebug.methods.length) {
+                    dbgLines.push('Metodo (doc): ' + previewDocParseDebug.methods.join(', '));
+                }
+                if (entry && entry._parse_debug && entry._parse_debug.candidates && entry._parse_debug.candidates.length) {
+                    dbgLines.push('Candidates: ' + entry._parse_debug.candidates.join(', '));
+                } else if (previewDocParseDebug && previewDocParseDebug.candidates && previewDocParseDebug.candidates.length) {
+                    dbgLines.push('Candidates (doc): ' + previewDocParseDebug.candidates.join(', '));
+                }
+                dbgEl.textContent = dbgLines.join(' | ');
+            } catch(e){}
+            // If this entry contains a _raw slice or raw_text in parsed_data, show it highlighted in raw text box if possible
+            try {
+                const rawTextEl = document.getElementById('previewRawText');
+                if (rawTextEl && entry && entry._raw && entry._raw.length) {
+                    rawTextEl.textContent = entry._raw;
+                }
+            } catch(e){}
+        }
+
+        function previewPrev() {
+            if (previewIndex > 0) { previewIndex -= 1; renderPreviewEntry(previewIndex); }
+        }
+
+        function previewNext() {
+            if (previewIndex < previewEntries.length - 1) { previewIndex += 1; renderPreviewEntry(previewIndex); }
+        }
+
+        async function applyDoc(id, override=null, selectedIndices=null) {
+            let opts = { method: 'POST' };
+            if (override) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(override); }
+            let url = `/documents/${id}/apply`;
+            if (selectedIndices != null) {
+                if (Array.isArray(selectedIndices)) url += '?selected_indices=' + selectedIndices.join(',');
+                else url += '?selected_indices=' + selectedIndices;
+            }
+            let response;
+            try {
+                console.log('applyDoc: POST', url);
+                response = await apiFetch(url, opts);
+            } catch (e) {
+                console.error('applyDoc network error', e, url);
+                alert('Errore di rete durante apply: ' + url + '\n' + (e && e.message));
+                return;
+            }
+            let data;
+            try { data = await response.json(); } catch (e) { data = {}; }
+            if (!response.ok) { alert('Apply failed: ' + (data.detail || 'error')); return; }
+            alert('Applied to Work: ' + data.applied_work_id);
+            loadWorks();
+            loadDocuments();
+            return data;
+        }
+
+                async function notifyTech(workId) {
+                    if (!confirm('Inviare notifica Telegram al tecnico assegnato?')) return;
+                    // Do NOT prompt the user for API keys. The X-API-Key header is injected by the server (Apache) if needed.
+                    // Fetch work to include more readable info in default message
+                    let work = null;
+                    try {
+                        const resp = await apiFetch(`/works/${workId}`);
+                        if (resp.ok) work = await resp.json();
+                    } catch (e) {}
+                    const defaultMsg = work ? `Ciao ${work.tecnico_assegnato ? (work.tecnico_assegnato.nome + ' ' + work.tecnico_assegnato.cognome) : ''}, ti è stato assegnato il lavoro WR ${work.numero_wr} - ${work.indirizzo || ''}` : `Ciao, ti è stato assegnato il lavoro WR ${workId}`;
+                    const msg = prompt('Messaggio da inviare', defaultMsg);
+                    try {
+                        const headers = {'Content-Type': 'application/json'}; // API key handled server-side
+                        const resp = await apiFetch(`/works/${workId}/notify`, {method: 'POST', headers, body: JSON.stringify({message: msg})});
+                        const data = await resp.json();
+                        if (!resp.ok) alert('Errore: ' + (data.detail || JSON.stringify(data)));
+                        else alert('Notifica inviata (ok: ' + !!data.ok + ')');
+                    } catch (e) {
+                        alert('Network error: ' + e.message);
+                    }
+                }
+
+        async function deleteDoc(id) {
+            if (!confirm('Sei sicuro di voler cancellare questo documento?')) return;
+            const response = await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (!response.ok) { alert('Delete failed: ' + (data.detail || 'error')); return; }
+            alert('Documento cancellato');
+            loadDocuments();
+        }
+
+        async function deleteWork(id) {
+            if (!confirm('Sei sicuro di voler cancellare questo lavoro?')) return;
+            const response = await apiFetch(`/works/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (!response.ok) { alert('Delete failed: ' + (data.detail || 'error')); return; }
+            alert('Lavoro cancellato');
+            loadWorks();
+        }
+
+        async function viewWorkDetails(id) {
+            alert('Dettagli lavoro ID: ' + id + ' - Implementa modal per dettagli completi');
+        }
+
+        // Inline edit support
+        async function startInlineEdit(id) {
+            const li = document.querySelector(`[data-work-id='${id}']`);
+            if (!li) return;
+            const display = li.querySelector('.work-display');
+            const edit = li.querySelector('.work-edit');
+            display.style.display = 'none';
+            edit.style.display = 'block';
+            // Populate technicians select
+            await populateTechnicianSelectForInline(id);
+        }
+
+        function cancelInlineEdit(id) {
+            const li = document.querySelector(`[data-work-id='${id}']`);
+            if (!li) return;
+            const display = li.querySelector('.work-display');
+            const edit = li.querySelector('.work-edit');
+            edit.style.display = 'none';
+            display.style.display = 'block';
+        }
+
+        async function populateTechnicianSelectForInline(id) {
+            // Use a cache to minimize server calls
+            if (!window._techniciansCache) {
+                try {
+                    const resp = await apiFetch('/technicians/');
+                    if (!resp.ok) return;
+                    window._techniciansCache = await resp.json();
+                } catch (e) {
+                    console.error('Failed to load technicians', e);
+                    window._techniciansCache = [];
+                }
+            }
+            const select = document.getElementById(`inline_tecnico_${id}`);
+            if (!select) return;
+            select.innerHTML = '<option value="">Nessun tecnico</option>';
+            window._techniciansCache.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.nome} ${t.cognome}`;
+                select.appendChild(opt);
+            });
+            // Set currently assigned
+            try {
+                const resp = await apiFetch(`/works/${id}`);
+                if (resp.ok) {
+                    const work = await resp.json();
+                    if (work.tecnico_assegnato) {
+                        select.value = work.tecnico_assegnato.id || '';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function saveInlineWork(id) {
+            const numero = document.getElementById(`inline_numero_wr_${id}`).value.trim();
+            const nomeCliente = document.getElementById(`inline_nome_cliente_${id}`).value.trim();
+            const indirizzo = document.getElementById(`inline_indirizzo_${id}`).value.trim();
+            const operatore = document.getElementById(`inline_operatore_${id}`).value.trim();
+            const tipo = document.getElementById(`inline_tipo_lavoro_${id}`).value.trim();
+            const tecnico = document.getElementById(`inline_tecnico_${id}`).value;
+            const stato = document.getElementById(`inline_stato_${id}`).value;
+
+            const payload = {};
+            if (numero) payload.numero_wr = numero;
+            if (nomeCliente) payload.nome_cliente = nomeCliente;
+            if (indirizzo) payload.indirizzo = indirizzo;
+            if (operatore) payload.operatore = operatore;
+            if (tipo) payload.tipo_lavoro = tipo;
+            if (stato) payload.stato = stato;
+            if (tecnico !== '') payload.tecnico_assegnato_id = parseInt(tecnico);
+            else payload.tecnico_assegnato_id = null;
+
+            try {
+                const resp = await apiFetch(`/works/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (!resp.ok) { alert('Save failed: ' + (data.detail || 'Unknown')); return; }
+                alert('Lavoro aggiornato');
+                // Refresh the particular item in the list
+                const li = document.querySelector(`[data-work-id='${id}']`);
+                if (li) {
+                    li.querySelector('.work-display').innerHTML = `<strong>${data.numero_wr}</strong> - ${data.stato}<br>
+                        <small>Cliente: ${data.nome_cliente || 'N/A'} | Indirizzo: ${data.indirizzo || 'N/A'}</small><br>
+                        <small>Operatore: ${data.operatore || 'N/A'} | Tipo: ${data.tipo_lavoro || 'N/A'}</small><br>
+                        <small>Tecnico: ${data.tecnico_assegnato ? (data.tecnico_assegnato.nome + ' ' + data.tecnico_assegnato.cognome) : 'N/A'}</small>`;
+                    cancelInlineEdit(id);
+                }
+                // Optionally refresh stats and documents
+                scheduleLoadStats();
+            } catch (e) {
+                alert('Errore: ' + e.message);
+            }
+        }
+
+        async function editWork(id) {
+            currentEditWorkId = id;
+            const resp = await apiFetch(`/works/${id}`);
+            if (!resp.ok) { alert('Work fetch failed'); return; }
+            const work = await resp.json();
+            document.getElementById('edit_numero_wr').value = work.numero_wr || '';
+            document.getElementById('edit_operatore').value = work.operatore || '';
+            document.getElementById('edit_indirizzo').value = work.indirizzo || '';
+            document.getElementById('edit_nome_cliente').value = work.nome_cliente || '';
+            document.getElementById('edit_tipo_lavoro').value = work.tipo_lavoro || '';
+            document.getElementById('edit_stato').value = work.stato || 'aperto';
+            document.getElementById('edit_note').value = work.note || '';
+            try {
+                const techEl = document.getElementById('edit_tecnico');
+                if (techEl) techEl.value = work.tecnico_assegnato ? work.tecnico_assegnato.id : '';
+            } catch(e) {}
+            var editModal = new bootstrap.Modal(document.getElementById('editWorkModal'));
+            editModal.show();
+        }
+
+        async function updateWork() {
+            const id = currentEditWorkId;
+            const payload = {
+                numero_wr: document.getElementById('edit_numero_wr').value,
+                operatore: document.getElementById('edit_operatore').value,
+                indirizzo: document.getElementById('edit_indirizzo').value,
+                nome_cliente: document.getElementById('edit_nome_cliente').value,
+                tipo_lavoro: document.getElementById('edit_tipo_lavoro').value,
+                stato: document.getElementById('edit_stato').value,
+                note: document.getElementById('edit_note').value
+            };
+            const techEl = document.getElementById('edit_tecnico');
+            if (techEl && techEl.value) {
+                payload.tecnico_assegnato_id = parseInt(techEl.value);
+            }
+            const resp = await apiFetch(`/works/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await resp.json();
+            if (!resp.ok) { alert('Update failed: ' + (data.detail || 'Unknown')); return; }
+            alert('Lavoro aggiornato');
+            loadWorks();
+            var editModalEl = document.getElementById('editWorkModal');
+            var editModal = bootstrap.Modal.getInstance(editModalEl);
+            editModal.hide();
+        }
+
+        async function changeWorkStatus(status) {
+            const id = currentEditWorkId;
+            if (!id) { alert('No work selected'); return; }
+            const payload = { stato: status };
+            const resp = await apiFetch(`/works/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await resp.json();
+            if (!resp.ok) { alert('Update failed: ' + (data.detail || 'Unknown')); return; }
+            alert('Stato aggiornato a ' + status);
+            loadWorks();
+            var editModalEl = document.getElementById('editWorkModal');
+            var editModal = bootstrap.Modal.getInstance(editModalEl);
+            editModal.hide();
+        }
+
+        async function loadTechnicians() {
+            const response = await apiFetch('/technicians/');
+            const techs = await response.json();
+            const list = document.getElementById('techniciansList');
+            const select = document.getElementById('techSelect');
+            const editSelect = document.getElementById('edit_tecnico');
+            list.innerHTML = '';
+            select.innerHTML = '<option value="">Seleziona Tecnico</option>';
+            if (editSelect) editSelect.innerHTML = '<option value="">Nessun tecnico</option>';
+            techs.forEach(tech => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerHTML = `${tech.nome} ${tech.cognome} - ${tech.telefono} - Telegram: ${tech.telegram_id || 'Non collegato'}`;
+                list.appendChild(li);
+                const option = document.createElement('option');
+                option.value = tech.id;
+                option.textContent = `${tech.nome} ${tech.cognome}`;
+                select.appendChild(option);
+                if (editSelect) {
+                    const option2 = document.createElement('option');
+                    option2.value = tech.id;
+                    option2.textContent = `${tech.nome} ${tech.cognome}`;
+                    editSelect.appendChild(option2);
+                }
+            });
+            // Also populate any inline tecnico selects (for inline editing rows)
+            const inlineSelects = document.querySelectorAll('[id^="inline_tecnico_"]');
+            inlineSelects.forEach(sel => {
+                sel.innerHTML = '<option value="">Nessun tecnico</option>';
+                techs.forEach(tech => {
+                    const option = document.createElement('option');
+                    option.value = tech.id;
+                    option.textContent = `${tech.nome} ${tech.cognome}`;
+                    sel.appendChild(option);
+                });
+                // If the select has a data attribute for current work assigned, set it
+                const workIdMatch = sel.id.match(/inline_tecnico_(\d+)/);
+                if (workIdMatch) {
+                    const workId = parseInt(workIdMatch[1]);
+                    // fetch current assigned value
+                    apiFetch(`/works/${workId}`).then(r => r.json()).then(w => {
+                        if (w && w.tecnico_assegnato) sel.value = w.tecnico_assegnato.id || '';
+                    }).catch(e => {});
+                }
+            });
+        }
+
+        async function deleteTechnician(id) {
+            if (!confirm('Sei sicuro di voler cancellare questo tecnico?')) return;
+            const response = await apiFetch(`/technicians/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (!response.ok) { alert('Delete failed: ' + (data.detail || 'error')); return; }
+            alert('Tecnico cancellato');
+            loadTechnicians();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+        // CSV upload disabled: the upload control has been removed from the UI.
+
         loadWorks();
+        // Use scheduleLoadStats to debounce repeated calls
+        function scheduleLoadStats(delay = 200) {
+            try { window._loadStatsTimeout = window._loadStatsTimeout || null; } catch(e) { window._loadStatsTimeout = null; }
+            if (window._loadStatsTimeout) clearTimeout(window._loadStatsTimeout);
+            window._loadStatsTimeout = setTimeout(() => { loadStats(); }, delay);
+        }
+        scheduleLoadStats();
+        loadDocuments();
+        loadTechnicians();
+
+    // Check API health quickly and update the status indicator
+    (async function () {
+            try {
+                const resp = await apiFetch('/health/');
+                if (resp && resp.ok) {
+                    document.getElementById('apiStatus').className = 'badge bg-success ms-2';
+                    document.getElementById('apiStatus').textContent = 'API: ok';
+                    return;
+                }
+            } catch (e) {
+                console.warn('Primary API health check failed', e);
+            }
+            // Fallback: try to probe the host at known backend port 6030 only for local dev
+            // When the static site is served on port 6031 (public), prefer same-origin so Apache
+            // can proxy and inject the X-API-Key header. Do not automatically set window.__API_BASE__ to 6030
+            // in that case (it would bypass Apache and cause missing credentials).
+            if (window.location.port !== '6031') {
+                try {
+                    const fallbackBase = `${window.location.protocol}//${window.location.hostname}:6030`;
+                    const resp2 = await fetch(fallbackBase + '/health/');
+                    if (resp2 && resp2.ok) {
+                        // set API_BASE so subsequent calls use this port (local dev only)
+                        window.__API_BASE__ = fallbackBase;
+                        document.getElementById('apiStatus').className = 'badge bg-success ms-2';
+                        document.getElementById('apiStatus').textContent = 'API: ok (6030)';
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Fallback API health check failed', e);
+                }
+            } else {
+                console.debug('Static site on 6031: skipping fallback to backend 6030 to avoid bypassing Apache header injection.');
+            }
+            // If none of the probes worked, mark as unreachable
+            document.getElementById('apiStatus').className = 'badge bg-danger ms-2';
+            document.getElementById('apiStatus').textContent = 'API: unreachable';
+        })();
+
+        // Works (CSV upload)
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await apiFetch('/works/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (response.ok) {
+                if (result.message) {
+                    alert(result.message);
+                } else {
+                    alert('Lavoro creato: ' + (result.numero_wr || 'ID ' + result.id));
+                }
+            } else {
+                alert('Errore: ' + (result.detail || 'Unknown error'));
+            }
+            loadWorks();
+        });
+
+        // Documents
+        // Removed API key requirement for now
+        document.getElementById('docsUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const f = document.getElementById('files');
+            const fd = new FormData();
+            for (let i = 0; i < f.files.length; i++) {
+                fd.append('files', f.files[i]);
+            }
+            const response = await apiFetch('/documents/upload', { method: 'POST', body: fd });
+            const data = await response.json();
+            if (response.status >= 400) {
+                alert('Upload error: ' + (data.detail || 'Unknown error'));
+                return;
+            }
+            alert('Documenti caricati: ' + data.length);
+            loadDocuments();
+        });
+
+    document.getElementById('previewApplySelectedBtn').addEventListener('click', async () => {
+            // find all entries from preview and gather selected indices
+            const selected = [];
+            // we use previewIndex to map to current displayed entry; store a per-index checkbox state in previewSelections
+            if (!window.previewSelections) window.previewSelections = {};
+            // include currently displayed checkbox state
+            const checkbox = document.getElementById('preview_select_entry');
+            if (checkbox && checkbox.checked) {
+                window.previewSelections[previewIndex] = true;
+            }
+            for (let i = 0; i < previewEntries.length; i++) {
+                if (window.previewSelections[i]) selected.push(i);
+            }
+            if (!selected.length) { alert('Nessuna entry selezionata'); return; }
+            // Call apply with selected indices
+            await applyDoc(currentPreviewDocId, null, selected);
+            loadWorks();
+            loadDocuments();
+            var previewModalEl = document.getElementById('previewModal');
+            var previewModal = bootstrap.Modal.getInstance(previewModalEl);
+            previewModal.hide();
+    });
+
+    document.getElementById('previewApplyBtn').addEventListener('click', async () => {
+            const override = {
+                numero_wr: document.getElementById('preview_numero_wr').value,
+                operatore: document.getElementById('preview_operatore').value,
+                indirizzo: document.getElementById('preview_indirizzo').value,
+                nome_cliente: document.getElementById('preview_nome_cliente').value,
+                tipo_lavoro: document.getElementById('preview_tipo_lavoro').value,
+            };
+            await applyDoc(currentPreviewDocId, override, previewIndex);
+            var previewModalEl = document.getElementById('previewModal');
+            var previewModal = bootstrap.Modal.getInstance(previewModalEl);
+            previewModal.hide();
+    });
+
+        // Clear selections when modal closes to avoid stale state
+        var previewModalEl = document.getElementById('previewModal');
+        previewModalEl.addEventListener('hidden.bs.modal', () => {
+            window.previewSelections = {};
+        });
+
+        document.getElementById('linkTelegramForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const techId = document.getElementById('techSelect').value;
+            const telegramId = document.getElementById('telegramId').value;
+            const response = await apiFetch(`/telegram/link/${techId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_id: telegramId })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert('Telegram ID collegato');
+                loadTechnicians();
+            } else {
+                alert('Errore: ' + (data.detail || 'Unknown'));
+            }
+        });
+    document.getElementById('editSaveBtn').addEventListener('click', async () => { await updateWork(); });
+    document.getElementById('editSuspendBtn').addEventListener('click', async () => { if (confirm('Sospendi questo lavoro?')) await changeWorkStatus('sospeso'); });
+    document.getElementById('editReopenBtn').addEventListener('click', async () => { if (confirm('Riaprire questo lavoro?')) await changeWorkStatus('aperto'); });
+    document.getElementById('editCloseBtn').addEventListener('click', async () => { if (confirm('Chiudere questo lavoro?')) await changeWorkStatus('chiuso'); });
+        });
     </script>
+
+        <!-- Preview Modal -->
+        <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="previewModalLabel">Anteprima Document</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <button id="previewPrevBtn" class="btn btn-sm btn-outline-secondary" type="button" onclick="previewPrev()">&lt; Prev</button>
+                                <button id="previewNextBtn" class="btn btn-sm btn-outline-secondary" type="button" onclick="previewNext()">Next &gt;</button>
+                            </div>
+                            <div id="previewCount">1/1</div>
+                        </div>
+                        <form id="previewForm">
+                            <div class="mb-2">
+                                <label>Numero WR</label>
+                                <input id="preview_numero_wr" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Operatore</label>
+                                <input id="preview_operatore" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Indirizzo</label>
+                                <input id="preview_indirizzo" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Nome Cliente</label>
+                                <input id="preview_nome_cliente" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Tipo Lavoro</label>
+                                <input id="preview_tipo_lavoro" class="form-control" />
+                            </div>
+                            <div id="previewDebug" class="mb-2 text-warning small"></div>
+                            <details class="mb-2">
+                                <summary>Mostra testo estratto (raw)</summary>
+                                <pre id="previewRawText" class="small" style="white-space: pre-wrap; max-height: 220px; overflow:auto; background:#f8f9fa; padding:8px; border-radius:4px;"></pre>
+                            </details>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="preview_select_entry" />
+                                <label class="form-check-label" for="preview_select_entry">Seleziona questa entry per 'Apply Selected'</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                        <button type="button" id="previewApplySelectedBtn" class="btn btn-outline-primary me-2">Applica Selezionati</button>
+                        <button type="button" id="previewApplyBtn" class="btn btn-primary">Applica e Crea lavoro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Work Modal -->
+        <div class="modal fade" id="editWorkModal" tabindex="-1" aria-labelledby="editWorkModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editWorkModalLabel">Modifica Lavoro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editWorkForm">
+                            <div class="mb-2">
+                                <label>Numero WR</label>
+                                <input id="edit_numero_wr" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Operatore</label>
+                                <input id="edit_operatore" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Indirizzo</label>
+                                <input id="edit_indirizzo" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Nome Cliente</label>
+                                <input id="edit_nome_cliente" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Tipo Lavoro</label>
+                                <input id="edit_tipo_lavoro" class="form-control" />
+                            </div>
+                            <div class="mb-2">
+                                <label>Tecnico Assegnato</label>
+                                <select id="edit_tecnico" class="form-control">
+                                    <option value="">Nessun tecnico</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Stato</label>
+                                <select id="edit_stato" class="form-control">
+                                    <option value="aperto">aperto</option>
+                                    <option value="in_corso">in_corso</option>
+                                    <option value="sospeso">sospeso</option>
+                                    <option value="chiuso">chiuso</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Note</label>
+                                <textarea id="edit_note" class="form-control" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-between">
+                        <div>
+                            <button type="button" id="editSuspendBtn" class="btn btn-warning">Sospendi</button>
+                            <button type="button" id="editReopenBtn" class="btn btn-success">Riapri</button>
+                            <button type="button" id="editCloseBtn" class="btn btn-danger">Chiudi</button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                            <button type="button" id="editSaveBtn" class="btn btn-primary">Salva</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 </body>
 </html>

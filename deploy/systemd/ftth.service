@@ -1,0 +1,16 @@
+[Unit]
+Description=FTTH Management Service
+After=network.target
+
+[Service]
+Type=simple
+User=aaa
+Group=www-data
+WorkingDirectory=/home/aaa/fibra
+Environment=PATH=/home/aaa/fibra/venv/bin
+ExecStart=/home/aaa/fibra/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 6030 --workers 4 --proxy-headers
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

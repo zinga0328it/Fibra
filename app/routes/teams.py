@@ -5,6 +5,7 @@ from app.models.models import Team
 from typing import List
 from app.utils.security import verify_api_key
 from app.schemas import TeamCreate, TeamOut
+from app.utils.auth import auth_required
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -21,7 +22,7 @@ def get_teams(db: Session = Depends(get_db)):
     return teams
 
 @router.post("/", response_model=TeamOut)
-def create_team(payload: TeamCreate, db: Session = Depends(get_db), api_key=Depends(verify_api_key)):
+def create_team(payload: TeamCreate, db: Session = Depends(get_db), current_user = Depends(auth_required(['admin']))):
     team = Team(nome=payload.nome)
     db.add(team)
     db.commit()

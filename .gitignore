@@ -1,5 +1,7 @@
 # Environment & Secrets
 .env
+.env.bak
+*.env.bak*
 tmp_wr.json
 
 # Databases

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, LargeBinary, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -21,6 +21,8 @@ class Work(Base):
 
     tecnico_assegnato = relationship("Technician", foreign_keys=[tecnico_assegnato_id])
     tecnico_chiusura = relationship("Technician", foreign_keys=[tecnico_chiusura_id])
+    # relation to documents that created/updated this work
+    documents = relationship("Document", secondary="document_applied_works", back_populates="applied_works")
 
 class Technician(Base):
     __tablename__ = "technicians"
@@ -49,3 +51,42 @@ class WorkEvent(Base):
     event_type = Column(String)  # assigned, status_change, etc.
     description = Column(String)
     user_id = Column(Integer, ForeignKey("technicians.id"))
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True)
+    filename = Column(String)
+    mime = Column(String, nullable=True)
+    content = Column(LargeBinary)
+    uploaded_at = Column(DateTime)
+    parsed = Column(Boolean, default=False)
+    parsed_data = Column(JSON, nullable=True)
+    applied_work_id = Column(Integer, ForeignKey("works.id"), nullable=True)
+
+    applied_work = relationship("Work", foreign_keys=[applied_work_id])
+    # Many-to-many relation to track which works this document applied
+    applied_works = relationship("Work", secondary="document_applied_works", back_populates="documents")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="backoffice")
+    technician_id = Column(Integer, ForeignKey("technicians.id"), nullable=True)
+
+    technician = relationship("Technician")
+
+
+class DocumentAppliedWork(Base):
+    __tablename__ = 'document_applied_works'
+    __table_args__ = (UniqueConstraint('document_id', 'work_id', name='uq_document_work'),)
+    id = Column(Integer, primary_key=True)
+    document_id = Column(Integer, ForeignKey('documents.id'))
+    work_id = Column(Integer, ForeignKey('works.id'))
+    applied_at = Column(DateTime)
+

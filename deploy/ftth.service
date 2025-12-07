@@ -1,0 +1,16 @@
+[Unit]
+Description=FTTH Uvicorn Service
+After=network.target
+
+[Service]
+User=aaa
+Group=www-data
+WorkingDirectory=/home/aaa/fibra
+Environment=PYTHONUNBUFFERED=1
+# Ensure TELEGRAM_BOT_TOKEN is set in the environment or in a drop-in file
+ExecStart=/home/aaa/fibra/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 6030 --proxy-headers --log-level info
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

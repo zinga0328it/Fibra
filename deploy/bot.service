@@ -1,0 +1,15 @@
+[Unit]
+Description=FTTH Telegram Bot (polling)
+After=network.target
+
+[Service]
+User=aaa
+Group=www-data
+WorkingDirectory=/home/aaa/fibra
+Environment=PYTHONPATH=/home/aaa/fibra
+ExecStart=/home/aaa/fibra/venv/bin/python -m app.bot
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard Tecnici - FTTH</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .work-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .work-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .work-card.stato-aperto {
+            border-left: 5px solid #dc3545;
+        }
+        .work-card.stato-in_corso {
+            border-left: 5px solid #ffc107;
+        }
+        .work-card.stato-sospeso {
+            border-left: 5px solid #ff9800;
+        }
+        .work-card.stato-chiuso {
+            border-left: 5px solid #28a745;
+        }
+        .work-number {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .work-info {
+            color: #666;
+            margin: 0.5rem 0;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+        .btn-fatto {
+            background: #28a745;
+            color: white;
+        }
+        .btn-sospendi {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-problema {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-riapri {
+            background: #17a2b8;
+            color: white;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .stats-aperti { color: #dc3545; }
+        .stats-in-corso { color: #ffc107; }
+        .stats-sospesi { color: #ff9800; }
+        .stats-chiusi { color: #28a745; }
+        .filter-btn {
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: bold;
+        }
+        .filter-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        .tech-name {
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+        }
+        .empty-state h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">🛠️ Lavori FTTH</h1>
+                <div>
+                    <a href="/static/gestionale.html" class="btn btn-outline-primary btn-sm">📊 Gestionale</a>
+                    <a href="/static/index.html" class="btn btn-outline-secondary btn-sm">⚙️ Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="row mb-3">
+            <div class="col-6 col-md-3">
+                <div class="stats-card">
+                    <p class="stats-number stats-aperti" id="statsAperti">0</p>
+                    <p class="stats-label">Da Fare</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stats-card">
+                    <p class="stats-number stats-in-corso" id="statsInCorso">0</p>
+                    <p class="stats-label">In Corso</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stats-card">
+                    <p class="stats-number stats-sospesi" id="statsSospesi">0</p>
+                    <p class="stats-label">Sospesi</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stats-card">
+                    <p class="stats-number stats-chiusi" id="statsChiusi">0</p>
+                    <p class="stats-label">Completati</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="text-center mb-3">
+            <button class="filter-btn active" onclick="filterWorks('tutti')">Tutti</button>
+            <button class="filter-btn" onclick="filterWorks('aperto')">Da Fare</button>
+            <button class="filter-btn" onclick="filterWorks('in_corso')">In Corso</button>
+            <button class="filter-btn" onclick="filterWorks('sospeso')">Sospesi</button>
+            <button class="filter-btn" onclick="filterWorks('chiuso')">Completati</button>
+        </div>
+
+        <!-- Works List -->
+        <div id="worksList"></div>
+        
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <h3>✅ Nessun lavoro da visualizzare</h3>
+            <p>Ottimo lavoro!</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const _loc = window.location;
+        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
+        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+        
+        function apiFetch(path, opts) {
+            const base = window.__API_BASE__ || API_BASE;
+            const url = base ? base + path : path;
+            return fetch(url, opts);
+        }
+
+        let allWorks = [];
+        let currentFilter = 'tutti';
+
+        async function loadWorks() {
+            try {
+                const response = await apiFetch('/works/');
+                allWorks = await response.json();
+                updateStats();
+                renderWorks();
+            } catch (e) {
+                console.error('Errore caricamento lavori', e);
+                alert('Errore nel caricamento dei lavori. Verifica la connessione.');
+            }
+        }
+
+        function updateStats() {
+            const stats = {
+                aperto: 0,
+                in_corso: 0,
+                sospeso: 0,
+                chiuso: 0
+            };
+            
+            allWorks.forEach(work => {
+                if (stats[work.stato] !== undefined) {
+                    stats[work.stato]++;
+                }
+            });
+
+            document.getElementById('statsAperti').textContent = stats.aperto;
+            document.getElementById('statsInCorso').textContent = stats.in_corso;
+            document.getElementById('statsSospesi').textContent = stats.sospeso;
+            document.getElementById('statsChiusi').textContent = stats.chiuso;
+        }
+
+        function renderWorks() {
+            const container = document.getElementById('worksList');
+            const emptyState = document.getElementById('emptyState');
+            
+            let filteredWorks = allWorks;
+            if (currentFilter !== 'tutti') {
+                filteredWorks = allWorks.filter(w => w.stato === currentFilter);
+            }
+
+            if (filteredWorks.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+
+            filteredWorks.forEach(work => {
+                const card = document.createElement('div');
+                card.className = `work-card stato-${work.stato}`;
+                
+                const statoLabel = {
+                    'aperto': '🔴 Da Fare',
+                    'in_corso': '🟡 In Corso',
+                    'sospeso': '🟠 Sospeso',
+                    'chiuso': '🟢 Completato'
+                };
+
+                const techInfo = work.tecnico_assegnato 
+                    ? `<span class="tech-name">👤 ${work.tecnico_assegnato.nome} ${work.tecnico_assegnato.cognome}</span>`
+                    : '<span class="tech-name">❌ Nessun tecnico</span>';
+
+                let actionButtons = '';
+                if (work.stato === 'aperto') {
+                    actionButtons = `
+                        <div class="row g-2">
+                            <div class="col-12"><button class="action-btn btn-fatto" onclick="cambiaStato(${work.id}, 'in_corso')">▶️ INIZIA LAVORO</button></div>
+                        </div>
+                    `;
+                } else if (work.stato === 'in_corso') {
+                    actionButtons = `
+                        <div class="row g-2">
+                            <div class="col-6"><button class="action-btn btn-fatto" onclick="cambiaStato(${work.id}, 'chiuso')">✅ COMPLETATO</button></div>
+                            <div class="col-6"><button class="action-btn btn-sospendi" onclick="cambiaStato(${work.id}, 'sospeso')">⏸️ SOSPENDI</button></div>
+                        </div>
+                    `;
+                } else if (work.stato === 'sospeso') {
+                    actionButtons = `
+                        <div class="row g-2">
+                            <div class="col-6"><button class="action-btn btn-riapri" onclick="cambiaStato(${work.id}, 'in_corso')">🔄 RIPRENDI</button></div>
+                            <div class="col-6"><button class="action-btn btn-problema" onclick="cambiaStato(${work.id}, 'aperto')">❌ RIAPRI</button></div>
+                        </div>
+                    `;
+                } else if (work.stato === 'chiuso') {
+                    actionButtons = `
+                        <div class="row g-2">
+                            <div class="col-12"><button class="action-btn btn-riapri" onclick="cambiaStato(${work.id}, 'aperto')">🔄 RIAPRI LAVORO</button></div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="work-number">WR ${work.numero_wr}</div>
+                            <div class="badge bg-secondary">${statoLabel[work.stato]}</div>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <strong>📍 ${work.indirizzo || 'Indirizzo non disponibile'}</strong><br>
+                        👤 ${work.nome_cliente || 'Cliente non specificato'}<br>
+                        🏢 ${work.operatore || 'N/A'} | 🔧 ${work.tipo_lavoro || 'N/A'}
+                    </div>
+                    ${techInfo}
+                    <hr>
+                    ${actionButtons}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        async function cambiaStato(workId, nuovoStato) {
+            try {
+                const response = await apiFetch(`/works/${workId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stato: nuovoStato })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Errore nell\'aggiornamento');
+                }
+
+                // Ricarica i lavori
+                await loadWorks();
+                
+                // Feedback visivo
+                const messages = {
+                    'in_corso': '▶️ Lavoro iniziato!',
+                    'chiuso': '✅ Lavoro completato!',
+                    'sospeso': '⏸️ Lavoro sospeso',
+                    'aperto': '🔄 Lavoro riaperto'
+                };
+                
+                showToast(messages[nuovoStato] || 'Stato aggiornato');
+            } catch (e) {
+                console.error('Errore cambio stato', e);
+                alert('Errore nell\'aggiornamento dello stato');
+            }
+        }
+
+        function filterWorks(stato) {
+            currentFilter = stato;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderWorks();
+        }
+
+        function showToast(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-weight: bold;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 2000);
+        }
+
+        // Load works on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadWorks();
+            // Auto-refresh every 30 seconds
+            setInterval(loadWorks, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestionale Consegne FTTH</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 2rem;
+        }
+        .header {
+            background: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: #667eea;
+            font-weight: bold;
+            margin: 0;
+        }
+        .header .subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+        .stat-box.aperto .stat-number { color: #dc3545; }
+        .stat-box.confermati .stat-number { color: #17a2b8; }
+        .stat-box.in-consegna .stat-number { color: #ffc107; }
+        .stat-box.completati .stat-number { color: #28a745; }
+        
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .tabs-container {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+            background: #f8f9fa;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .tab-button.active {
+            color: #667eea;
+            background: white;
+            border-bottom: 3px solid #667eea;
+        }
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .order-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        .order-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .order-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .status-badge.aperto {
+            background: #ffe5e5;
+            color: #dc3545;
+        }
+        .status-badge.in_corso {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-badge.sospeso {
+            background: #fff3cd;
+            color: #ff9800;
+        }
+        .status-badge.chiuso {
+            background: #d4edda;
+            color: #28a745;
+        }
+        .order-info {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .order-info strong {
+            color: #333;
+        }
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-conferma {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-conferma:hover {
+            background: #138496;
+        }
+        .btn-completa {
+            background: #28a745;
+            color: white;
+        }
+        .btn-completa:hover {
+            background: #218838;
+        }
+        .btn-sospendi {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-sospendi:hover {
+            background: #e0a800;
+        }
+        .btn-annulla {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-annulla:hover {
+            background: #c82333;
+        }
+        .btn-dettagli {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-dettagli:hover {
+            background: #5a6268;
+        }
+        .search-bar {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .tech-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #f0f0f0;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .product-list {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>🛠️ Gestionale Consegne FTTH</h1>
+                    <p class="subtitle mb-0">Sistema di gestione ordini e consegne</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/static/dashboard.html" class="btn btn-outline-primary">📱 Dashboard Tecnici</a>
+                    <a href="/static/index.html" class="btn btn-outline-secondary">⚙️ Admin</a>
+                    <button class="logout-btn" onclick="alert('Logout non implementato')">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-box aperto">
+                <p class="stat-number" id="statAperti">0</p>
+                <p class="stat-label">In Attesa</p>
+            </div>
+            <div class="stat-box confermati">
+                <p class="stat-number" id="statConfermati">0</p>
+                <p class="stat-label">Confermati</p>
+            </div>
+            <div class="stat-box in-consegna">
+                <p class="stat-number" id="statInConsegna">0</p>
+                <p class="stat-label">In Consegna</p>
+            </div>
+            <div class="stat-box completati">
+                <p class="stat-number" id="statCompletati">0</p>
+                <p class="stat-label">Completati</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <button class="tab-button active" data-tab="aperti" onclick="switchTab('aperti')">
+                    📋 Consegn Aperti
+                </button>
+                <button class="tab-button" data-tab="chiusi" onclick="switchTab('chiusi')">
+                    ✅ Consegn Chiuse
+                </button>
+                <button class="tab-button" data-tab="clienti" onclick="switchTab('clienti')">
+                    👥 Clienti
+                </button>
+                <button class="tab-button" data-tab="gestione" onclick="switchTab('gestione')">
+                    🚫 Gestione Utenti
+                </button>
+                <button class="tab-button" data-tab="tutte" onclick="switchTab('tutte')">
+                    📊 Tutte
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cerca per numero WR, cliente, indirizzo..." onkeyup="filterOrders()">
+            </div>
+
+            <!-- Tab Content: Aperti -->
+            <div class="tab-content active" id="tab-aperti">
+                <div id="ordersList-aperti"></div>
+            </div>
+
+            <!-- Tab Content: Chiusi -->
+            <div class="tab-content" id="tab-chiusi">
+                <div id="ordersList-chiusi"></div>
+            </div>
+
+            <!-- Tab Content: Clienti -->
+            <div class="tab-content" id="tab-clienti">
+                <div class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <h4>Gestione Clienti</h4>
+                    <p>Funzionalità in sviluppo</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Gestione Utenti -->
+            <div class="tab-content" id="tab-gestione">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🚫</div>
+                    <h4>Gestione Utenti</h4>
+                    <p>Funzionalità in sviluppo</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Tutte -->
+            <div class="tab-content" id="tab-tutte">
+                <div id="ordersList-tutte"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const _loc = window.location;
+        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
+        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+        
+        function apiFetch(path, opts) {
+            const base = window.__API_BASE__ || API_BASE;
+            const url = base ? base + path : path;
+            return fetch(url, opts);
+        }
+
+        let allOrders = [];
+        let currentTab = 'aperti';
+
+        async function loadOrders() {
+            try {
+                const response = await apiFetch('/works/');
+                allOrders = await response.json();
+                updateStats();
+                renderOrders();
+            } catch (e) {
+                console.error('Errore caricamento ordini', e);
+            }
+        }
+
+        function updateStats() {
+            const stats = {
+                aperto: 0,
+                in_corso: 0,
+                sospeso: 0,
+                chiuso: 0
+            };
+            
+            allOrders.forEach(order => {
+                if (stats[order.stato] !== undefined) {
+                    stats[order.stato]++;
+                }
+            });
+
+            // Mappa stati ai contatori del gestionale
+            document.getElementById('statAperti').textContent = stats.aperto;
+            document.getElementById('statConfermati').textContent = stats.in_corso;
+            document.getElementById('statInConsegna').textContent = stats.sospeso;
+            document.getElementById('statCompletati').textContent = stats.chiuso;
+        }
+
+        function renderOrders() {
+            // Filtra ordini in base al tab
+            let filteredOrders = allOrders;
+            
+            if (currentTab === 'aperti') {
+                filteredOrders = allOrders.filter(o => o.stato !== 'chiuso');
+            } else if (currentTab === 'chiusi') {
+                filteredOrders = allOrders.filter(o => o.stato === 'chiuso');
+            }
+
+            // Render per ogni tab
+            const containers = {
+                'aperti': document.getElementById('ordersList-aperti'),
+                'chiusi': document.getElementById('ordersList-chiusi'),
+                'tutte': document.getElementById('ordersList-tutte')
+            };
+
+            Object.keys(containers).forEach(key => {
+                const container = containers[key];
+                if (!container) return;
+
+                let orders = allOrders;
+                if (key === 'aperti') orders = allOrders.filter(o => o.stato !== 'chiuso');
+                if (key === 'chiusi') orders = allOrders.filter(o => o.stato === 'chiuso');
+
+                if (orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <h4>Nessun ordine</h4>
+                            <p>Non ci sono ordini in questa categoria</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                orders.forEach(order => {
+                    const card = createOrderCard(order);
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.dataset.orderId = order.id;
+            card.dataset.searchText = `${order.numero_wr} ${order.nome_cliente} ${order.indirizzo} ${order.operatore}`.toLowerCase();
+
+            const statoLabels = {
+                'aperto': 'In Attesa',
+                'in_corso': 'Confermato',
+                'sospeso': 'In Consegna',
+                'chiuso': 'Completato'
+            };
+
+            const techInfo = order.tecnico_assegnato 
+                ? `<span class="tech-badge">👤 ${order.tecnico_assegnato.nome} ${order.tecnico_assegnato.cognome}</span>`
+                : '<span class="tech-badge">❌ Non assegnato</span>';
+
+            let actionButtons = '';
+            if (order.stato === 'aperto') {
+                actionButtons = `
+                    <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">✓ Conferma</button>
+                    <button class="action-button btn-annulla" onclick="mostraNote(${order.id})">✗ Cancella</button>
+                `;
+            } else if (order.stato === 'in_corso') {
+                actionButtons = `
+                    <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
+                    <button class="action-button btn-sospendi" onclick="cambiaStato(${order.id}, 'sospeso')">⏸ Sospendi</button>
+                `;
+            } else if (order.stato === 'sospeso') {
+                actionButtons = `
+                    <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">🔄 Riprendi</button>
+                    <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
+                `;
+            } else if (order.stato === 'chiuso') {
+                actionButtons = `
+                    <button class="action-button btn-dettagli" onclick="mostraDettagli(${order.id})">👁 Dettagli</button>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="order-header">
+                    <div class="order-number">#${order.numero_wr}</div>
+                    <span class="status-badge ${order.stato}">${statoLabels[order.stato]}</span>
+                </div>
+                <div class="order-info">
+                    <strong>📞 Telefono:</strong> ${order.telefono_cliente || 'N/A'}<br>
+                    <strong>📍 Indirizzo:</strong> ${order.indirizzo || 'Non specificato'}<br>
+                    <strong>👤 Cliente:</strong> ${order.nome_cliente || 'Non specificato'}<br>
+                    <strong>🏢 Operatore:</strong> ${order.operatore || 'N/A'} | <strong>🔧 Tipo:</strong> ${order.tipo_lavoro || 'N/A'}
+                    ${techInfo}
+                    ${order.note ? `<div class="product-list">📝 Note: ${order.note}</div>` : ''}
+                </div>
+                <div class="order-actions">
+                    ${actionButtons}
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function cambiaStato(orderId, nuovoStato) {
+            try {
+                const response = await apiFetch(`/works/${orderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stato: nuovoStato })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Errore aggiornamento');
+                }
+
+                await loadOrders();
+                showNotification('Stato aggiornato con successo', 'success');
+            } catch (e) {
+                console.error('Errore cambio stato', e);
+                showNotification('Errore nell\'aggiornamento', 'error');
+            }
+        }
+
+        function mostraNote(orderId) {
+            const note = prompt('Motivo cancellazione:');
+            if (note) {
+                // Qui potresti implementare la cancellazione con nota
+                alert('Funzionalità in sviluppo');
+            }
+        }
+
+        function mostraDettagli(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (order) {
+                alert(`Dettagli ordine #${order.numero_wr}\n\nCliente: ${order.nome_cliente}\nIndirizzo: ${order.indirizzo}\nStato: ${order.stato}\n\nNote: ${order.note || 'Nessuna nota'}`);
+            }
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update active button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update active content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            filterOrders();
+        }
+
+        function filterOrders() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.order-card').forEach(card => {
+                const cardText = card.dataset.searchText;
+                if (cardText.includes(searchText)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function showNotification(message, type) {
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                info: '#17a2b8'
+            };
+
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-weight: bold;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadOrders();
+            // Auto-refresh every 30 seconds
+            setInterval(loadOrders, 30000);
+        });
+    </script>
+</body>
+</html>

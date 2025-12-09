@@ -1,235 +1,577 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inserimento Manuale WR</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-  <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <h1>Inserimento Manuale WR <small id="staticVersionManual" class="text-muted ms-2"></small></h1>
-  <a href="/" class="btn btn-outline-secondary">Torna indietro</a>
-  <button id="toggleForceDirectBtn" type="button" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
-    </div>
-  <div class="alert alert-warning">Questa pagina è pensata per inserimento manuale amministrativo (quando altri sistemi non funzionano). La creazione non invia notifiche Telegram. Il POST a <code>/manual/works</code> richiede autenticazione (header <code>X-API-Key</code> o <code>Authorization: Bearer &lt;token&gt;</code>).</div>
-    <form id="manualForm">
-      <div class="row">
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Numero WR</label>
-          <input class="form-control" id="numero_wr" required>
+<!DOCTYPE html><!doctype html>
+
+<html lang="it"><html lang="it">
+
+<head><head>
+
+    <meta charset="UTF-8">  <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Inserimento Rapido Lavoro - FTTH</title>  <title>Inserimento Manuale WR</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style></head>
+
+        body {<body>
+
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);  <div class="container mt-4">
+
+            min-height: 100vh;    <div class="d-flex justify-content-between align-items-center">
+
+            padding: 2rem 0;      <h1>Inserimento Manuale WR <small id="staticVersionManual" class="text-muted ms-2"></small></h1>
+
+        }  <a href="/" class="btn btn-outline-secondary">Torna indietro</a>
+
+        .main-card {  <button id="toggleForceDirectBtn" type="button" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
+
+            background: white;    </div>
+
+            border-radius: 15px;  <div class="alert alert-warning">Questa pagina è pensata per inserimento manuale amministrativo (quando altri sistemi non funzionano). La creazione non invia notifiche Telegram. Il POST a <code>/manual/works</code> richiede autenticazione (header <code>X-API-Key</code> o <code>Authorization: Bearer &lt;token&gt;</code>).</div>
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);    <form id="manualForm">
+
+            padding: 2rem;      <div class="row">
+
+            max-width: 800px;        <div class="col-md-4 mb-2">
+
+            margin: 0 auto;          <label class="form-label">Numero WR</label>
+
+        }          <input class="form-control" id="numero_wr" required>
+
+        .form-label {        </div>
+
+            font-weight: 600;        <div class="col-md-4 mb-2">
+
+            color: #333;          <label class="form-label">Nome Cliente</label>
+
+            margin-bottom: 0.5rem;          <input class="form-control" id="nome_cliente">
+
+        }        </div>
+
+        .form-control, .form-select {        <div class="col-md-4 mb-2">
+
+            border: 2px solid #e0e0e0;          <label class="form-label">Indirizzo</label>
+
+            border-radius: 8px;          <input class="form-control" id="indirizzo">
+
+            padding: 0.75rem;        </div>
+
+        }        <div class="col-md-4 mb-2">
+
+        .form-control:focus, .form-select:focus {          <label class="form-label">Operatore / Impresa</label>
+
+            border-color: #667eea;          <input class="form-control" id="operatore">
+
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);        </div>
+
+        }        <div class="col-md-4 mb-2">
+
+        .required-field::after {          <label class="form-label">Tipo Lavoro</label>
+
+            content: " *";          <input class="form-control" id="tipo_lavoro">
+
+            color: #dc3545;        </div>
+
+        }        <div class="col-md-4 mb-2">
+
+        .btn-submit {          <label class="form-label">Stato</label>
+
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);          <select id="stato" class="form-select">
+
+            border: none;            <option value="aperto">aperto</option>
+
+            padding: 1rem 3rem;            <option value="in_corso">in_corso</option>
+
+            font-size: 1.1rem;            <option value="chiuso">chiuso</option>
+
+            font-weight: bold;            <option value="attivato">attivato</option>
+
+            border-radius: 10px;            <option value="non attivato">non attivato</option>
+
+            color: white;          </select>
+
+            width: 100%;        </div>
+
+            margin-top: 1rem;        <div class="col-md-4 mb-2">
+
+        }          <label class="form-label">Data Inizio (appuntamento)</label>
+
+        .btn-submit:hover {          <input class="form-control" id="data_inizio" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+
+            transform: translateY(-2px);        </div>
+
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);        <div class="col-md-4 mb-2">
+
+        }          <label class="form-label">Data Fine (appuntamento)</label>
+
+        .section-title {          <input class="form-control" id="data_fine" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+
+            color: #667eea;        </div>
+
+            font-weight: bold;        <div class="col-md-4 mb-2">
+
+            margin-top: 1.5rem;          <label class="form-label">Numero Impianto</label>
+
+            margin-bottom: 1rem;          <input class="form-control" id="numero_impianto">
+
+            padding-bottom: 0.5rem;        </div>
+
+            border-bottom: 2px solid #e0e0e0;        <div class="col-md-4 mb-2">
+
+        }          <label class="form-label">Telefono cliente</label>
+
+        .alert-info {          <input class="form-control" id="telefono_cliente">
+
+            background: #e7f3ff;        </div>
+
+            border: 1px solid #b3d9ff;        <div class="col-md-4 mb-2">
+
+            border-radius: 8px;          <label class="form-label">Assegna Tecnico (opzionale)</label>
+
+        }          <select class="form-select" id="tecnico_select">
+
+        .quick-links {            <option value="">Nessun tecnico</option>
+
+            display: flex;          </select>
+
+            gap: 0.5rem;        </div>
+
+            flex-wrap: wrap;        <div class="col-md-4 mb-2">
+
+        }          <label class="form-label">UID WR</label>
+
+    </style>          <input class="form-control" id="uid_wr">
+
+</head>        </div>
+
+<body>        <div class="col-md-4 mb-2">
+
+    <div class="container">          <label class="form-label">ID Xme</label>
+
+        <div class="main-card">          <input class="form-control" id="id_xme">
+
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">        </div>
+
+                <h1 class="mb-0">✏️ Inserimento Rapido Lavoro</h1>        <div class="col-12 mb-2">
+
+                <div class="quick-links">          <label class="form-label">Descrizione / Note</label>
+
+                    <a href="/static/gestionale.html" class="btn btn-primary btn-sm">📊 Gestionale</a>          <textarea class="form-control" id="note" rows="3"></textarea>
+
+                    <a href="/static/dashboard.html" class="btn btn-info btn-sm">📱 Dashboard</a>        </div>
+
+                    <a href="/static/index.html" class="btn btn-secondary btn-sm">🏠 Admin</a>        <div class="col-12 mb-2">
+
+                </div>          <label class="form-label">Extra (JSON) - Inserisci campi addizionali in formato JSON</label>
+
+            </div>          <textarea class="form-control" id="extra_json" rows="6" placeholder='{"CODICE_OLO": "EPD_FTTH_9976", ...}'></textarea>
+
         </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Nome Cliente</label>
-          <input class="form-control" id="nome_cliente">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Indirizzo</label>
-          <input class="form-control" id="indirizzo">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Operatore / Impresa</label>
-          <input class="form-control" id="operatore">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Tipo Lavoro</label>
-          <input class="form-control" id="tipo_lavoro">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Stato</label>
-          <select id="stato" class="form-select">
-            <option value="aperto">aperto</option>
-            <option value="in_corso">in_corso</option>
-            <option value="chiuso">chiuso</option>
-            <option value="attivato">attivato</option>
-            <option value="non attivato">non attivato</option>
-          </select>
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Data Inizio (appuntamento)</label>
-          <input class="form-control" id="data_inizio" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Data Fine (appuntamento)</label>
-          <input class="form-control" id="data_fine" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Numero Impianto</label>
-          <input class="form-control" id="numero_impianto">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Telefono cliente</label>
-          <input class="form-control" id="telefono_cliente">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">Assegna Tecnico (opzionale)</label>
-          <select class="form-select" id="tecnico_select">
-            <option value="">Nessun tecnico</option>
-          </select>
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">UID WR</label>
-          <input class="form-control" id="uid_wr">
-        </div>
-        <div class="col-md-4 mb-2">
-          <label class="form-label">ID Xme</label>
-          <input class="form-control" id="id_xme">
-        </div>
-        <div class="col-12 mb-2">
-          <label class="form-label">Descrizione / Note</label>
-          <textarea class="form-control" id="note" rows="3"></textarea>
-        </div>
-        <div class="col-12 mb-2">
-          <label class="form-label">Extra (JSON) - Inserisci campi addizionali in formato JSON</label>
-          <textarea class="form-control" id="extra_json" rows="6" placeholder='{"CODICE_OLO": "EPD_FTTH_9976", ...}'></textarea>
-        </div>
-        <div class="col-md-6 mb-2 d-flex gap-2 align-items-end">
-          <div style="flex: 1">
-            <label class="form-label">API Token (opzionale; usa Authorization: Bearer &lt;token&gt;). L'X-API-Key viene fornita dal server se configurata.</label>
+
+            <div class="alert alert-info">        <div class="col-md-6 mb-2 d-flex gap-2 align-items-end">
+
+                <strong>ℹ️ Nota:</strong> Compila solo i campi che conosci. I campi con * sono obbligatori.          <div style="flex: 1">
+
+            </div>            <label class="form-label">API Token (opzionale; usa Authorization: Bearer &lt;token&gt;). L'X-API-Key viene fornita dal server se configurata.</label>
+
             <input type="password" class="form-control" id="api_token">
-          </div>
-          <div style="width: 70px; margin-bottom: 0.5rem;">
-            <button id="toggleApiTokenBtn" type="button" class="btn btn-outline-secondary btn-sm w-100">Mostra</button>
-          </div>
-        </div>
-        <!-- X-API-Key removed: API key is provided server-side automatically -->
-      </div>
-      <div class="mt-3 d-flex gap-2">
-        <button class="btn btn-primary" id="submitBtn">Inserisci WR</button>
-        <button class="btn btn-secondary" id="fillSample">Riempi con esempio</button>
-      </div>
-      </div>
-    </form>
-    <div id="responseArea" class="mt-3"></div>
-  </div>
-  <script>
-    try { document.getElementById('staticVersionManual').textContent = 'deploy: ' + new Date().toISOString(); } catch(e) {}
-  const _loc = window.location;
-  const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+
+            <form id="manualForm">          </div>
+
+                <!-- Dati Principali -->          <div style="width: 70px; margin-bottom: 0.5rem;">
+
+                <h5 class="section-title">📋 Dati Principali</h5>            <button id="toggleApiTokenBtn" type="button" class="btn btn-outline-secondary btn-sm w-100">Mostra</button>
+
+                <div class="row">          </div>
+
+                    <div class="col-md-6 mb-3">        </div>
+
+                        <label class="form-label required-field">Numero WR</label>        <!-- X-API-Key removed: API key is provided server-side automatically -->
+
+                        <input type="text" class="form-control" id="numero_wr" placeholder="es: 15699897" required>      </div>
+
+                        <small class="text-muted">Il numero identificativo del lavoro</small>      <div class="mt-3 d-flex gap-2">
+
+                    </div>        <button class="btn btn-primary" id="submitBtn">Inserisci WR</button>
+
+                    <div class="col-md-6 mb-3">        <button class="btn btn-secondary" id="fillSample">Riempi con esempio</button>
+
+                        <label class="form-label required-field">Stato</label>      </div>
+
+                        <select id="stato" class="form-select">      </div>
+
+                            <option value="aperto">🔴 Aperto (Da fare)</option>    </form>
+
+                            <option value="in_corso">🟡 In Corso</option>    <div id="responseArea" class="mt-3"></div>
+
+                            <option value="sospeso">🟠 Sospeso</option>  </div>
+
+                            <option value="chiuso">🟢 Chiuso (Completato)</option>  <script>
+
+                        </select>    try { document.getElementById('staticVersionManual').textContent = 'deploy: ' + new Date().toISOString(); } catch(e) {}
+
+                    </div>  const _loc = window.location;
+
+                </div>  const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+
   const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
-  const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
-  const API = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
-  function toggleForceDirectApi() {
-    if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
-    const cur = sessionStorage.getItem('FORCE_DIRECT_API');
-    if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
-    else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
-    location.reload();
-  }
-  document.getElementById('manualForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      document.getElementById('submitBtn').disabled = true;
-      const payload = {
-        numero_wr: document.getElementById('numero_wr').value.trim(),
-        nome_cliente: document.getElementById('nome_cliente').value.trim(),
-        indirizzo: document.getElementById('indirizzo').value.trim(),
+
+                <!-- Dati Cliente -->  const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+
+                <h5 class="section-title">👤 Dati Cliente</h5>  const API = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+
+                <div class="row">  function toggleForceDirectApi() {
+
+                    <div class="col-md-6 mb-3">    if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
+
+                        <label class="form-label">Nome Cliente</label>    const cur = sessionStorage.getItem('FORCE_DIRECT_API');
+
+                        <input type="text" class="form-control" id="nome_cliente" placeholder="es: Mario Rossi">    if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
+
+                    </div>    else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
+
+                    <div class="col-md-6 mb-3">    location.reload();
+
+                        <label class="form-label">Telefono Cliente</label>  }
+
+                        <input type="tel" class="form-control" id="telefono_cliente" placeholder="es: 3491234567">  document.getElementById('manualForm').addEventListener('submit', async (e) => {
+
+                    </div>      e.preventDefault();
+
+                    <div class="col-12 mb-3">      document.getElementById('submitBtn').disabled = true;
+
+                        <label class="form-label">Indirizzo Installazione</label>      const payload = {
+
+                        <input type="text" class="form-control" id="indirizzo" placeholder="es: Via Roma 123, Milano">        numero_wr: document.getElementById('numero_wr').value.trim(),
+
+                    </div>        nome_cliente: document.getElementById('nome_cliente').value.trim(),
+
+                </div>        indirizzo: document.getElementById('indirizzo').value.trim(),
+
         operatore: document.getElementById('operatore').value.trim(),
-        tipo_lavoro: document.getElementById('tipo_lavoro').value.trim(),
-        stato: document.getElementById('stato').value,
-        data_inizio: document.getElementById('data_inizio').value.trim(),
-        data_fine: document.getElementById('data_fine').value.trim(),
-        numero_impianto: document.getElementById('numero_impianto').value.trim(),
-        telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
-        uid_wr: document.getElementById('uid_wr').value.trim(),
-        id_xme: document.getElementById('id_xme').value.trim(),
-        note: document.getElementById('note').value.trim(),
-      };
-  try {
-        const extraText = document.getElementById('extra_json').value.trim();
-        if (extraText) {
-          try { payload.extra = JSON.parse(extraText); } catch (e) { payload.extra = { raw: extraText }; }
-        }
-      } catch (e) {}
-      const headers = { 'Content-Type': 'application/json' };
-  let apiToken = document.getElementById('api_token').value.trim();
-  // Normalize common env var prefixed values and surrounding quotes (JWT only)
-  if (apiToken.includes('=') && /api[_-]?key/i.test(apiToken.split('=')[0])) apiToken = apiToken.split('=').slice(1).join('=').trim();
-  if (apiToken.startsWith('"') && apiToken.endsWith('"')) apiToken = apiToken.slice(1, -1);
-  if (apiToken.startsWith('\'') && apiToken.endsWith('\'')) apiToken = apiToken.slice(1, -1);
-      // Prefer Authorization if API token looks like a JWT or starts with Bearer
-      if (apiToken && apiToken.toLowerCase().startsWith('bearer ')) {
-        headers['Authorization'] = apiToken;
-      } else if (apiToken && apiToken.split('.').length === 3) {
-        headers['Authorization'] = 'Bearer ' + apiToken;
+
+                <!-- Dati Lavoro -->        tipo_lavoro: document.getElementById('tipo_lavoro').value.trim(),
+
+                <h5 class="section-title">🔧 Dettagli Lavoro</h5>        stato: document.getElementById('stato').value,
+
+                <div class="row">        data_inizio: document.getElementById('data_inizio').value.trim(),
+
+                    <div class="col-md-6 mb-3">        data_fine: document.getElementById('data_fine').value.trim(),
+
+                        <label class="form-label">Operatore / Impresa</label>        numero_impianto: document.getElementById('numero_impianto').value.trim(),
+
+                        <select class="form-select" id="operatore">        telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
+
+                            <option value="">Seleziona operatore</option>        uid_wr: document.getElementById('uid_wr').value.trim(),
+
+                            <option value="Open Fiber">Open Fiber</option>        id_xme: document.getElementById('id_xme').value.trim(),
+
+                            <option value="TIM">TIM</option>        note: document.getElementById('note').value.trim(),
+
+                            <option value="Fastweb">Fastweb</option>      };
+
+                            <option value="Vodafone">Vodafone</option>  try {
+
+                            <option value="WindTre">WindTre</option>        const extraText = document.getElementById('extra_json').value.trim();
+
+                            <option value="Altro">Altro</option>        if (extraText) {
+
+                        </select>          try { payload.extra = JSON.parse(extraText); } catch (e) { payload.extra = { raw: extraText }; }
+
+                    </div>        }
+
+                    <div class="col-md-6 mb-3">      } catch (e) {}
+
+                        <label class="form-label">Tipo Lavoro</label>      const headers = { 'Content-Type': 'application/json' };
+
+                        <select class="form-select" id="tipo_lavoro">  let apiToken = document.getElementById('api_token').value.trim();
+
+                            <option value="">Seleziona tipo</option>  // Normalize common env var prefixed values and surrounding quotes (JWT only)
+
+                            <option value="Installazione">Installazione Modem</option>  if (apiToken.includes('=') && /api[_-]?key/i.test(apiToken.split('=')[0])) apiToken = apiToken.split('=').slice(1).join('=').trim();
+
+                            <option value="Attivazione">Attivazione Linea</option>  if (apiToken.startsWith('"') && apiToken.endsWith('"')) apiToken = apiToken.slice(1, -1);
+
+                            <option value="Riparazione">Riparazione</option>  if (apiToken.startsWith('\'') && apiToken.endsWith('\'')) apiToken = apiToken.slice(1, -1);
+
+                            <option value="Sopralluogo">Sopralluogo</option>      // Prefer Authorization if API token looks like a JWT or starts with Bearer
+
+                            <option value="Altro">Altro</option>      if (apiToken && apiToken.toLowerCase().startsWith('bearer ')) {
+
+                        </select>        headers['Authorization'] = apiToken;
+
+                    </div>      } else if (apiToken && apiToken.split('.').length === 3) {
+
+                </div>        headers['Authorization'] = 'Bearer ' + apiToken;
+
       }
-  // Pass selected technician id if any
-  const selectedTech = document.getElementById('tecnico_select').value;
-  if (selectedTech) payload.tecnico = selectedTech;
-      try {
-        const resp = await fetch((API || '') + '/manual/works', { method: 'POST', headers, body: JSON.stringify(payload) });
-        const data = await resp.json();
-        let out;
-        if (!resp.ok) out = `<div class='alert alert-danger'>Errore: ${data.detail || JSON.stringify(data)}</div>`;
-        else out = `<div class='alert alert-success'>Work inserito: ID ${data.id} - ${data.numero_wr}</div>`;
-        document.getElementById('responseArea').innerHTML = out;
-      } catch (e) {
-        document.getElementById('responseArea').innerHTML = `<div class='alert alert-danger'>Network error: ${e.message}</div>`;
+
+                <!-- Appuntamento -->  // Pass selected technician id if any
+
+                <h5 class="section-title">📅 Appuntamento (Opzionale)</h5>  const selectedTech = document.getElementById('tecnico_select').value;
+
+                <div class="row">  if (selectedTech) payload.tecnico = selectedTech;
+
+                    <div class="col-md-6 mb-3">      try {
+
+                        <label class="form-label">Data e Ora Inizio</label>        const resp = await fetch((API || '') + '/manual/works', { method: 'POST', headers, body: JSON.stringify(payload) });
+
+                        <input type="datetime-local" class="form-control" id="data_inizio">        const data = await resp.json();
+
+                    </div>        let out;
+
+                    <div class="col-md-6 mb-3">        if (!resp.ok) out = `<div class='alert alert-danger'>Errore: ${data.detail || JSON.stringify(data)}</div>`;
+
+                        <label class="form-label">Data e Ora Fine</label>        else out = `<div class='alert alert-success'>Work inserito: ID ${data.id} - ${data.numero_wr}</div>`;
+
+                        <input type="datetime-local" class="form-control" id="data_fine">        document.getElementById('responseArea').innerHTML = out;
+
+                    </div>      } catch (e) {
+
+                </div>        document.getElementById('responseArea').innerHTML = `<div class='alert alert-danger'>Network error: ${e.message}</div>`;
+
       } finally {
-        document.getElementById('submitBtn').disabled = false;
-      }
-    });
-    // Fetch technicians to pre-populate select
-    async function loadTechnicians() {
-      try {
-        const resp = await fetch((API || '') + '/technicians/');
-        if (!resp.ok) return;
-        const techs = await resp.json();
-        const sel = document.getElementById('tecnico_select');
+
+                <!-- Assegnazione Tecnico -->        document.getElementById('submitBtn').disabled = false;
+
+                <h5 class="section-title">👷 Assegnazione (Opzionale)</h5>      }
+
+                <div class="row">    });
+
+                    <div class="col-md-12 mb-3">    // Fetch technicians to pre-populate select
+
+                        <label class="form-label">Assegna a Tecnico</label>    async function loadTechnicians() {
+
+                        <select class="form-select" id="tecnico_select">      try {
+
+                            <option value="">Nessun tecnico (assegna dopo)</option>        const resp = await fetch((API || '') + '/technicians/');
+
+                        </select>        if (!resp.ok) return;
+
+                    </div>        const techs = await resp.json();
+
+                </div>        const sel = document.getElementById('tecnico_select');
+
         techs.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t.id;
-          opt.text = `${t.nome} ${t.cognome} (${t.telefono || 'n.d.'})`;
-          sel.appendChild(opt);
-        });
+
+                <!-- Note -->          const opt = document.createElement('option');
+
+                <h5 class="section-title">📝 Note (Opzionale)</h5>          opt.value = t.id;
+
+                <div class="mb-3">          opt.text = `${t.nome} ${t.cognome} (${t.telefono || 'n.d.'})`;
+
+                    <textarea class="form-control" id="note" rows="3" placeholder="Aggiungi note aggiuntive sul lavoro..."></textarea>          sel.appendChild(opt);
+
+                </div>        });
+
       } catch (e) {
-        console.warn('Failed to load technicians for manual entry', e);
-      }
-    }
-    loadTechnicians();
-  document.getElementById('fillSample').addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('numero_wr').value = '15699897';
-      document.getElementById('nome_cliente').value = 'RAINONE DANILO';
-      document.getElementById('indirizzo').value = 'VIA GIUSEPPE OBLACH 73';
-      document.getElementById('operatore').value = 'INPOWER';
-      document.getElementById('tipo_lavoro').value = '70 - DELIVERY OF';
-      document.getElementById('stato').value = 'ASSEGNATA';
-      document.getElementById('data_inizio').value = '2025-12-01T11:30:00';
-      document.getElementById('data_fine').value = '2025-12-01T13:30:00';
-      document.getElementById('numero_impianto').value = 'NW: 15699897';
-      document.getElementById('telefono_cliente').value = '3496259508';
-      document.getElementById('uid_wr').value = 'INPOWER_CO285814';
-      document.getElementById('id_xme').value = '283.233';
-      document.getElementById('extra_json').value = JSON.stringify({
-        'squadra': 'S080 - ILIOS SRL',
-        'DESCRIZIONE_OLO': 'EPD_FTTH_9976',
-        'COMUNE': 'FIUMICINO'
-      }, null, 2);
-    });
-  // Toggle inputs for API token and X-API-Key visibility
-    try {
-      document.getElementById('toggleApiTokenBtn').addEventListener('click', function () {
-        const inp = document.getElementById('api_token');
+
+                <!-- Campi Avanzati (Collapsabile) -->        console.warn('Failed to load technicians for manual entry', e);
+
+                <div class="accordion mb-3" id="advancedFields">      }
+
+                    <div class="accordion-item">    }
+
+                        <h2 class="accordion-header">    loadTechnicians();
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">  document.getElementById('fillSample').addEventListener('click', (e) => {
+
+                                ⚙️ Campi Avanzati (Opzionale)      e.preventDefault();
+
+                            </button>      document.getElementById('numero_wr').value = '15699897';
+
+                        </h2>      document.getElementById('nome_cliente').value = 'RAINONE DANILO';
+
+                        <div id="collapseAdvanced" class="accordion-collapse collapse" data-bs-parent="#advancedFields">      document.getElementById('indirizzo').value = 'VIA GIUSEPPE OBLACH 73';
+
+                            <div class="accordion-body">      document.getElementById('operatore').value = 'INPOWER';
+
+                                <div class="row">      document.getElementById('tipo_lavoro').value = '70 - DELIVERY OF';
+
+                                    <div class="col-md-6 mb-3">      document.getElementById('stato').value = 'ASSEGNATA';
+
+                                        <label class="form-label">Numero Impianto</label>      document.getElementById('data_inizio').value = '2025-12-01T11:30:00';
+
+                                        <input type="text" class="form-control" id="numero_impianto">      document.getElementById('data_fine').value = '2025-12-01T13:30:00';
+
+                                    </div>      document.getElementById('numero_impianto').value = 'NW: 15699897';
+
+                                    <div class="col-md-6 mb-3">      document.getElementById('telefono_cliente').value = '3496259508';
+
+                                        <label class="form-label">UID WR</label>      document.getElementById('uid_wr').value = 'INPOWER_CO285814';
+
+                                        <input type="text" class="form-control" id="uid_wr">      document.getElementById('id_xme').value = '283.233';
+
+                                    </div>      document.getElementById('extra_json').value = JSON.stringify({
+
+                                    <div class="col-md-6 mb-3">        'squadra': 'S080 - ILIOS SRL',
+
+                                        <label class="form-label">ID Xme</label>        'DESCRIZIONE_OLO': 'EPD_FTTH_9976',
+
+                                        <input type="text" class="form-control" id="id_xme">        'COMUNE': 'FIUMICINO'
+
+                                    </div>      }, null, 2);
+
+                                </div>    });
+
+                            </div>  // Toggle inputs for API token and X-API-Key visibility
+
+                        </div>    try {
+
+                    </div>      document.getElementById('toggleApiTokenBtn').addEventListener('click', function () {
+
+                </div>        const inp = document.getElementById('api_token');
+
         if (inp.type === 'password') { inp.type = 'text'; this.textContent = 'Nascondi'; } else { inp.type = 'password'; this.textContent = 'Mostra'; }
-      });
-    } catch (e) {}
-    try {
-      const btn = document.getElementById('toggleForceDirectBtn');
-      if (btn) {
-        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
+
+                <button type="submit" class="btn btn-submit">      });
+
+                    ✅ INSERISCI LAVORO    } catch (e) {}
+
+                </button>    try {
+
+            </form>      const btn = document.getElementById('toggleForceDirectBtn');
+
+        </div>      if (btn) {
+
+    </div>        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
+
           btn.style.display = 'inline-block';
-          const updateLabel = () => {
-            const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
-            btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
-          };
-          updateLabel();
-          btn.addEventListener('click', () => {
-            toggleForceDirectApi();
-          });
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>          const updateLabel = () => {
+
+    <script>            const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+
+        const _loc = window.location;            btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
+
+        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);          };
+
+        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;          updateLabel();
+
+        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';          btn.addEventListener('click', () => {
+
+        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));            toggleForceDirectApi();
+
+                  });
+
+        function apiFetch(path, opts) {        }
+
+            const base = window.__API_BASE__ || API_BASE;      }
+
+            const url = base ? base + path : path;    } catch (e) {}
+
+            return fetch(url, opts);  </script>
+
+        }</body>
+
+</html>
+
+        // Carica tecnici disponibili
+        async function loadTechnicians() {
+            try {
+                const response = await apiFetch('/technicians/');
+                const techs = await response.json();
+                const select = document.getElementById('tecnico_select');
+                
+                techs.forEach(tech => {
+                    const option = document.createElement('option');
+                    option.value = tech.id;
+                    option.textContent = `${tech.nome} ${tech.cognome}`;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Errore caricamento tecnici', e);
+            }
         }
-      }
-    } catch (e) {}
-  </script>
+
+        // Submit form
+        document.getElementById('manualForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                numero_wr: document.getElementById('numero_wr').value.trim(),
+                stato: document.getElementById('stato').value,
+                nome_cliente: document.getElementById('nome_cliente').value.trim() || undefined,
+                telefono_cliente: document.getElementById('telefono_cliente').value.trim() || undefined,
+                indirizzo: document.getElementById('indirizzo').value.trim() || undefined,
+                operatore: document.getElementById('operatore').value || undefined,
+                tipo_lavoro: document.getElementById('tipo_lavoro').value || undefined,
+                note: document.getElementById('note').value.trim() || undefined,
+                numero_impianto: document.getElementById('numero_impianto').value.trim() || undefined,
+                uid_wr: document.getElementById('uid_wr').value.trim() || undefined,
+                id_xme: document.getElementById('id_xme').value.trim() || undefined
+            };
+
+            // Data inizio/fine
+            if (document.getElementById('data_inizio').value) {
+                payload.data_inizio = new Date(document.getElementById('data_inizio').value).toISOString();
+            }
+            if (document.getElementById('data_fine').value) {
+                payload.data_fine = new Date(document.getElementById('data_fine').value).toISOString();
+            }
+
+            // Tecnico
+            const tecnicoId = document.getElementById('tecnico_select').value;
+            if (tecnicoId) {
+                payload.tecnico_assegnato_id = parseInt(tecnicoId);
+            }
+
+            try {
+                const response = await apiFetch('/manual/works', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Errore nell\'inserimento');
+                }
+
+                const result = await response.json();
+                
+                // Success notification
+                showSuccess(`✅ Lavoro WR ${result.numero_wr} inserito con successo!`);
+                
+                // Reset form
+                document.getElementById('manualForm').reset();
+                
+                // Redirect dopo 2 secondi
+                setTimeout(() => {
+                    window.location.href = '/static/gestionale.html';
+                }, 2000);
+                
+            } catch (error) {
+                showError('❌ Errore: ' + error.message);
+            }
+        });
+
+        function showSuccess(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+            alert.style.zIndex = '9999';
+            alert.innerHTML = `<strong>${message}</strong>`;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        function showError(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger position-fixed top-0 start-50 translate-middle-x mt-3';
+            alert.style.zIndex = '9999';
+            alert.innerHTML = `<strong>${message}</strong>`;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Load tecnici on page load
+        window.addEventListener('DOMContentLoaded', loadTechnicians);
+    </script>
 </body>
 </html>

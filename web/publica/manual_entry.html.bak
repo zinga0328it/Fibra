@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inserimento Manuale WR</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1>Inserimento Manuale WR <small id="staticVersionManual" class="text-muted ms-2"></small></h1>
+  <a href="/" class="btn btn-outline-secondary">Torna indietro</a>
+  <button id="toggleForceDirectBtn" type="button" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
+    </div>
+  <div class="alert alert-warning">Questa pagina è pensata per inserimento manuale amministrativo (quando altri sistemi non funzionano). La creazione non invia notifiche Telegram. Il POST a <code>/manual/works</code> richiede autenticazione (header <code>X-API-Key</code> o <code>Authorization: Bearer &lt;token&gt;</code>).</div>
+    <form id="manualForm">
+      <div class="row">
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Numero WR</label>
+          <input class="form-control" id="numero_wr" required>
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Nome Cliente</label>
+          <input class="form-control" id="nome_cliente">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Indirizzo</label>
+          <input class="form-control" id="indirizzo">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Operatore / Impresa</label>
+          <input class="form-control" id="operatore">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Tipo Lavoro</label>
+          <input class="form-control" id="tipo_lavoro">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Stato</label>
+          <select id="stato" class="form-select">
+            <option value="aperto">aperto</option>
+            <option value="in_corso">in_corso</option>
+            <option value="chiuso">chiuso</option>
+            <option value="attivato">attivato</option>
+            <option value="non attivato">non attivato</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Data Inizio (appuntamento)</label>
+          <input class="form-control" id="data_inizio" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Data Fine (appuntamento)</label>
+          <input class="form-control" id="data_fine" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Numero Impianto</label>
+          <input class="form-control" id="numero_impianto">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Telefono cliente</label>
+          <input class="form-control" id="telefono_cliente">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Assegna Tecnico (opzionale)</label>
+          <select class="form-select" id="tecnico_select">
+            <option value="">Nessun tecnico</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">UID WR</label>
+          <input class="form-control" id="uid_wr">
+        </div>
+        <div class="col-md-4 mb-2">
+          <label class="form-label">ID Xme</label>
+          <input class="form-control" id="id_xme">
+        </div>
+        <div class="col-12 mb-2">
+          <label class="form-label">Descrizione / Note</label>
+          <textarea class="form-control" id="note" rows="3"></textarea>
+        </div>
+        <div class="col-12 mb-2">
+          <label class="form-label">Extra (JSON) - Inserisci campi addizionali in formato JSON</label>
+          <textarea class="form-control" id="extra_json" rows="6" placeholder='{"CODICE_OLO": "EPD_FTTH_9976", ...}'></textarea>
+        </div>
+        <div class="col-md-6 mb-2 d-flex gap-2 align-items-end">
+          <div style="flex: 1">
+            <label class="form-label">API Token (opzionale; usa Authorization: Bearer &lt;token&gt;). L'X-API-Key viene fornita dal server se configurata.</label>
+            <input type="password" class="form-control" id="api_token">
+          </div>
+          <div style="width: 70px; margin-bottom: 0.5rem;">
+            <button id="toggleApiTokenBtn" type="button" class="btn btn-outline-secondary btn-sm w-100">Mostra</button>
+          </div>
+        </div>
+        <!-- X-API-Key removed: API key is provided server-side automatically -->
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-primary" id="submitBtn">Inserisci WR</button>
+        <button class="btn btn-secondary" id="fillSample">Riempi con esempio</button>
+      </div>
+      </div>
+    </form>
+    <div id="responseArea" class="mt-3"></div>
+  </div>
+  <script>
+    try { document.getElementById('staticVersionManual').textContent = 'deploy: ' + new Date().toISOString(); } catch(e) {}
+  const _loc = window.location;
+  const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+  const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
+  const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+  const API = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+  function toggleForceDirectApi() {
+    if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
+    const cur = sessionStorage.getItem('FORCE_DIRECT_API');
+    if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
+    else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
+    location.reload();
+  }
+  document.getElementById('manualForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('submitBtn').disabled = true;
+      const payload = {
+        numero_wr: document.getElementById('numero_wr').value.trim(),
+        nome_cliente: document.getElementById('nome_cliente').value.trim(),
+        indirizzo: document.getElementById('indirizzo').value.trim(),
+        operatore: document.getElementById('operatore').value.trim(),
+        tipo_lavoro: document.getElementById('tipo_lavoro').value.trim(),
+        stato: document.getElementById('stato').value,
+        data_inizio: document.getElementById('data_inizio').value.trim(),
+        data_fine: document.getElementById('data_fine').value.trim(),
+        numero_impianto: document.getElementById('numero_impianto').value.trim(),
+        telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
+        uid_wr: document.getElementById('uid_wr').value.trim(),
+        id_xme: document.getElementById('id_xme').value.trim(),
+        note: document.getElementById('note').value.trim(),
+      };
+  try {
+        const extraText = document.getElementById('extra_json').value.trim();
+        if (extraText) {
+          try { payload.extra = JSON.parse(extraText); } catch (e) { payload.extra = { raw: extraText }; }
+        }
+      } catch (e) {}
+      const headers = { 'Content-Type': 'application/json' };
+  let apiToken = document.getElementById('api_token').value.trim();
+  // Normalize common env var prefixed values and surrounding quotes (JWT only)
+  if (apiToken.includes('=') && /api[_-]?key/i.test(apiToken.split('=')[0])) apiToken = apiToken.split('=').slice(1).join('=').trim();
+  if (apiToken.startsWith('"') && apiToken.endsWith('"')) apiToken = apiToken.slice(1, -1);
+  if (apiToken.startsWith('\'') && apiToken.endsWith('\'')) apiToken = apiToken.slice(1, -1);
+      // Prefer Authorization if API token looks like a JWT or starts with Bearer
+      if (apiToken && apiToken.toLowerCase().startsWith('bearer ')) {
+        headers['Authorization'] = apiToken;
+      } else if (apiToken && apiToken.split('.').length === 3) {
+        headers['Authorization'] = 'Bearer ' + apiToken;
+      }
+  // Pass selected technician id if any
+  const selectedTech = document.getElementById('tecnico_select').value;
+  if (selectedTech) payload.tecnico = selectedTech;
+      try {
+        const resp = await fetch((API || '') + '/manual/works', { method: 'POST', headers, body: JSON.stringify(payload) });
+        const data = await resp.json();
+        let out;
+        if (!resp.ok) out = `<div class='alert alert-danger'>Errore: ${data.detail || JSON.stringify(data)}</div>`;
+        else out = `<div class='alert alert-success'>Work inserito: ID ${data.id} - ${data.numero_wr}</div>`;
+        document.getElementById('responseArea').innerHTML = out;
+      } catch (e) {
+        document.getElementById('responseArea').innerHTML = `<div class='alert alert-danger'>Network error: ${e.message}</div>`;
+      } finally {
+        document.getElementById('submitBtn').disabled = false;
+      }
+    });
+    // Fetch technicians to pre-populate select
+    async function loadTechnicians() {
+      try {
+        const resp = await fetch((API || '') + '/technicians/');
+        if (!resp.ok) return;
+        const techs = await resp.json();
+        const sel = document.getElementById('tecnico_select');
+        techs.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.text = `${t.nome} ${t.cognome} (${t.telefono || 'n.d.'})`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.warn('Failed to load technicians for manual entry', e);
+      }
+    }
+    loadTechnicians();
+  document.getElementById('fillSample').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('numero_wr').value = '15699897';
+      document.getElementById('nome_cliente').value = 'RAINONE DANILO';
+      document.getElementById('indirizzo').value = 'VIA GIUSEPPE OBLACH 73';
+      document.getElementById('operatore').value = 'INPOWER';
+      document.getElementById('tipo_lavoro').value = '70 - DELIVERY OF';
+      document.getElementById('stato').value = 'ASSEGNATA';
+      document.getElementById('data_inizio').value = '2025-12-01T11:30:00';
+      document.getElementById('data_fine').value = '2025-12-01T13:30:00';
+      document.getElementById('numero_impianto').value = 'NW: 15699897';
+      document.getElementById('telefono_cliente').value = '3496259508';
+      document.getElementById('uid_wr').value = 'INPOWER_CO285814';
+      document.getElementById('id_xme').value = '283.233';
+      document.getElementById('extra_json').value = JSON.stringify({
+        'squadra': 'S080 - ILIOS SRL',
+        'DESCRIZIONE_OLO': 'EPD_FTTH_9976',
+        'COMUNE': 'FIUMICINO'
+      }, null, 2);
+    });
+  // Toggle inputs for API token and X-API-Key visibility
+    try {
+      document.getElementById('toggleApiTokenBtn').addEventListener('click', function () {
+        const inp = document.getElementById('api_token');
+        if (inp.type === 'password') { inp.type = 'text'; this.textContent = 'Nascondi'; } else { inp.type = 'password'; this.textContent = 'Mostra'; }
+      });
+    } catch (e) {}
+    try {
+      const btn = document.getElementById('toggleForceDirectBtn');
+      if (btn) {
+        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
+          btn.style.display = 'inline-block';
+          const updateLabel = () => {
+            const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+            btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
+          };
+          updateLabel();
+          btn.addEventListener('click', () => {
+            toggleForceDirectApi();
+          });
+        }
+      }
+    } catch (e) {}
+  </script>
+</body>
+</html>

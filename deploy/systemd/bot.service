@@ -7,10 +7,13 @@ Type=simple
 User=aaa
 Group=www-data
 WorkingDirectory=/home/aaa/fibra
+EnvironmentFile=/home/aaa/fibra/.env
 Environment=PATH=/home/aaa/fibra/venv/bin
 ExecStart=/home/aaa/fibra/venv/bin/python -m app.bot
 Restart=on-failure
 RestartSec=5s
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

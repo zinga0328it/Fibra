@@ -1,470 +1,1394 @@
-<!DOCTYPE html><!doctype html>
+<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html><!doctype html>
 
-<html lang="it"><html lang="it">
+<html lang="it">
 
-<head><head>
+<head><html lang="it">
 
-    <meta charset="UTF-8">  <meta charset="utf-8">
+    <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"><head><html lang="it"><html lang="it">
 
-    <title>Inserimento Rapido Lavoro - FTTH</title>  <title>Inserimento Manuale WR</title>
+    <title>Nuovo Lavoro - FTTH</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">    <meta charset="UTF-8">
 
-    <style></head>
+    <style>
 
-        body {<body>
+        * {    <meta name="viewport" content="width=device-width, initial-scale=1"><head><head>
 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);  <div class="container mt-4">
+            margin: 0;
 
-            min-height: 100vh;    <div class="d-flex justify-content-between align-items-center">
+            padding: 0;    <title>Nuovo Lavoro - FTTH</title>
 
-            padding: 2rem 0;      <h1>Inserimento Manuale WR <small id="staticVersionManual" class="text-muted ms-2"></small></h1>
+            box-sizing: border-box;
 
-        }  <a href="/" class="btn btn-outline-secondary">Torna indietro</a>
+        }    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">    <meta charset="UTF-8">  <meta charset="utf-8">
 
-        .main-card {  <button id="toggleForceDirectBtn" type="button" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
+        
 
-            background: white;    </div>
+        body {    <style>
 
-            border-radius: 15px;  <div class="alert alert-warning">Questa pagina è pensata per inserimento manuale amministrativo (quando altri sistemi non funzionano). La creazione non invia notifiche Telegram. Il POST a <code>/manual/works</code> richiede autenticazione (header <code>X-API-Key</code> o <code>Authorization: Bearer &lt;token&gt;</code>).</div>
+            background: #f5f7fa;
 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);    <form id="manualForm">
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;        * {    <meta name="viewport" content="width=device-width, initial-scale=1">  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-            padding: 2rem;      <div class="row">
+            min-height: 100vh;
 
-            max-width: 800px;        <div class="col-md-4 mb-2">
+            padding: 20px;            margin: 0;
 
-            margin: 0 auto;          <label class="form-label">Numero WR</label>
+        }
 
-        }          <input class="form-control" id="numero_wr" required>
+                    padding: 0;    <title>Inserimento Rapido Lavoro - FTTH</title>  <title>Inserimento Manuale WR</title>
 
-        .form-label {        </div>
+        .container {
 
-            font-weight: 600;        <div class="col-md-4 mb-2">
+            max-width: 900px;            box-sizing: border-box;
 
-            color: #333;          <label class="form-label">Nome Cliente</label>
+            margin: 0 auto;
 
-            margin-bottom: 0.5rem;          <input class="form-control" id="nome_cliente">
+        }        }    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        }        </div>
+        
 
-        .form-control, .form-select {        <div class="col-md-4 mb-2">
+        .header {        
 
-            border: 2px solid #e0e0e0;          <label class="form-label">Indirizzo</label>
+            background: white;
 
-            border-radius: 8px;          <input class="form-control" id="indirizzo">
+            border-radius: 16px;        body {    <style></head>
 
-            padding: 0.75rem;        </div>
+            padding: 24px 32px;
 
-        }        <div class="col-md-4 mb-2">
+            margin-bottom: 24px;            background: #f5f7fa;
 
-        .form-control:focus, .form-select:focus {          <label class="form-label">Operatore / Impresa</label>
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 
-            border-color: #667eea;          <input class="form-control" id="operatore">
+            display: flex;            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;        body {<body>
 
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);        </div>
+            justify-content: space-between;
 
-        }        <div class="col-md-4 mb-2">
+            align-items: center;            min-height: 100vh;
 
-        .required-field::after {          <label class="form-label">Tipo Lavoro</label>
+            flex-wrap: wrap;
 
-            content: " *";          <input class="form-control" id="tipo_lavoro">
+            gap: 16px;            padding: 20px;            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);  <div class="container mt-4">
 
-            color: #dc3545;        </div>
+        }
 
-        }        <div class="col-md-4 mb-2">
+                }
 
-        .btn-submit {          <label class="form-label">Stato</label>
+        .header h1 {
 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);          <select id="stato" class="form-select">
+            font-size: 28px;                    min-height: 100vh;    <div class="d-flex justify-content-between align-items-center">
 
-            border: none;            <option value="aperto">aperto</option>
+            font-weight: 700;
 
-            padding: 1rem 3rem;            <option value="in_corso">in_corso</option>
+            color: #1a202c;        .container {
 
-            font-size: 1.1rem;            <option value="chiuso">chiuso</option>
+            margin: 0;
 
-            font-weight: bold;            <option value="attivato">attivato</option>
+        }            max-width: 900px;            padding: 2rem 0;      <h1>Inserimento Manuale WR <small id="staticVersionManual" class="text-muted ms-2"></small></h1>
 
-            border-radius: 10px;            <option value="non attivato">non attivato</option>
+        
 
-            color: white;          </select>
+        .nav-links {            margin: 0 auto;
 
-            width: 100%;        </div>
+            display: flex;
 
-            margin-top: 1rem;        <div class="col-md-4 mb-2">
+            gap: 8px;        }        }  <a href="/" class="btn btn-outline-secondary">Torna indietro</a>
 
-        }          <label class="form-label">Data Inizio (appuntamento)</label>
+        }
 
-        .btn-submit:hover {          <input class="form-control" id="data_inizio" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+                
 
-            transform: translateY(-2px);        </div>
+        .nav-links a {
 
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);        <div class="col-md-4 mb-2">
+            padding: 8px 16px;        .header {        .main-card {  <button id="toggleForceDirectBtn" type="button" class="btn btn-outline-danger btn-sm ms-2" style="display:none">Forza backend locale</button>
 
-        }          <label class="form-label">Data Fine (appuntamento)</label>
+            border-radius: 8px;
 
-        .section-title {          <input class="form-control" id="data_fine" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+            text-decoration: none;            background: white;
 
-            color: #667eea;        </div>
+            font-size: 14px;
 
-            font-weight: bold;        <div class="col-md-4 mb-2">
+            font-weight: 500;            border-radius: 16px;            background: white;    </div>
 
-            margin-top: 1.5rem;          <label class="form-label">Numero Impianto</label>
+            transition: all 0.2s;
 
-            margin-bottom: 1rem;          <input class="form-control" id="numero_impianto">
+        }            padding: 24px 32px;
 
-            padding-bottom: 0.5rem;        </div>
+        
 
-            border-bottom: 2px solid #e0e0e0;        <div class="col-md-4 mb-2">
+        .nav-links .btn-primary {            margin-bottom: 24px;            border-radius: 15px;  <div class="alert alert-warning">Questa pagina è pensata per inserimento manuale amministrativo (quando altri sistemi non funzionano). La creazione non invia notifiche Telegram. Il POST a <code>/manual/works</code> richiede autenticazione (header <code>X-API-Key</code> o <code>Authorization: Bearer &lt;token&gt;</code>).</div>
 
-        }          <label class="form-label">Telefono cliente</label>
+            background: #4f46e5;
 
-        .alert-info {          <input class="form-control" id="telefono_cliente">
+            color: white;            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 
-            background: #e7f3ff;        </div>
+        }
 
-            border: 1px solid #b3d9ff;        <div class="col-md-4 mb-2">
+                    display: flex;            box-shadow: 0 10px 30px rgba(0,0,0,0.2);    <form id="manualForm">
 
-            border-radius: 8px;          <label class="form-label">Assegna Tecnico (opzionale)</label>
+        .nav-links .btn-primary:hover {
 
-        }          <select class="form-select" id="tecnico_select">
+            background: #4338ca;            justify-content: space-between;
 
-        .quick-links {            <option value="">Nessun tecnico</option>
+        }
 
-            display: flex;          </select>
+                    align-items: center;            padding: 2rem;      <div class="row">
 
-            gap: 0.5rem;        </div>
+        .nav-links .btn-secondary {
 
-            flex-wrap: wrap;        <div class="col-md-4 mb-2">
+            background: #e5e7eb;            flex-wrap: wrap;
 
-        }          <label class="form-label">UID WR</label>
+            color: #374151;
 
-    </style>          <input class="form-control" id="uid_wr">
+        }            gap: 16px;            max-width: 800px;        <div class="col-md-4 mb-2">
 
-</head>        </div>
+        
 
-<body>        <div class="col-md-4 mb-2">
+        .nav-links .btn-secondary:hover {        }
 
-    <div class="container">          <label class="form-label">ID Xme</label>
+            background: #d1d5db;
 
-        <div class="main-card">          <input class="form-control" id="id_xme">
+        }                    margin: 0 auto;          <label class="form-label">Numero WR</label>
 
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">        </div>
+        
 
-                <h1 class="mb-0">✏️ Inserimento Rapido Lavoro</h1>        <div class="col-12 mb-2">
+        .form-card {        .header h1 {
 
-                <div class="quick-links">          <label class="form-label">Descrizione / Note</label>
+            background: white;
 
-                    <a href="/static/gestionale.html" class="btn btn-primary btn-sm">📊 Gestionale</a>          <textarea class="form-control" id="note" rows="3"></textarea>
+            border-radius: 16px;            font-size: 28px;        }          <input class="form-control" id="numero_wr" required>
 
-                    <a href="/static/dashboard.html" class="btn btn-info btn-sm">📱 Dashboard</a>        </div>
+            padding: 32px;
 
-                    <a href="/static/index.html" class="btn btn-secondary btn-sm">🏠 Admin</a>        <div class="col-12 mb-2">
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);            font-weight: 700;
 
-                </div>          <label class="form-label">Extra (JSON) - Inserisci campi addizionali in formato JSON</label>
+        }
 
-            </div>          <textarea class="form-control" id="extra_json" rows="6" placeholder='{"CODICE_OLO": "EPD_FTTH_9976", ...}'></textarea>
+                    color: #1a202c;        .form-label {        </div>
+
+        .form-section {
+
+            margin-bottom: 32px;            margin: 0;
+
+        }
+
+                }            font-weight: 600;        <div class="col-md-4 mb-2">
+
+        .form-section:last-child {
+
+            margin-bottom: 0;        
+
+        }
+
+                .nav-links {            color: #333;          <label class="form-label">Nome Cliente</label>
+
+        .section-title {
+
+            font-size: 18px;            display: flex;
+
+            font-weight: 600;
+
+            color: #1a202c;            gap: 8px;            margin-bottom: 0.5rem;          <input class="form-control" id="nome_cliente">
+
+            margin-bottom: 16px;
+
+            padding-bottom: 8px;        }
+
+            border-bottom: 2px solid #f3f4f6;
+
+        }                }        </div>
+
+        
+
+        .form-row {        .nav-links a {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));            padding: 8px 16px;        .form-control, .form-select {        <div class="col-md-4 mb-2">
+
+            gap: 16px;
+
+            margin-bottom: 16px;            border-radius: 8px;
+
+        }
+
+                    text-decoration: none;            border: 2px solid #e0e0e0;          <label class="form-label">Indirizzo</label>
+
+        .form-group {
+
+            display: flex;            font-size: 14px;
+
+            flex-direction: column;
+
+        }            font-weight: 500;            border-radius: 8px;          <input class="form-control" id="indirizzo">
+
+        
+
+        .form-label {            transition: all 0.2s;
+
+            font-size: 14px;
+
+            font-weight: 500;        }            padding: 0.75rem;        </div>
+
+            color: #374151;
+
+            margin-bottom: 6px;        
+
+        }
+
+                .nav-links .btn-primary {        }        <div class="col-md-4 mb-2">
+
+        .form-label.required::after {
+
+            content: " *";            background: #4f46e5;
+
+            color: #ef4444;
+
+        }            color: white;        .form-control:focus, .form-select:focus {          <label class="form-label">Operatore / Impresa</label>
+
+        
+
+        .form-control, .form-select {        }
+
+            padding: 10px 14px;
+
+            border: 1px solid #d1d5db;                    border-color: #667eea;          <input class="form-control" id="operatore">
+
+            border-radius: 8px;
+
+            font-size: 15px;        .nav-links .btn-primary:hover {
+
+            transition: all 0.2s;
+
+            background: white;            background: #4338ca;            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);        </div>
+
+        }
+
+                }
+
+        .form-control:focus, .form-select:focus {
+
+            outline: none;                }        <div class="col-md-4 mb-2">
+
+            border-color: #4f46e5;
+
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);        .nav-links .btn-secondary {
+
+        }
+
+                    background: #e5e7eb;        .required-field::after {          <label class="form-label">Tipo Lavoro</label>
+
+        textarea.form-control {
+
+            resize: vertical;            color: #374151;
+
+            min-height: 80px;
+
+        }        }            content: " *";          <input class="form-control" id="tipo_lavoro">
+
+        
+
+        .form-helper {        
+
+            font-size: 12px;
+
+            color: #6b7280;        .nav-links .btn-secondary:hover {            color: #dc3545;        </div>
+
+            margin-top: 4px;
+
+        }            background: #d1d5db;
+
+        
+
+        .btn-submit {        }        }        <div class="col-md-4 mb-2">
+
+            width: 100%;
+
+            padding: 14px;        
+
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+
+            color: white;        .form-card {        .btn-submit {          <label class="form-label">Stato</label>
+
+            border: none;
+
+            border-radius: 10px;            background: white;
+
+            font-size: 16px;
+
+            font-weight: 600;            border-radius: 16px;            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);          <select id="stato" class="form-select">
+
+            cursor: pointer;
+
+            transition: all 0.3s;            padding: 32px;
+
+            margin-top: 24px;
+
+        }            box-shadow: 0 1px 3px rgba(0,0,0,0.1);            border: none;            <option value="aperto">aperto</option>
+
+        
+
+        .btn-submit:hover {        }
+
+            transform: translateY(-2px);
+
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);                    padding: 1rem 3rem;            <option value="in_corso">in_corso</option>
+
+        }
+
+                .form-section {
+
+        .btn-submit:active {
+
+            transform: translateY(0);            margin-bottom: 32px;            font-size: 1.1rem;            <option value="chiuso">chiuso</option>
+
+        }
+
+                }
+
+        .alert {
+
+            padding: 12px 16px;                    font-weight: bold;            <option value="attivato">attivato</option>
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;        .form-section:last-child {
+
+            font-size: 14px;
+
+        }            margin-bottom: 0;            border-radius: 10px;            <option value="non attivato">non attivato</option>
+
+        
+
+        .alert-info {        }
+
+            background: #dbeafe;
+
+            color: #1e40af;                    color: white;          </select>
+
+            border-left: 4px solid #3b82f6;
+
+        }        .section-title {
+
+        
+
+        .toast {            font-size: 18px;            width: 100%;        </div>
+
+            position: fixed;
+
+            top: 20px;            font-weight: 600;
+
+            right: 20px;
+
+            background: white;            color: #1a202c;            margin-top: 1rem;        <div class="col-md-4 mb-2">
+
+            padding: 16px 20px;
+
+            border-radius: 10px;            margin-bottom: 16px;
+
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+
+            z-index: 9999;            padding-bottom: 8px;        }          <label class="form-label">Data Inizio (appuntamento)</label>
+
+            max-width: 350px;
+
+            animation: slideIn 0.3s ease-out;            border-bottom: 2px solid #f3f4f6;
+
+        }
+
+                }        .btn-submit:hover {          <input class="form-control" id="data_inizio" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+
+        @keyframes slideIn {
+
+            from {        
+
+                transform: translateX(400px);
+
+                opacity: 0;        .form-row {            transform: translateY(-2px);        </div>
+
+            }
+
+            to {            display: grid;
+
+                transform: translateX(0);
+
+                opacity: 1;            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);        <div class="col-md-4 mb-2">
+
+            }
+
+        }            gap: 16px;
+
+        
+
+        .toast.success {            margin-bottom: 16px;        }          <label class="form-label">Data Fine (appuntamento)</label>
+
+            border-left: 4px solid #10b981;
+
+        }        }
+
+        
+
+        .toast.error {                .section-title {          <input class="form-control" id="data_fine" placeholder="YYYY-MM-DDTHH:MM:SS or DD/MM/YYYY HH:MM">
+
+            border-left: 4px solid #ef4444;
+
+        }        .form-group {
+
+        
+
+        @media (max-width: 768px) {            display: flex;            color: #667eea;        </div>
+
+            body {
+
+                padding: 12px;            flex-direction: column;
+
+            }
+
+                    }            font-weight: bold;        <div class="col-md-4 mb-2">
+
+            .header {
+
+                padding: 16px 20px;        
+
+            }
+
+                    .form-label {            margin-top: 1.5rem;          <label class="form-label">Numero Impianto</label>
+
+            .header h1 {
+
+                font-size: 22px;            font-size: 14px;
+
+            }
+
+                        font-weight: 500;            margin-bottom: 1rem;          <input class="form-control" id="numero_impianto">
+
+            .form-card {
+
+                padding: 20px;            color: #374151;
+
+            }
+
+                        margin-bottom: 6px;            padding-bottom: 0.5rem;        </div>
+
+            .form-row {
+
+                grid-template-columns: 1fr;        }
+
+            }
+
+        }                    border-bottom: 2px solid #e0e0e0;        <div class="col-md-4 mb-2">
+
+    </style>
+
+</head>        .form-label.required::after {
+
+<body>
+
+    <div class="container">            content: " *";        }          <label class="form-label">Telefono cliente</label>
+
+        <div class="header">
+
+            <h1>✨ Nuovo Lavoro</h1>            color: #ef4444;
+
+            <div class="nav-links">
+
+                <a href="/static/gestionale.html" class="btn-primary">📊 Gestionale</a>        }        .alert-info {          <input class="form-control" id="telefono_cliente">
+
+                <a href="/static/dashboard.html" class="btn-secondary">📱 Dashboard</a>
+
+                <a href="/static/index.html" class="btn-secondary">🏠 Home</a>        
+
+            </div>
+
+        </div>        .form-control, .form-select {            background: #e7f3ff;        </div>
+
+
+
+        <div class="alert alert-info">            padding: 10px 14px;
+
+            💡 <strong>Suggerimento:</strong> Compila solo i campi che conosci. I campi con asterisco (*) sono obbligatori.
+
+        </div>            border: 1px solid #d1d5db;            border: 1px solid #b3d9ff;        <div class="col-md-4 mb-2">
+
+
+
+        <div class="form-card">            border-radius: 8px;
+
+            <form id="workForm">
+
+                <div class="form-section">            font-size: 15px;            border-radius: 8px;          <label class="form-label">Assegna Tecnico (opzionale)</label>
+
+                    <div class="section-title">📋 Informazioni Base</div>
+
+                    <div class="form-row">            transition: all 0.2s;
+
+                        <div class="form-group">
+
+                            <label class="form-label required">Numero WR</label>            background: white;        }          <select class="form-select" id="tecnico_select">
+
+                            <input type="text" class="form-control" id="numero_wr" placeholder="es: 15699897" required>
+
+                            <small class="form-helper">Numero identificativo del lavoro</small>        }
+
+                        </div>
+
+                        <div class="form-group">                .quick-links {            <option value="">Nessun tecnico</option>
+
+                            <label class="form-label required">Stato</label>
+
+                            <select class="form-select" id="stato" required>        .form-control:focus, .form-select:focus {
+
+                                <option value="aperto">Da Fare</option>
+
+                                <option value="in_corso">In Corso</option>            outline: none;            display: flex;          </select>
+
+                                <option value="sospeso">Sospeso</option>
+
+                                <option value="chiuso">Completato</option>            border-color: #4f46e5;
+
+                            </select>
+
+                        </div>            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);            gap: 0.5rem;        </div>
+
+                    </div>
+
+                </div>        }
+
+
+
+                <div class="form-section">                    flex-wrap: wrap;        <div class="col-md-4 mb-2">
+
+                    <div class="section-title">👤 Dati Cliente</div>
+
+                    <div class="form-row">        textarea.form-control {
+
+                        <div class="form-group">
+
+                            <label class="form-label">Nome Cliente</label>            resize: vertical;        }          <label class="form-label">UID WR</label>
+
+                            <input type="text" class="form-control" id="nome_cliente" placeholder="Mario Rossi">
+
+                        </div>            min-height: 80px;
+
+                        <div class="form-group">
+
+                            <label class="form-label">Telefono</label>        }    </style>          <input class="form-control" id="uid_wr">
+
+                            <input type="tel" class="form-control" id="telefono_cliente" placeholder="3491234567">
+
+                        </div>        
+
+                    </div>
+
+                    <div class="form-group">        .form-helper {</head>        </div>
+
+                        <label class="form-label">Indirizzo</label>
+
+                        <input type="text" class="form-control" id="indirizzo" placeholder="Via Roma 123, Milano">            font-size: 12px;
+
+                    </div>
+
+                </div>            color: #6b7280;<body>        <div class="col-md-4 mb-2">
+
+
+
+                <div class="form-section">            margin-top: 4px;
+
+                    <div class="section-title">🔧 Dettagli</div>
+
+                    <div class="form-row">        }    <div class="container">          <label class="form-label">ID Xme</label>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Operatore</label>        
+
+                            <select class="form-select" id="operatore">
+
+                                <option value="">Seleziona...</option>        .btn-submit {        <div class="main-card">          <input class="form-control" id="id_xme">
+
+                                <option value="Open Fiber">Open Fiber</option>
+
+                                <option value="TIM">TIM</option>            width: 100%;
+
+                                <option value="Fastweb">Fastweb</option>
+
+                                <option value="Vodafone">Vodafone</option>            padding: 14px;            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">        </div>
+
+                                <option value="WindTre">WindTre</option>
+
+                            </select>            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+
+                        </div>
+
+                        <div class="form-group">            color: white;                <h1 class="mb-0">✏️ Inserimento Rapido Lavoro</h1>        <div class="col-12 mb-2">
+
+                            <label class="form-label">Tipo Lavoro</label>
+
+                            <select class="form-select" id="tipo_lavoro">            border: none;
+
+                                <option value="">Seleziona...</option>
+
+                                <option value="Installazione">Installazione</option>            border-radius: 10px;                <div class="quick-links">          <label class="form-label">Descrizione / Note</label>
+
+                                <option value="Attivazione">Attivazione</option>
+
+                                <option value="Riparazione">Riparazione</option>            font-size: 16px;
+
+                                <option value="Sopralluogo">Sopralluogo</option>
+
+                            </select>            font-weight: 600;                    <a href="/static/gestionale.html" class="btn btn-primary btn-sm">📊 Gestionale</a>          <textarea class="form-control" id="note" rows="3"></textarea>
+
+                        </div>
+
+                    </div>            cursor: pointer;
+
+                    <div class="form-row">
+
+                        <div class="form-group">            transition: all 0.3s;                    <a href="/static/dashboard.html" class="btn btn-info btn-sm">📱 Dashboard</a>        </div>
+
+                            <label class="form-label">Tecnico Assegnato</label>
+
+                            <select class="form-select" id="tecnico_select">            margin-top: 24px;
+
+                                <option value="">Nessuno</option>
+
+                            </select>        }                    <a href="/static/index.html" class="btn btn-secondary btn-sm">🏠 Admin</a>        <div class="col-12 mb-2">
+
+                        </div>
+
+                    </div>        
+
+                </div>
+
+        .btn-submit:hover {                </div>          <label class="form-label">Extra (JSON) - Inserisci campi addizionali in formato JSON</label>
+
+                <div class="form-section">
+
+                    <div class="section-title">📅 Appuntamento (opzionale)</div>            transform: translateY(-2px);
+
+                    <div class="form-row">
+
+                        <div class="form-group">            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);            </div>          <textarea class="form-control" id="extra_json" rows="6" placeholder='{"CODICE_OLO": "EPD_FTTH_9976", ...}'></textarea>
+
+                            <label class="form-label">Data Inizio</label>
+
+                            <input type="datetime-local" class="form-control" id="data_inizio">        }
+
+                        </div>
+
+                        <div class="form-group">                </div>
+
+                            <label class="form-label">Data Fine</label>
+
+                            <input type="datetime-local" class="form-control" id="data_fine">        .btn-submit:active {
+
+                        </div>
+
+                    </div>            transform: translateY(0);            <div class="alert alert-info">        <div class="col-md-6 mb-2 d-flex gap-2 align-items-end">
+
+                </div>
+
+        }
+
+                <div class="form-section">
+
+                    <div class="section-title">📝 Note</div>                        <strong>ℹ️ Nota:</strong> Compila solo i campi che conosci. I campi con * sono obbligatori.          <div style="flex: 1">
+
+                    <div class="form-group">
+
+                        <textarea class="form-control" id="note" placeholder="Aggiungi note sul lavoro..."></textarea>        .alert {
+
+                    </div>
+
+                </div>            padding: 12px 16px;            </div>            <label class="form-label">API Token (opzionale; usa Authorization: Bearer &lt;token&gt;). L'X-API-Key viene fornita dal server se configurata.</label>
+
+
+
+                <button type="submit" class="btn-submit">✅ Crea Lavoro</button>            border-radius: 8px;
+
+            </form>
+
+        </div>            margin-bottom: 20px;            <input type="password" class="form-control" id="api_token">
+
+    </div>
+
+            font-size: 14px;
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>        }            <form id="manualForm">          </div>
+
+        const loc = window.location;
+
+        const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(loc.hostname);        
+
+        const isPublicServer = (loc.port === '6031') && !isLocalHost;
+
+        const forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';        .alert-info {                <!-- Dati Principali -->          <div style="width: 70px; margin-bottom: 0.5rem;">
+
+        const API_BASE = (window.__API_BASE__ || (forceDirect || isLocalHost ? loc.protocol + '//' + loc.hostname + ':6030' : (isPublicServer ? '' : loc.protocol + '//' + loc.hostname + ':6030')));
+
+                    background: #dbeafe;
+
+        function apiFetch(path, opts) {
+
+            const base = window.__API_BASE__ || API_BASE;            color: #1e40af;                <h5 class="section-title">📋 Dati Principali</h5>            <button id="toggleApiTokenBtn" type="button" class="btn btn-outline-secondary btn-sm w-100">Mostra</button>
+
+            const url = base ? base + path : path;
+
+            return fetch(url, opts);            border-left: 4px solid #3b82f6;
+
+        }
+
+        }                <div class="row">          </div>
+
+        async function loadTechnicians() {
+
+            try {        
+
+                const response = await apiFetch('/technicians/');
+
+                const techs = await response.json();        .toast {                    <div class="col-md-6 mb-3">        </div>
+
+                const select = document.getElementById('tecnico_select');
+
+                            position: fixed;
+
+                techs.forEach(function(tech) {
+
+                    const option = document.createElement('option');            top: 20px;                        <label class="form-label required-field">Numero WR</label>        <!-- X-API-Key removed: API key is provided server-side automatically -->
+
+                    option.value = tech.id;
+
+                    option.textContent = tech.nome + ' ' + tech.cognome;            right: 20px;
+
+                    select.appendChild(option);
+
+                });            background: white;                        <input type="text" class="form-control" id="numero_wr" placeholder="es: 15699897" required>      </div>
+
+            } catch (e) {
+
+                console.error('Errore caricamento tecnici', e);            padding: 16px 20px;
+
+            }
+
+        }            border-radius: 10px;                        <small class="text-muted">Il numero identificativo del lavoro</small>      <div class="mt-3 d-flex gap-2">
+
+
+
+        document.getElementById('workForm').addEventListener('submit', async function(e) {            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+
+            e.preventDefault();
+
+                        z-index: 9999;                    </div>        <button class="btn btn-primary" id="submitBtn">Inserisci WR</button>
+
+            const payload = {
+
+                numero_wr: document.getElementById('numero_wr').value.trim(),            max-width: 350px;
+
+                stato: document.getElementById('stato').value,
+
+                nome_cliente: document.getElementById('nome_cliente').value.trim() || undefined,            animation: slideIn 0.3s ease-out;                    <div class="col-md-6 mb-3">        <button class="btn btn-secondary" id="fillSample">Riempi con esempio</button>
+
+                telefono_cliente: document.getElementById('telefono_cliente').value.trim() || undefined,
+
+                indirizzo: document.getElementById('indirizzo').value.trim() || undefined,        }
+
+                operatore: document.getElementById('operatore').value || undefined,
+
+                tipo_lavoro: document.getElementById('tipo_lavoro').value || undefined,                                <label class="form-label required-field">Stato</label>      </div>
+
+                note: document.getElementById('note').value.trim() || undefined
+
+            };        @keyframes slideIn {
+
+
+
+            if (document.getElementById('data_inizio').value) {            from {                        <select id="stato" class="form-select">      </div>
+
+                payload.data_inizio = new Date(document.getElementById('data_inizio').value).toISOString();
+
+            }                transform: translateX(400px);
+
+            if (document.getElementById('data_fine').value) {
+
+                payload.data_fine = new Date(document.getElementById('data_fine').value).toISOString();                opacity: 0;                            <option value="aperto">🔴 Aperto (Da fare)</option>    </form>
+
+            }
+
+            }
+
+            const tecnicoId = document.getElementById('tecnico_select').value;
+
+            if (tecnicoId) {            to {                            <option value="in_corso">🟡 In Corso</option>    <div id="responseArea" class="mt-3"></div>
+
+                payload.tecnico_assegnato_id = parseInt(tecnicoId);
+
+            }                transform: translateX(0);
+
+
+
+            try {                opacity: 1;                            <option value="sospeso">🟠 Sospeso</option>  </div>
+
+                const response = await apiFetch('/manual/works', {
+
+                    method: 'POST',            }
+
+                    headers: { 'Content-Type': 'application/json' },
+
+                    body: JSON.stringify(payload)        }                            <option value="chiuso">🟢 Chiuso (Completato)</option>  <script>
+
+                });
+
+        
+
+                if (!response.ok) {
+
+                    const error = await response.json();        .toast.success {                        </select>    try { document.getElementById('staticVersionManual').textContent = 'deploy: ' + new Date().toISOString(); } catch(e) {}
+
+                    throw new Error(error.detail || 'Errore nell\'inserimento');
+
+                }            border-left: 4px solid #10b981;
+
+
+
+                const result = await response.json();        }                    </div>  const _loc = window.location;
+
+                showToast('Lavoro ' + result.numero_wr + ' creato!', 'success');
+
+                        
+
+                document.getElementById('workForm').reset();
+
+                        .toast.error {                </div>  const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
+
+                setTimeout(function() {
+
+                    window.location.href = '/static/gestionale.html';            border-left: 4px solid #ef4444;
+
+                }, 1500);
+
+                        }  const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
+
+            } catch (error) {
+
+                showToast('Errore: ' + error.message, 'error');        
+
+            }
+
+        });        @media (max-width: 768px) {                <!-- Dati Cliente -->  const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
+
+
+
+        function showToast(message, type) {            body {
+
+            const toast = document.createElement('div');
+
+            toast.className = 'toast ' + type;                padding: 12px;                <h5 class="section-title">👤 Dati Cliente</h5>  const API = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+
+            toast.innerHTML = '<strong>' + message + '</strong>';
+
+            document.body.appendChild(toast);            }
+
+            
+
+            setTimeout(function() {                            <div class="row">  function toggleForceDirectApi() {
+
+                toast.remove();
+
+            }, 3000);            .header {
+
+        }
+
+                padding: 16px 20px;                    <div class="col-md-6 mb-3">    if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
+
+        window.addEventListener('DOMContentLoaded', loadTechnicians);
+
+    </script>            }
+
+</body>
+
+</html>                                    <label class="form-label">Nome Cliente</label>    const cur = sessionStorage.getItem('FORCE_DIRECT_API');
+
+
+            .header h1 {
+
+                font-size: 22px;                        <input type="text" class="form-control" id="nome_cliente" placeholder="es: Mario Rossi">    if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
+
+            }
+
+                                </div>    else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
+
+            .form-card {
+
+                padding: 20px;                    <div class="col-md-6 mb-3">    location.reload();
+
+            }
+
+                                    <label class="form-label">Telefono Cliente</label>  }
+
+            .form-row {
+
+                grid-template-columns: 1fr;                        <input type="tel" class="form-control" id="telefono_cliente" placeholder="es: 3491234567">  document.getElementById('manualForm').addEventListener('submit', async (e) => {
+
+            }
+
+        }                    </div>      e.preventDefault();
+
+    </style>
+
+</head>                    <div class="col-12 mb-3">      document.getElementById('submitBtn').disabled = true;
+
+<body>
+
+    <div class="container">                        <label class="form-label">Indirizzo Installazione</label>      const payload = {
+
+        <!-- Header -->
+
+        <div class="header">                        <input type="text" class="form-control" id="indirizzo" placeholder="es: Via Roma 123, Milano">        numero_wr: document.getElementById('numero_wr').value.trim(),
+
+            <h1>✨ Nuovo Lavoro</h1>
+
+            <div class="nav-links">                    </div>        nome_cliente: document.getElementById('nome_cliente').value.trim(),
+
+                <a href="/static/gestionale.html" class="btn-primary">📊 Gestionale</a>
+
+                <a href="/static/dashboard.html" class="btn-secondary">📱 Dashboard</a>                </div>        indirizzo: document.getElementById('indirizzo').value.trim(),
+
+                <a href="/static/index.html" class="btn-secondary">🏠 Home</a>
+
+            </div>        operatore: document.getElementById('operatore').value.trim(),
 
         </div>
 
-            <div class="alert alert-info">        <div class="col-md-6 mb-2 d-flex gap-2 align-items-end">
-
-                <strong>ℹ️ Nota:</strong> Compila solo i campi che conosci. I campi con * sono obbligatori.          <div style="flex: 1">
-
-            </div>            <label class="form-label">API Token (opzionale; usa Authorization: Bearer &lt;token&gt;). L'X-API-Key viene fornita dal server se configurata.</label>
-
-            <input type="password" class="form-control" id="api_token">
-
-            <form id="manualForm">          </div>
-
-                <!-- Dati Principali -->          <div style="width: 70px; margin-bottom: 0.5rem;">
-
-                <h5 class="section-title">📋 Dati Principali</h5>            <button id="toggleApiTokenBtn" type="button" class="btn btn-outline-secondary btn-sm w-100">Mostra</button>
-
-                <div class="row">          </div>
-
-                    <div class="col-md-6 mb-3">        </div>
-
-                        <label class="form-label required-field">Numero WR</label>        <!-- X-API-Key removed: API key is provided server-side automatically -->
-
-                        <input type="text" class="form-control" id="numero_wr" placeholder="es: 15699897" required>      </div>
-
-                        <small class="text-muted">Il numero identificativo del lavoro</small>      <div class="mt-3 d-flex gap-2">
-
-                    </div>        <button class="btn btn-primary" id="submitBtn">Inserisci WR</button>
-
-                    <div class="col-md-6 mb-3">        <button class="btn btn-secondary" id="fillSample">Riempi con esempio</button>
-
-                        <label class="form-label required-field">Stato</label>      </div>
-
-                        <select id="stato" class="form-select">      </div>
-
-                            <option value="aperto">🔴 Aperto (Da fare)</option>    </form>
-
-                            <option value="in_corso">🟡 In Corso</option>    <div id="responseArea" class="mt-3"></div>
-
-                            <option value="sospeso">🟠 Sospeso</option>  </div>
-
-                            <option value="chiuso">🟢 Chiuso (Completato)</option>  <script>
-
-                        </select>    try { document.getElementById('staticVersionManual').textContent = 'deploy: ' + new Date().toISOString(); } catch(e) {}
-
-                    </div>  const _loc = window.location;
-
-                </div>  const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);
-
-  const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
-
-                <!-- Dati Cliente -->  const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
-
-                <h5 class="section-title">👤 Dati Cliente</h5>  const API = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
-
-                <div class="row">  function toggleForceDirectApi() {
-
-                    <div class="col-md-6 mb-3">    if (!['localhost','127.0.0.1','::1'].includes(window.location.hostname)) return;
-
-                        <label class="form-label">Nome Cliente</label>    const cur = sessionStorage.getItem('FORCE_DIRECT_API');
-
-                        <input type="text" class="form-control" id="nome_cliente" placeholder="es: Mario Rossi">    if (cur === 'true') sessionStorage.removeItem('FORCE_DIRECT_API');
-
-                    </div>    else sessionStorage.setItem('FORCE_DIRECT_API', 'true');
-
-                    <div class="col-md-6 mb-3">    location.reload();
-
-                        <label class="form-label">Telefono Cliente</label>  }
-
-                        <input type="tel" class="form-control" id="telefono_cliente" placeholder="es: 3491234567">  document.getElementById('manualForm').addEventListener('submit', async (e) => {
-
-                    </div>      e.preventDefault();
-
-                    <div class="col-12 mb-3">      document.getElementById('submitBtn').disabled = true;
-
-                        <label class="form-label">Indirizzo Installazione</label>      const payload = {
-
-                        <input type="text" class="form-control" id="indirizzo" placeholder="es: Via Roma 123, Milano">        numero_wr: document.getElementById('numero_wr').value.trim(),
-
-                    </div>        nome_cliente: document.getElementById('nome_cliente').value.trim(),
-
-                </div>        indirizzo: document.getElementById('indirizzo').value.trim(),
-
-        operatore: document.getElementById('operatore').value.trim(),
-
                 <!-- Dati Lavoro -->        tipo_lavoro: document.getElementById('tipo_lavoro').value.trim(),
 
-                <h5 class="section-title">🔧 Dettagli Lavoro</h5>        stato: document.getElementById('stato').value,
+        <!-- Info Alert -->
 
-                <div class="row">        data_inizio: document.getElementById('data_inizio').value.trim(),
+        <div class="alert alert-info">                <h5 class="section-title">🔧 Dettagli Lavoro</h5>        stato: document.getElementById('stato').value,
 
-                    <div class="col-md-6 mb-3">        data_fine: document.getElementById('data_fine').value.trim(),
+            💡 <strong>Suggerimento:</strong> Compila solo i campi che conosci. I campi con asterisco (*) sono obbligatori.
 
-                        <label class="form-label">Operatore / Impresa</label>        numero_impianto: document.getElementById('numero_impianto').value.trim(),
+        </div>                <div class="row">        data_inizio: document.getElementById('data_inizio').value.trim(),
 
-                        <select class="form-select" id="operatore">        telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
 
-                            <option value="">Seleziona operatore</option>        uid_wr: document.getElementById('uid_wr').value.trim(),
 
-                            <option value="Open Fiber">Open Fiber</option>        id_xme: document.getElementById('id_xme').value.trim(),
+        <!-- Form -->                    <div class="col-md-6 mb-3">        data_fine: document.getElementById('data_fine').value.trim(),
 
-                            <option value="TIM">TIM</option>        note: document.getElementById('note').value.trim(),
+        <div class="form-card">
 
-                            <option value="Fastweb">Fastweb</option>      };
+            <form id="workForm">                        <label class="form-label">Operatore / Impresa</label>        numero_impianto: document.getElementById('numero_impianto').value.trim(),
 
-                            <option value="Vodafone">Vodafone</option>  try {
+                <!-- Dati Principali -->
 
-                            <option value="WindTre">WindTre</option>        const extraText = document.getElementById('extra_json').value.trim();
+                <div class="form-section">                        <select class="form-select" id="operatore">        telefono_cliente: document.getElementById('telefono_cliente').value.trim(),
 
-                            <option value="Altro">Altro</option>        if (extraText) {
+                    <div class="section-title">📋 Informazioni Base</div>
 
-                        </select>          try { payload.extra = JSON.parse(extraText); } catch (e) { payload.extra = { raw: extraText }; }
+                    <div class="form-row">                            <option value="">Seleziona operatore</option>        uid_wr: document.getElementById('uid_wr').value.trim(),
 
-                    </div>        }
+                        <div class="form-group">
 
-                    <div class="col-md-6 mb-3">      } catch (e) {}
+                            <label class="form-label required">Numero WR</label>                            <option value="Open Fiber">Open Fiber</option>        id_xme: document.getElementById('id_xme').value.trim(),
 
-                        <label class="form-label">Tipo Lavoro</label>      const headers = { 'Content-Type': 'application/json' };
+                            <input type="text" class="form-control" id="numero_wr" placeholder="es: 15699897" required>
 
-                        <select class="form-select" id="tipo_lavoro">  let apiToken = document.getElementById('api_token').value.trim();
+                            <small class="form-helper">Numero identificativo del lavoro</small>                            <option value="TIM">TIM</option>        note: document.getElementById('note').value.trim(),
 
-                            <option value="">Seleziona tipo</option>  // Normalize common env var prefixed values and surrounding quotes (JWT only)
+                        </div>
 
-                            <option value="Installazione">Installazione Modem</option>  if (apiToken.includes('=') && /api[_-]?key/i.test(apiToken.split('=')[0])) apiToken = apiToken.split('=').slice(1).join('=').trim();
+                        <div class="form-group">                            <option value="Fastweb">Fastweb</option>      };
 
-                            <option value="Attivazione">Attivazione Linea</option>  if (apiToken.startsWith('"') && apiToken.endsWith('"')) apiToken = apiToken.slice(1, -1);
+                            <label class="form-label required">Stato</label>
 
-                            <option value="Riparazione">Riparazione</option>  if (apiToken.startsWith('\'') && apiToken.endsWith('\'')) apiToken = apiToken.slice(1, -1);
+                            <select class="form-select" id="stato" required>                            <option value="Vodafone">Vodafone</option>  try {
 
-                            <option value="Sopralluogo">Sopralluogo</option>      // Prefer Authorization if API token looks like a JWT or starts with Bearer
+                                <option value="aperto">Da Fare</option>
 
-                            <option value="Altro">Altro</option>      if (apiToken && apiToken.toLowerCase().startsWith('bearer ')) {
+                                <option value="in_corso">In Corso</option>                            <option value="WindTre">WindTre</option>        const extraText = document.getElementById('extra_json').value.trim();
+
+                                <option value="sospeso">Sospeso</option>
+
+                                <option value="chiuso">Completato</option>                            <option value="Altro">Altro</option>        if (extraText) {
+
+                            </select>
+
+                        </div>                        </select>          try { payload.extra = JSON.parse(extraText); } catch (e) { payload.extra = { raw: extraText }; }
+
+                    </div>
+
+                </div>                    </div>        }
+
+
+
+                <!-- Cliente -->                    <div class="col-md-6 mb-3">      } catch (e) {}
+
+                <div class="form-section">
+
+                    <div class="section-title">👤 Dati Cliente</div>                        <label class="form-label">Tipo Lavoro</label>      const headers = { 'Content-Type': 'application/json' };
+
+                    <div class="form-row">
+
+                        <div class="form-group">                        <select class="form-select" id="tipo_lavoro">  let apiToken = document.getElementById('api_token').value.trim();
+
+                            <label class="form-label">Nome Cliente</label>
+
+                            <input type="text" class="form-control" id="nome_cliente" placeholder="Mario Rossi">                            <option value="">Seleziona tipo</option>  // Normalize common env var prefixed values and surrounding quotes (JWT only)
+
+                        </div>
+
+                        <div class="form-group">                            <option value="Installazione">Installazione Modem</option>  if (apiToken.includes('=') && /api[_-]?key/i.test(apiToken.split('=')[0])) apiToken = apiToken.split('=').slice(1).join('=').trim();
+
+                            <label class="form-label">Telefono</label>
+
+                            <input type="tel" class="form-control" id="telefono_cliente" placeholder="3491234567">                            <option value="Attivazione">Attivazione Linea</option>  if (apiToken.startsWith('"') && apiToken.endsWith('"')) apiToken = apiToken.slice(1, -1);
+
+                        </div>
+
+                    </div>                            <option value="Riparazione">Riparazione</option>  if (apiToken.startsWith('\'') && apiToken.endsWith('\'')) apiToken = apiToken.slice(1, -1);
+
+                    <div class="form-group">
+
+                        <label class="form-label">Indirizzo</label>                            <option value="Sopralluogo">Sopralluogo</option>      // Prefer Authorization if API token looks like a JWT or starts with Bearer
+
+                        <input type="text" class="form-control" id="indirizzo" placeholder="Via Roma 123, Milano">
+
+                    </div>                            <option value="Altro">Altro</option>      if (apiToken && apiToken.toLowerCase().startsWith('bearer ')) {
+
+                </div>
 
                         </select>        headers['Authorization'] = apiToken;
 
-                    </div>      } else if (apiToken && apiToken.split('.').length === 3) {
+                <!-- Dettagli Lavoro -->
 
-                </div>        headers['Authorization'] = 'Bearer ' + apiToken;
+                <div class="form-section">                    </div>      } else if (apiToken && apiToken.split('.').length === 3) {
 
-      }
+                    <div class="section-title">🔧 Dettagli</div>
 
-                <!-- Appuntamento -->  // Pass selected technician id if any
+                    <div class="form-row">                </div>        headers['Authorization'] = 'Bearer ' + apiToken;
 
-                <h5 class="section-title">📅 Appuntamento (Opzionale)</h5>  const selectedTech = document.getElementById('tecnico_select').value;
+                        <div class="form-group">
 
-                <div class="row">  if (selectedTech) payload.tecnico = selectedTech;
+                            <label class="form-label">Operatore</label>      }
 
-                    <div class="col-md-6 mb-3">      try {
+                            <select class="form-select" id="operatore">
 
-                        <label class="form-label">Data e Ora Inizio</label>        const resp = await fetch((API || '') + '/manual/works', { method: 'POST', headers, body: JSON.stringify(payload) });
+                                <option value="">Seleziona...</option>                <!-- Appuntamento -->  // Pass selected technician id if any
 
-                        <input type="datetime-local" class="form-control" id="data_inizio">        const data = await resp.json();
+                                <option value="Open Fiber">Open Fiber</option>
 
-                    </div>        let out;
+                                <option value="TIM">TIM</option>                <h5 class="section-title">📅 Appuntamento (Opzionale)</h5>  const selectedTech = document.getElementById('tecnico_select').value;
 
-                    <div class="col-md-6 mb-3">        if (!resp.ok) out = `<div class='alert alert-danger'>Errore: ${data.detail || JSON.stringify(data)}</div>`;
+                                <option value="Fastweb">Fastweb</option>
 
-                        <label class="form-label">Data e Ora Fine</label>        else out = `<div class='alert alert-success'>Work inserito: ID ${data.id} - ${data.numero_wr}</div>`;
+                                <option value="Vodafone">Vodafone</option>                <div class="row">  if (selectedTech) payload.tecnico = selectedTech;
 
-                        <input type="datetime-local" class="form-control" id="data_fine">        document.getElementById('responseArea').innerHTML = out;
+                                <option value="WindTre">WindTre</option>
 
-                    </div>      } catch (e) {
+                            </select>                    <div class="col-md-6 mb-3">      try {
 
-                </div>        document.getElementById('responseArea').innerHTML = `<div class='alert alert-danger'>Network error: ${e.message}</div>`;
+                        </div>
 
-      } finally {
+                        <div class="form-group">                        <label class="form-label">Data e Ora Inizio</label>        const resp = await fetch((API || '') + '/manual/works', { method: 'POST', headers, body: JSON.stringify(payload) });
 
-                <!-- Assegnazione Tecnico -->        document.getElementById('submitBtn').disabled = false;
+                            <label class="form-label">Tipo Lavoro</label>
+
+                            <select class="form-select" id="tipo_lavoro">                        <input type="datetime-local" class="form-control" id="data_inizio">        const data = await resp.json();
+
+                                <option value="">Seleziona...</option>
+
+                                <option value="Installazione">Installazione</option>                    </div>        let out;
+
+                                <option value="Attivazione">Attivazione</option>
+
+                                <option value="Riparazione">Riparazione</option>                    <div class="col-md-6 mb-3">        if (!resp.ok) out = `<div class='alert alert-danger'>Errore: ${data.detail || JSON.stringify(data)}</div>`;
+
+                                <option value="Sopralluogo">Sopralluogo</option>
+
+                            </select>                        <label class="form-label">Data e Ora Fine</label>        else out = `<div class='alert alert-success'>Work inserito: ID ${data.id} - ${data.numero_wr}</div>`;
+
+                        </div>
+
+                    </div>                        <input type="datetime-local" class="form-control" id="data_fine">        document.getElementById('responseArea').innerHTML = out;
+
+                    <div class="form-row">
+
+                        <div class="form-group">                    </div>      } catch (e) {
+
+                            <label class="form-label">Tecnico Assegnato</label>
+
+                            <select class="form-select" id="tecnico_select">                </div>        document.getElementById('responseArea').innerHTML = `<div class='alert alert-danger'>Network error: ${e.message}</div>`;
+
+                                <option value="">Nessuno</option>
+
+                            </select>      } finally {
+
+                        </div>
+
+                    </div>                <!-- Assegnazione Tecnico -->        document.getElementById('submitBtn').disabled = false;
+
+                </div>
 
                 <h5 class="section-title">👷 Assegnazione (Opzionale)</h5>      }
 
-                <div class="row">    });
+                <!-- Appuntamento -->
 
-                    <div class="col-md-12 mb-3">    // Fetch technicians to pre-populate select
+                <div class="form-section">                <div class="row">    });
 
-                        <label class="form-label">Assegna a Tecnico</label>    async function loadTechnicians() {
+                    <div class="section-title">📅 Appuntamento (opzionale)</div>
 
-                        <select class="form-select" id="tecnico_select">      try {
+                    <div class="form-row">                    <div class="col-md-12 mb-3">    // Fetch technicians to pre-populate select
 
-                            <option value="">Nessun tecnico (assegna dopo)</option>        const resp = await fetch((API || '') + '/technicians/');
+                        <div class="form-group">
 
-                        </select>        if (!resp.ok) return;
+                            <label class="form-label">Data Inizio</label>                        <label class="form-label">Assegna a Tecnico</label>    async function loadTechnicians() {
 
-                    </div>        const techs = await resp.json();
+                            <input type="datetime-local" class="form-control" id="data_inizio">
 
-                </div>        const sel = document.getElementById('tecnico_select');
+                        </div>                        <select class="form-select" id="tecnico_select">      try {
 
-        techs.forEach(t => {
+                        <div class="form-group">
 
-                <!-- Note -->          const opt = document.createElement('option');
+                            <label class="form-label">Data Fine</label>                            <option value="">Nessun tecnico (assegna dopo)</option>        const resp = await fetch((API || '') + '/technicians/');
 
-                <h5 class="section-title">📝 Note (Opzionale)</h5>          opt.value = t.id;
+                            <input type="datetime-local" class="form-control" id="data_fine">
 
-                <div class="mb-3">          opt.text = `${t.nome} ${t.cognome} (${t.telefono || 'n.d.'})`;
+                        </div>                        </select>        if (!resp.ok) return;
 
-                    <textarea class="form-control" id="note" rows="3" placeholder="Aggiungi note aggiuntive sul lavoro..."></textarea>          sel.appendChild(opt);
+                    </div>
 
-                </div>        });
+                </div>                    </div>        const techs = await resp.json();
+
+
+
+                <!-- Note -->                </div>        const sel = document.getElementById('tecnico_select');
+
+                <div class="form-section">
+
+                    <div class="section-title">📝 Note</div>        techs.forEach(t => {
+
+                    <div class="form-group">
+
+                        <textarea class="form-control" id="note" placeholder="Aggiungi note sul lavoro..."></textarea>                <!-- Note -->          const opt = document.createElement('option');
+
+                    </div>
+
+                </div>                <h5 class="section-title">📝 Note (Opzionale)</h5>          opt.value = t.id;
+
+
+
+                <button type="submit" class="btn-submit">                <div class="mb-3">          opt.text = `${t.nome} ${t.cognome} (${t.telefono || 'n.d.'})`;
+
+                    ✅ Crea Lavoro
+
+                </button>                    <textarea class="form-control" id="note" rows="3" placeholder="Aggiungi note aggiuntive sul lavoro..."></textarea>          sel.appendChild(opt);
+
+            </form>
+
+        </div>                </div>        });
+
+    </div>
 
       } catch (e) {
 
-                <!-- Campi Avanzati (Collapsabile) -->        console.warn('Failed to load technicians for manual entry', e);
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-                <div class="accordion mb-3" id="advancedFields">      }
+    <script>                <!-- Campi Avanzati (Collapsabile) -->        console.warn('Failed to load technicians for manual entry', e);
 
-                    <div class="accordion-item">    }
+        const _loc = window.location;
 
-                        <h2 class="accordion-header">    loadTechnicians();
+        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);                <div class="accordion mb-3" id="advancedFields">      }
 
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">  document.getElementById('fillSample').addEventListener('click', (e) => {
+        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;
 
-                                ⚙️ Campi Avanzati (Opzionale)      e.preventDefault();
+        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';                    <div class="accordion-item">    }
+
+        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));
+
+                                <h2 class="accordion-header">    loadTechnicians();
+
+        function apiFetch(path, opts) {
+
+            const base = window.__API_BASE__ || API_BASE;                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">  document.getElementById('fillSample').addEventListener('click', (e) => {
+
+            const url = base ? base + path : path;
+
+            return fetch(url, opts);                                ⚙️ Campi Avanzati (Opzionale)      e.preventDefault();
+
+        }
 
                             </button>      document.getElementById('numero_wr').value = '15699897';
 
-                        </h2>      document.getElementById('nome_cliente').value = 'RAINONE DANILO';
+        // Load technicians
 
-                        <div id="collapseAdvanced" class="accordion-collapse collapse" data-bs-parent="#advancedFields">      document.getElementById('indirizzo').value = 'VIA GIUSEPPE OBLACH 73';
+        async function loadTechnicians() {                        </h2>      document.getElementById('nome_cliente').value = 'RAINONE DANILO';
 
-                            <div class="accordion-body">      document.getElementById('operatore').value = 'INPOWER';
+            try {
 
-                                <div class="row">      document.getElementById('tipo_lavoro').value = '70 - DELIVERY OF';
+                const response = await apiFetch('/technicians/');                        <div id="collapseAdvanced" class="accordion-collapse collapse" data-bs-parent="#advancedFields">      document.getElementById('indirizzo').value = 'VIA GIUSEPPE OBLACH 73';
 
-                                    <div class="col-md-6 mb-3">      document.getElementById('stato').value = 'ASSEGNATA';
+                const techs = await response.json();
 
-                                        <label class="form-label">Numero Impianto</label>      document.getElementById('data_inizio').value = '2025-12-01T11:30:00';
+                const select = document.getElementById('tecnico_select');                            <div class="accordion-body">      document.getElementById('operatore').value = 'INPOWER';
 
-                                        <input type="text" class="form-control" id="numero_impianto">      document.getElementById('data_fine').value = '2025-12-01T13:30:00';
+                
 
-                                    </div>      document.getElementById('numero_impianto').value = 'NW: 15699897';
+                techs.forEach(tech => {                                <div class="row">      document.getElementById('tipo_lavoro').value = '70 - DELIVERY OF';
+
+                    const option = document.createElement('option');
+
+                    option.value = tech.id;                                    <div class="col-md-6 mb-3">      document.getElementById('stato').value = 'ASSEGNATA';
+
+                    option.textContent = `${tech.nome} ${tech.cognome}`;
+
+                    select.appendChild(option);                                        <label class="form-label">Numero Impianto</label>      document.getElementById('data_inizio').value = '2025-12-01T11:30:00';
+
+                });
+
+            } catch (e) {                                        <input type="text" class="form-control" id="numero_impianto">      document.getElementById('data_fine').value = '2025-12-01T13:30:00';
+
+                console.error('Errore caricamento tecnici', e);
+
+            }                                    </div>      document.getElementById('numero_impianto').value = 'NW: 15699897';
+
+        }
 
                                     <div class="col-md-6 mb-3">      document.getElementById('telefono_cliente').value = '3496259508';
 
-                                        <label class="form-label">UID WR</label>      document.getElementById('uid_wr').value = 'INPOWER_CO285814';
+        // Submit form
 
-                                        <input type="text" class="form-control" id="uid_wr">      document.getElementById('id_xme').value = '283.233';
+        document.getElementById('workForm').addEventListener('submit', async (e) => {                                        <label class="form-label">UID WR</label>      document.getElementById('uid_wr').value = 'INPOWER_CO285814';
 
-                                    </div>      document.getElementById('extra_json').value = JSON.stringify({
+            e.preventDefault();
 
-                                    <div class="col-md-6 mb-3">        'squadra': 'S080 - ILIOS SRL',
+                                                    <input type="text" class="form-control" id="uid_wr">      document.getElementById('id_xme').value = '283.233';
 
-                                        <label class="form-label">ID Xme</label>        'DESCRIZIONE_OLO': 'EPD_FTTH_9976',
+            const payload = {
 
-                                        <input type="text" class="form-control" id="id_xme">        'COMUNE': 'FIUMICINO'
+                numero_wr: document.getElementById('numero_wr').value.trim(),                                    </div>      document.getElementById('extra_json').value = JSON.stringify({
 
-                                    </div>      }, null, 2);
+                stato: document.getElementById('stato').value,
 
-                                </div>    });
+                nome_cliente: document.getElementById('nome_cliente').value.trim() || undefined,                                    <div class="col-md-6 mb-3">        'squadra': 'S080 - ILIOS SRL',
 
-                            </div>  // Toggle inputs for API token and X-API-Key visibility
+                telefono_cliente: document.getElementById('telefono_cliente').value.trim() || undefined,
 
-                        </div>    try {
+                indirizzo: document.getElementById('indirizzo').value.trim() || undefined,                                        <label class="form-label">ID Xme</label>        'DESCRIZIONE_OLO': 'EPD_FTTH_9976',
+
+                operatore: document.getElementById('operatore').value || undefined,
+
+                tipo_lavoro: document.getElementById('tipo_lavoro').value || undefined,                                        <input type="text" class="form-control" id="id_xme">        'COMUNE': 'FIUMICINO'
+
+                note: document.getElementById('note').value.trim() || undefined
+
+            };                                    </div>      }, null, 2);
+
+
+
+            if (document.getElementById('data_inizio').value) {                                </div>    });
+
+                payload.data_inizio = new Date(document.getElementById('data_inizio').value).toISOString();
+
+            }                            </div>  // Toggle inputs for API token and X-API-Key visibility
+
+            if (document.getElementById('data_fine').value) {
+
+                payload.data_fine = new Date(document.getElementById('data_fine').value).toISOString();                        </div>    try {
+
+            }
 
                     </div>      document.getElementById('toggleApiTokenBtn').addEventListener('click', function () {
 
-                </div>        const inp = document.getElementById('api_token');
+            const tecnicoId = document.getElementById('tecnico_select').value;
 
-        if (inp.type === 'password') { inp.type = 'text'; this.textContent = 'Nascondi'; } else { inp.type = 'password'; this.textContent = 'Mostra'; }
+            if (tecnicoId) {                </div>        const inp = document.getElementById('api_token');
 
-                <button type="submit" class="btn btn-submit">      });
+                payload.tecnico_assegnato_id = parseInt(tecnicoId);
 
-                    ✅ INSERISCI LAVORO    } catch (e) {}
+            }        if (inp.type === 'password') { inp.type = 'text'; this.textContent = 'Nascondi'; } else { inp.type = 'password'; this.textContent = 'Mostra'; }
 
-                </button>    try {
+
+
+            try {                <button type="submit" class="btn btn-submit">      });
+
+                const response = await apiFetch('/manual/works', {
+
+                    method: 'POST',                    ✅ INSERISCI LAVORO    } catch (e) {}
+
+                    headers: { 'Content-Type': 'application/json' },
+
+                    body: JSON.stringify(payload)                </button>    try {
+
+                });
 
             </form>      const btn = document.getElementById('toggleForceDirectBtn');
 
-        </div>      if (btn) {
+                if (!response.ok) {
 
-    </div>        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
+                    const error = await response.json();        </div>      if (btn) {
 
-          btn.style.display = 'inline-block';
+                    throw new Error(error.detail || 'Errore nell\'inserimento');
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>          const updateLabel = () => {
+                }    </div>        if (['localhost','127.0.0.1','::1'].includes(window.location.hostname)) {
 
-    <script>            const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
 
-        const _loc = window.location;            btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
 
-        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);          };
+                const result = await response.json();          btn.style.display = 'inline-block';
 
-        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;          updateLabel();
+                showToast(`✅ Lavoro ${result.numero_wr} creato!`, 'success');
 
-        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';          btn.addEventListener('click', () => {
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>          const updateLabel = () => {
 
-        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));            toggleForceDirectApi();
+                document.getElementById('workForm').reset();
 
-                  });
+                    <script>            const forced = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';
 
-        function apiFetch(path, opts) {        }
+                setTimeout(() => {
 
-            const base = window.__API_BASE__ || API_BASE;      }
+                    window.location.href = '/static/gestionale.html';        const _loc = window.location;            btn.textContent = forced ? 'Disattiva backend locale' : 'Forza backend locale';
+
+                }, 1500);
+
+                        const _isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(_loc.hostname);          };
+
+            } catch (error) {
+
+                showToast(`❌ ${error.message}`, 'error');        const _isPublicServer = (_loc.port === '6031') && !_isLocalHost;          updateLabel();
+
+            }
+
+        });        const _forceDirect = sessionStorage.getItem('FORCE_DIRECT_API') === 'true';          btn.addEventListener('click', () => {
+
+
+
+        function showToast(message, type) {        const API_BASE = (window.__API_BASE__ || (_forceDirect || _isLocalHost ? `${_loc.protocol}//${_loc.hostname}:6030` : (_isPublicServer ? '' : `${_loc.protocol}//${_loc.hostname}:6030`)));            toggleForceDirectApi();
+
+            const toast = document.createElement('div');
+
+            toast.className = `toast ${type}`;                  });
+
+            toast.innerHTML = `<strong>${message}</strong>`;
+
+            document.body.appendChild(toast);        function apiFetch(path, opts) {        }
+
+            
+
+            setTimeout(() => toast.remove(), 3000);            const base = window.__API_BASE__ || API_BASE;      }
+
+        }
 
             const url = base ? base + path : path;    } catch (e) {}
 
-            return fetch(url, opts);  </script>
+        window.addEventListener('DOMContentLoaded', loadTechnicians);
 
-        }</body>
+    </script>            return fetch(url, opts);  </script>
+
+</body>
+
+</html>        }</body>
+
 
 </html>
 

@@ -15,6 +15,7 @@ class TechnicianCreate(BaseModel):
     cognome: str = Field(min_length=1)
     telefono: str
     squadra_id: int
+    telegram_id: Optional[str] = None
 
     @field_validator('telefono')
     @classmethod
@@ -30,7 +31,24 @@ class TechnicianOut(BaseModel):
     cognome: str
     telefono: str
     squadra: Optional[TeamOut]
+    telegram_id: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
+
+class TechnicianUpdate(BaseModel):
+    nome: Optional[str] = Field(None, min_length=1)
+    cognome: Optional[str] = Field(None, min_length=1)
+    telefono: Optional[str] = None
+    squadra_id: Optional[int] = None
+    telegram_id: Optional[str] = None
+
+    @field_validator('telefono')
+    @classmethod
+    def validate_telefono(cls, v: Optional[str]):
+        if v is not None:
+            import re
+            if not re.match(r"^[0-9\+\-\s]{6,20}$", v):
+                raise ValueError('telefono must be numeric and 6-20 chars')
+        return v
 
 class WorkCreate(BaseModel):
     numero_wr: str = Field(min_length=1, max_length=64)

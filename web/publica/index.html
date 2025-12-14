@@ -196,6 +196,58 @@
         .recent-item:last-child {
             border-bottom: none;
         }
+        .tech-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tech-item:last-child {
+            border-bottom: none;
+        }
+        .tech-info {
+            flex: 1;
+        }
+        .tech-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .tech-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .telegram-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+        .telegram-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .telegram-badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-edit {
+            background: #667eea;
+            color: white;
+        }
+        .btn-edit:hover {
+            background: #5568d3;
+        }
     </style>
 </head>
 <body>
@@ -315,6 +367,36 @@
                 <p class="text-muted text-center">Caricamento...</p>
             </div>
         </div>
+
+        <!-- Gestione Tecnici -->
+        <div class="section-card">
+            <h2 class="section-title">👥 Tecnici</h2>
+            <div id="techniciansList">
+                <p class="text-muted text-center">Caricamento...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per aggiornare Telegram ID -->
+    <div id="telegramModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">📱 Aggiorna Telegram ID</h3>
+            <p style="color: #666; margin-bottom: 1rem;">Tecnico: <strong id="modalTechName"></strong></p>
+            
+            <div class="mb-3">
+                <label class="form-label">Telegram ID</label>
+                <input type="text" class="form-control" id="modalTelegramId" placeholder="Es: 123456789">
+                <small class="text-muted">Per ottenere l'ID: cerca @userinfobot su Telegram e invia /start</small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button onclick="closeTelegramModal()" class="btn-small" style="flex: 1; background: #ccc; color: #333;">Annulla</button>
+                <button onclick="saveTelegramId()" class="btn-small btn-edit" style="flex: 1;">Salva</button>
+            </div>
+            
+            <div id="modalSuccess" class="success-message" style="margin-top: 1rem;"></div>
+            <div id="modalError" class="error-message" style="margin-top: 1rem;"></div>
+        </div>
     </div>
 
     <script>
@@ -322,9 +404,25 @@
         var loc = window.location;
         var isLocalHost = loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
         var API_BASE = isLocalHost ? loc.protocol + '//' + loc.hostname + ':6030' : '';
+        
+        // 🔐 SICUREZZA: API Key per operazioni amministrative
+        // IMPORTANTE: In produzione, questa chiave dovrebbe essere inserita tramite login
+        // e memorizzata in sessionStorage/localStorage, NON hardcoded nel file!
+        var ADMIN_API_KEY = prompt('Inserisci API Key amministratore:', '');
 
         function apiFetch(path, opts) {
             var url = API_BASE ? API_BASE + path : path;
+            return fetch(url, opts);
+        }
+        
+        function apiFetchSecure(path, opts) {
+            var url = API_BASE ? API_BASE + path : path;
+            opts = opts || {};
+            opts.headers = opts.headers || {};
+            // Aggiungi API Key per operazioni sicure
+            if (ADMIN_API_KEY) {
+                opts.headers['X-API-Key'] = ADMIN_API_KEY;
+            }
             return fetch(url, opts);
         }
 
@@ -374,13 +472,119 @@
                     techs.forEach(function(t) {
                         var opt = document.createElement('option');
                         opt.value = t.id;
-                        opt.textContent = t.nome + ' ' + t.cognome;
+                        var telegramIcon = t.telegram_id ? ' 📱' : '';
+                        opt.textContent = t.nome + ' ' + t.cognome + telegramIcon;
                         select.appendChild(opt);
                     });
+                    
+                    // Update technicians list
+                    updateTechniciansList(techs);
                 })
                 .catch(function(e) {
                     console.error('Errore caricamento tecnici', e);
                 });
+        }
+
+        // Update technicians display list
+        function updateTechniciansList(techs) {
+            var container = document.getElementById('techniciansList');
+            if (!techs || techs.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">Nessun tecnico</p>';
+                return;
+            }
+            
+            var html = '';
+            techs.forEach(function(t) {
+                var hasTelegram = t.telegram_id ? true : false;
+                var telegramBadge = hasTelegram 
+                    ? '<span class="telegram-badge active">📱 Telegram OK</span>'
+                    : '<span class="telegram-badge inactive">❌ Telegram non configurato</span>';
+                
+                html += '<div class="tech-item">';
+                html += '<div class="tech-info">';
+                html += '<div class="tech-name">' + t.nome + ' ' + t.cognome + telegramBadge + '</div>';
+                html += '<div class="tech-details">📞 ' + t.telefono;
+                if (t.squadra) {
+                    html += ' | 👥 ' + t.squadra.nome;
+                }
+                if (hasTelegram) {
+                    html += ' | 📱 ID: ' + t.telegram_id;
+                }
+                html += '</div>';
+                html += '</div>';
+                html += '<button class="btn-small btn-edit" onclick="openTelegramModal(' + t.id + ', \'' + 
+                        t.nome + ' ' + t.cognome + '\', \'' + (t.telegram_id || '') + '\')">📱 Telegram</button>';
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Modal management
+        var currentTechId = null;
+        
+        function openTelegramModal(techId, techName, currentTelegramId) {
+            currentTechId = techId;
+            document.getElementById('modalTechName').textContent = techName;
+            document.getElementById('modalTelegramId').value = currentTelegramId || '';
+            document.getElementById('modalSuccess').style.display = 'none';
+            document.getElementById('modalError').style.display = 'none';
+            document.getElementById('telegramModal').style.display = 'flex';
+        }
+        
+        function closeTelegramModal() {
+            document.getElementById('telegramModal').style.display = 'none';
+            currentTechId = null;
+        }
+        
+        function saveTelegramId() {
+            var telegramId = document.getElementById('modalTelegramId').value.trim();
+            var successMsg = document.getElementById('modalSuccess');
+            var errorMsg = document.getElementById('modalError');
+            
+            if (!telegramId) {
+                errorMsg.textContent = '❌ Telegram ID obbligatorio';
+                errorMsg.style.display = 'block';
+                successMsg.style.display = 'none';
+                return;
+            }
+            
+            if (!ADMIN_API_KEY) {
+                errorMsg.textContent = '❌ API Key richiesta per questa operazione';
+                errorMsg.style.display = 'block';
+                successMsg.style.display = 'none';
+                return;
+            }
+            
+            apiFetchSecure('/technicians/' + currentTechId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_id: telegramId })
+            })
+            .then(function(r) {
+                if (!r.ok) {
+                    return r.json().then(function(err) {
+                        throw new Error(err.detail || 'Errore');
+                    });
+                }
+                return r.json();
+            })
+            .then(function(result) {
+                successMsg.textContent = '✅ Telegram ID aggiornato!';
+                successMsg.style.display = 'block';
+                errorMsg.style.display = 'none';
+                
+                // Reload technicians after 1 second
+                setTimeout(function() {
+                    closeTelegramModal();
+                    loadTechnicians();
+                }, 1000);
+            })
+            .catch(function(err) {
+                errorMsg.textContent = '❌ ' + err.message;
+                errorMsg.style.display = 'block';
+                successMsg.style.display = 'none';
+            });
         }
 
         // Form Submit

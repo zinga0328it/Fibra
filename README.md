@@ -166,12 +166,81 @@ Mobile UI: ho aggiunto alcune ottimizzazioni a `web/publica/index.html` per migl
 9. Integrazione GPS per tracking
 10. Report PDF statistiche
 
+## Yggdrasil Network (Accesso Remoto)
+
+Il sistema supporta l'accesso remoto tramite la rete **Yggdrasil** per comunicazione sicura tra PC.
+
+### Configurazione Attuale (14 Dicembre 2025)
+
+| Componente | Indirizzo | Porta | Stato |
+|------------|-----------|-------|-------|
+| **Backend FTTH** | `200:421e:6385:4a8b:dca7:cfb:197f:e9c3` | 6030 | ✅ ATTIVO |
+| **API Yggdrasil** | `200:421e:6385:4a8b:dca7:cfb:197f:e9c3` | 8600 | ✅ ATTIVO |
+
+### Chiavi API
+
+| Servizio | Header | Chiave |
+|----------|--------|--------|
+| API Principale | `X-API-Key` | (vedi `.env`) |
+| API Yggdrasil | `X-KEY` | `ftth_ygg_secret_2025` |
+
+### Avvio Backend per Yggdrasil
+
+**IMPORTANTE**: Per accettare connessioni IPv6 da Yggdrasil, il backend DEVE essere avviato con `--host ::`:
+
+```bash
+cd /home/aaa/fibra
+source venv/bin/activate
+python3 -m uvicorn app.main:app --host :: --port 6030
+```
+
+Per l'API Yggdrasil separata:
+```bash
+cd /home/aaa/fibra/yggdrasil_api
+source ../venv/bin/activate
+python3 -m uvicorn main:app --host 200:421e:6385:4a8b:dca7:cfb:197f:e9c3 --port 8600
+```
+
+### Test da PC Esterno (via Yggdrasil)
+
+```bash
+# Test connessione
+ping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3
+
+# Test Backend principale
+curl -s -L "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/health/"
+
+# Test API Yggdrasil
+curl -s -H "X-KEY: ftth_ygg_secret_2025" "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:8600/health"
+
+# Accesso interfaccia web
+curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/static/index.html"
+```
+
+### Configurazione Apache (PC esterno servicess.net)
+
+Per esporre il gestionale via HTTPS su servicess.net, aggiungere in Apache:
+
+```apache
+# In servicess.net-ssl.conf
+ProxyPass /gestionale/ http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
+ProxyPassReverse /gestionale/ http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
+
+<Location /gestionale/>
+    RequestHeader set X-API-Key "YOUR_API_KEY"
+    ProxyPreserveHost On
+</Location>
+```
+
+Poi ricaricare Apache: `sudo systemctl reload apache2`
+
 ## Sicurezza
 
 - Porta 6030 protetta con nftables
 - fail2ban attivo
 - API key per autenticazione
 - Crittografia dati sensibili
+- Yggdrasil per comunicazione sicura tra PC
 
 ### Uso della API key
 

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestionale Consegne FTTH</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -253,6 +255,94 @@
             margin-top: 0.5rem;
             font-size: 0.85rem;
         }
+        /* Modal Mappa */
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-modal.active {
+            display: flex;
+        }
+        .map-container {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .map-header {
+            padding: 1rem 1.5rem;
+            background: #667eea;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .map-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .map-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .map-body {
+            padding: 1rem;
+        }
+        .map-info {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        #mapElement {
+            height: 400px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .map-actions {
+            padding: 1rem;
+            background: #f8f9fa;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-navigate {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+        .btn-navigate:hover {
+            background: #218838;
+        }
+        .btn-mappa {
+            background: #667eea;
+            color: white;
+        }
+        .btn-mappa:hover {
+            background: #5a6fd6;
+        }
     </style>
 </head>
 <body>
@@ -350,6 +440,28 @@
             <!-- Tab Content: Tutte -->
             <div class="tab-content" id="tab-tutte">
                 <div id="ordersList-tutte"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mappa -->
+    <div class="map-modal" id="mapModal">
+        <div class="map-container">
+            <div class="map-header">
+                <h3 id="mapTitle">📍 Posizione Lavoro</h3>
+                <button class="map-close" onclick="chiudiMappa()">&times;</button>
+            </div>
+            <div class="map-body">
+                <div class="map-info" id="mapInfo"></div>
+                <div id="mapElement"></div>
+            </div>
+            <div class="map-actions">
+                <button class="btn-navigate" id="btnNavigate" onclick="apriNavigatore()">
+                    🧭 Apri in Google Maps
+                </button>
+                <button class="btn-navigate" style="background:#17a2b8" id="btnWaze" onclick="apriWaze()">
+                    🚗 Apri in Waze
+                </button>
             </div>
         </div>
     </div>
@@ -468,20 +580,24 @@
             if (order.stato === 'aperto') {
                 actionButtons = `
                     <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">✓ Conferma</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
                     <button class="action-button btn-annulla" onclick="mostraNote(${order.id})">✗ Cancella</button>
                 `;
             } else if (order.stato === 'in_corso') {
                 actionButtons = `
                     <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
                     <button class="action-button btn-sospendi" onclick="cambiaStato(${order.id}, 'sospeso')">⏸ Sospendi</button>
                 `;
             } else if (order.stato === 'sospeso') {
                 actionButtons = `
                     <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">🔄 Riprendi</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
                     <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
                 `;
             } else if (order.stato === 'chiuso') {
                 actionButtons = `
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
                     <button class="action-button btn-dettagli" onclick="mostraDettagli(${order.id})">👁 Dettagli</button>
                 `;
             }
@@ -541,6 +657,117 @@
                 alert(`Dettagli ordine #${order.numero_wr}\n\nCliente: ${order.nome_cliente}\nIndirizzo: ${order.indirizzo}\nStato: ${order.stato}\n\nNote: ${order.note || 'Nessuna nota'}`);
             }
         }
+
+        // Variabili globali per la mappa
+        let mapInstance = null;
+        let currentMapOrder = null;
+        let currentCoords = null;
+
+        function mostraMappa(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            currentMapOrder = order;
+            const indirizzo = order.indirizzo || 'Indirizzo non specificato';
+            
+            // Aggiorna info modal
+            document.getElementById('mapTitle').textContent = `📍 ${order.numero_wr}`;
+            document.getElementById('mapInfo').innerHTML = `
+                <strong>👤 Cliente:</strong> ${order.nome_cliente || 'N/A'}<br>
+                <strong>📍 Indirizzo:</strong> ${indirizzo}<br>
+                <strong>🏢 Operatore:</strong> ${order.operatore || 'N/A'} | <strong>🔧 Tipo:</strong> ${order.tipo_lavoro || 'N/A'}
+            `;
+            
+            // Mostra modal
+            document.getElementById('mapModal').classList.add('active');
+            
+            // Inizializza o aggiorna mappa
+            setTimeout(() => {
+                if (!mapInstance) {
+                    mapInstance = L.map('mapElement').setView([41.9028, 12.4964], 10); // Default Roma
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapInstance);
+                }
+                mapInstance.invalidateSize();
+                
+                // Geocodifica l'indirizzo
+                if (indirizzo && indirizzo !== 'Indirizzo non specificato') {
+                    geocodificaIndirizzo(indirizzo);
+                } else {
+                    showNotification('Indirizzo non disponibile per questo lavoro', 'error');
+                }
+            }, 100);
+        }
+
+        function geocodificaIndirizzo(indirizzo) {
+            // Usa Nominatim (OpenStreetMap) per geocodifica
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(indirizzo)}&countrycodes=it&limit=1`;
+            
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        currentCoords = { lat, lon };
+                        
+                        // Pulisci markers precedenti
+                        mapInstance.eachLayer(layer => {
+                            if (layer instanceof L.Marker) {
+                                mapInstance.removeLayer(layer);
+                            }
+                        });
+                        
+                        // Centra mappa e aggiungi marker
+                        mapInstance.setView([lat, lon], 16);
+                        L.marker([lat, lon])
+                            .addTo(mapInstance)
+                            .bindPopup(`<strong>${currentMapOrder.numero_wr}</strong><br>${indirizzo}`)
+                            .openPopup();
+                    } else {
+                        showNotification('Indirizzo non trovato sulla mappa', 'error');
+                        currentCoords = null;
+                    }
+                })
+                .catch(err => {
+                    console.error('Errore geocodifica:', err);
+                    showNotification('Errore durante la ricerca dell\'indirizzo', 'error');
+                    currentCoords = null;
+                });
+        }
+
+        function chiudiMappa() {
+            document.getElementById('mapModal').classList.remove('active');
+        }
+
+        function apriNavigatore() {
+            if (currentCoords) {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${currentCoords.lat},${currentCoords.lon}`, '_blank');
+            } else if (currentMapOrder && currentMapOrder.indirizzo) {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentMapOrder.indirizzo)}`, '_blank');
+            } else {
+                showNotification('Coordinate non disponibili', 'error');
+            }
+        }
+
+        function apriWaze() {
+            if (currentCoords) {
+                window.open(`https://waze.com/ul?ll=${currentCoords.lat},${currentCoords.lon}&navigate=yes`, '_blank');
+            } else if (currentMapOrder && currentMapOrder.indirizzo) {
+                window.open(`https://waze.com/ul?q=${encodeURIComponent(currentMapOrder.indirizzo)}`, '_blank');
+            } else {
+                showNotification('Coordinate non disponibili', 'error');
+            }
+        }
+
+        // Chiudi modal con ESC o click fuori
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') chiudiMappa();
+        });
+        document.getElementById('mapModal').addEventListener('click', (e) => {
+            if (e.target.id === 'mapModal') chiudiMappa();
+        });
 
         function switchTab(tabName) {
             currentTab = tabName;

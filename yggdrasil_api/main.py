@@ -27,6 +27,11 @@ YGGDRASIL_HOST = os.getenv("YGG_HOST", "200:421e:6385:4a8b:dca7:cfb:197f:e9c3")
 YGGDRASIL_PORT = int(os.getenv("YGG_PORT", "6040"))
 API_KEY = os.getenv("YGG_API_KEY", "your-secure-yggdrasil-key-here")
 
+# Database configuration - point to main project database
+MAIN_PROJECT_DIR = Path(__file__).parent.parent
+DATABASE_URL = f"sqlite:///{MAIN_PROJECT_DIR}/ftth.db"
+os.environ["DATABASE_URL"] = DATABASE_URL
+
 # Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):

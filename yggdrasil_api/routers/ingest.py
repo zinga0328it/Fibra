@@ -6,6 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+import sys
+import os
+
+# Add parent directory to path to import from main app
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from app.database import SessionLocal, engine
+from app.models.models import Work, Technician
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
 
@@ -38,7 +48,6 @@ class IngestResponse(BaseModel):
 
 # ============ Auth Dependency ============
 
-import os
 API_KEY = os.getenv("YGG_API_KEY", "your-secure-yggdrasil-key-here")
 
 async def verify_key(x_key: str = Header(..., alias="X-KEY")):
@@ -52,16 +61,74 @@ async def verify_key(x_key: str = Header(..., alias="X-KEY")):
 @router.post("/work", response_model=IngestResponse, dependencies=[Depends(verify_key)])
 async def ingest_single_work(work: WorkIngest):
     """Ingest a single work order"""
+    db: Session = SessionLocal()
     try:
-        # Here you would save to database
-        # For now, just return success
+        # Check if work already exists
+        existing_work = db.query(Work).filter(Work.numero_wr == work.numero_wr).first()
+        
+        if existing_work:
+            # Update existing work
+            if work.nome_cliente:
+                existing_work.nome_cliente = work.nome_cliente
+            if work.telefono_cliente:
+                # Store phone in extra_fields if not already there
+                if not existing_work.extra_fields:
+                    existing_work.extra_fields = {}
+                existing_work.extra_fields['telefono'] = work.telefono_cliente
+            if work.indirizzo:
+                existing_work.indirizzo = work.indirizzo
+            if work.operatore:
+                existing_work.operatore = work.operatore
+            if work.tipo_lavoro:
+                existing_work.tipo_lavoro = work.tipo_lavoro
+            if work.note:
+                existing_work.note = work.note
+            if work.extra_fields:
+                if not existing_work.extra_fields:
+                    existing_work.extra_fields = {}
+                existing_work.extra_fields.update(work.extra_fields)
+            
+            db.commit()
+            message = f"Work {work.numero_wr} updated"
+        else:
+            # Create new work
+            new_work = Work(
+                numero_wr=work.numero_wr,
+                nome_cliente=work.nome_cliente,
+                indirizzo=work.indirizzo,
+                operatore=work.operatore,
+                tipo_lavoro=work.tipo_lavoro,
+                note=work.note,
+                stato="aperto",
+                data_apertura=datetime.now(),
+                extra_fields={
+                    "telefono": work.telefono_cliente,
+                    "source": "yggdrasil",
+                    "data_appuntamento": work.data_appuntamento,
+                    **(work.extra_fields or {})
+                }
+            )
+            db.add(new_work)
+            db.commit()
+            message = f"Work {work.numero_wr} created"
+        
         return IngestResponse(
             ok=True,
-            message=f"Work {work.numero_wr} received",
+            message=message,
             received=1,
             processed=1
         )
+    except IntegrityError as e:
+        db.rollback()
+        return IngestResponse(
+            ok=False,
+            message=f"Work {work.numero_wr} already exists or constraint violation",
+            received=1,
+            processed=0,
+            errors=[str(e)]
+        )
     except Exception as e:
+        db.rollback()
         return IngestResponse(
             ok=False,
             message=str(e),
@@ -69,28 +136,87 @@ async def ingest_single_work(work: WorkIngest):
             processed=0,
             errors=[str(e)]
         )
+    finally:
+        db.close()
 
 
 @router.post("/bulk", response_model=IngestResponse, dependencies=[Depends(verify_key)])
 async def ingest_bulk_works(request: BulkIngestRequest):
     """Ingest multiple work orders at once"""
+    db: Session = SessionLocal()
     errors = []
     processed = 0
     
-    for work in request.works:
-        try:
-            # Process each work
-            processed += 1
-        except Exception as e:
-            errors.append(f"{work.numero_wr}: {str(e)}")
-    
-    return IngestResponse(
-        ok=len(errors) == 0,
-        message=f"Bulk ingest from {request.source}",
-        received=len(request.works),
-        processed=processed,
-        errors=errors
-    )
+    try:
+        for work in request.works:
+            try:
+                # Check if work already exists
+                existing_work = db.query(Work).filter(Work.numero_wr == work.numero_wr).first()
+                
+                if existing_work:
+                    # Update existing work
+                    if work.nome_cliente:
+                        existing_work.nome_cliente = work.nome_cliente
+                    if work.telefono_cliente:
+                        if not existing_work.extra_fields:
+                            existing_work.extra_fields = {}
+                        existing_work.extra_fields['telefono'] = work.telefono_cliente
+                    if work.indirizzo:
+                        existing_work.indirizzo = work.indirizzo
+                    if work.operatore:
+                        existing_work.operatore = work.operatore
+                    if work.tipo_lavoro:
+                        existing_work.tipo_lavoro = work.tipo_lavoro
+                    if work.note:
+                        existing_work.note = work.note
+                    if work.extra_fields:
+                        if not existing_work.extra_fields:
+                            existing_work.extra_fields = {}
+                        existing_work.extra_fields.update(work.extra_fields)
+                else:
+                    # Create new work
+                    new_work = Work(
+                        numero_wr=work.numero_wr,
+                        nome_cliente=work.nome_cliente,
+                        indirizzo=work.indirizzo,
+                        operatore=work.operatore,
+                        tipo_lavoro=work.tipo_lavoro,
+                        note=work.note,
+                        stato="aperto",
+                        data_apertura=datetime.now(),
+                        extra_fields={
+                            "telefono": work.telefono_cliente,
+                            "source": request.source or "yggdrasil",
+                            "data_appuntamento": work.data_appuntamento,
+                            **(work.extra_fields or {})
+                        }
+                    )
+                    db.add(new_work)
+                
+                processed += 1
+            except Exception as e:
+                errors.append(f"{work.numero_wr}: {str(e)}")
+        
+        db.commit()
+        
+        return IngestResponse(
+            ok=len(errors) == 0,
+            message=f"Bulk ingest from {request.source}: {processed} processed, {len(errors)} errors",
+            received=len(request.works),
+            processed=processed,
+            errors=errors
+        )
+    except Exception as e:
+        db.rollback()
+        return IngestResponse(
+            ok=False,
+            message=f"Bulk ingest failed: {str(e)}",
+            received=len(request.works),
+            processed=processed,
+            errors=[str(e)] + errors
+        )
+    finally:
+        db.close()
 
 
 @router.get("/status", dependencies=[Depends(verify_key)])

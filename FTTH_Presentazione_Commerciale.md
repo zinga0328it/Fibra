@@ -279,10 +279,10 @@
 
 ### 📞 Contatti
 
-**Team Commerciale FTTH Management System**  
-📧 sales@ftth-management.com  
-📱 +39 123 456 7890  
-🌐 www.ftth-management.com  
+**Alessandro Pepe**  
+📧 alessandro.pepe@site-python.com  
+📱 +39 3510120753  
+🌐 www.site-python.com
 
 **Richiedi la tua demo gratuita oggi stesso!**
 
@@ -315,5 +315,4 @@
 
 ---
 
-*Questa presentazione è proprietaria di FTTH Management System. Tutti i diritti riservati. Versione 1.1 - Dicembre 2025*</content>
-<parameter name="filePath">/home/aaa/fibra/FTTH_Presentazione_Commerciale.md
+*Questa presentazione è proprietaria di FTTH Management System. Tutti i diritti riservati. Versione 1.1 - Dicembre 2025*

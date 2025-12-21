@@ -272,6 +272,6 @@ sudo systemctl restart ftth telegram-bot
 ## Supporto
 
 Per problemi di installazione:
-- 📧 support@ftth-management.com
+- 📧 pepeAlessandro@proton.me
 - 📱 Telegram: @FTTH_Support_Bot
 - 📖 [Documentazione Completa](https://github.com/zinga0328it/fibra/wiki)

@@ -51,12 +51,14 @@ except Exception:
 
 # Include routers
 from app.routes import works, technicians, teams, stats, auth, telegram, documents, health, manual, debug
+from telegram_endpoints import router as telegram_router
 app.include_router(works.router)
 app.include_router(technicians.router)
 app.include_router(teams.router)
 app.include_router(stats.router)
 app.include_router(auth.router)
 app.include_router(telegram.router)
+app.include_router(telegram_router, tags=["telegram"])
 app.include_router(documents.router)
 app.include_router(health.router)
 app.include_router(manual.router)

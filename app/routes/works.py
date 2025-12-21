@@ -248,9 +248,16 @@ def assign_work(work_id: int, tech_id: int, db: Session = Depends(get_db), curre
     db.commit()
     # Notify technician via telegram if they have a telegram_id
     try:
-        tech = db.query(Technician).filter(Technician.id == tech_id).first()
         if tech and tech.telegram_id:
-            msg = f"Ciao {tech.nome or ''} {tech.cognome or ''}, ti è stato assegnato il lavoro WR {work.numero_wr} - {work.indirizzo or ''} - Appuntamento: {work.data_apertura or ''}"
+            msg = f"""🔄 <b>Lavoro riassegnato!</b>
+
+📋 <b>WR:</b> {work.numero_wr}
+👤 <b>Cliente:</b> {work.nome_cliente or 'N/D'}
+📍 <b>Indirizzo:</b> {work.indirizzo or 'N/D'}
+🔧 <b>Tipo:</b> {work.tipo_lavoro or 'N/D'}
+📞 <b>Telefono:</b> {work.telefono_cliente or 'N/D'}
+
+💡 <i>Il lavoro è ora in corso</i>"""
             telegram_utils.send_message_to_telegram(tech.telegram_id, msg)
     except Exception as e:
         logging.getLogger('app.routes.works').exception('Failed to notify technician: %s', e)
@@ -377,12 +384,21 @@ def update_work(work_id: int, payload: WorkUpdate, db: Session = Depends(get_db)
 
 def notify_new_work(work: Work, db: Session):
     try:
-        msg = f"Nuovo lavoro WR {work.numero_wr} - Cliente: {work.nome_cliente or 'N/A'} - Indirizzo: {work.indirizzo or 'N/A'} - Tipo: {work.tipo_lavoro or 'N/A'}"
-        # Notify all technicians with telegram_id
-        techs = db.query(Technician).filter(Technician.telegram_id != None).all()
-        for t in techs:
-            if t.telegram_id:
-                telegram_utils.send_message_to_telegram(t.telegram_id, msg)
+        # Only notify assigned technician if present
+        if work.tecnico_assegnato_id:
+            tech = db.query(Technician).filter(Technician.id == work.tecnico_assegnato_id).first()
+            if tech and tech.telegram_id:
+                msg = f"""🔧 <b>Nuovo lavoro assegnato!</b>
+
+📋 <b>WR:</b> {work.numero_wr}
+👤 <b>Cliente:</b> {work.nome_cliente or 'N/D'}
+📍 <b>Indirizzo:</b> {work.indirizzo or 'N/D'}
+🔧 <b>Tipo:</b> {work.tipo_lavoro or 'N/D'}
+📞 <b>Telefono:</b> {work.telefono_cliente or 'N/D'}
+📅 <b>Data apertura:</b> {work.data_apertura.strftime('%d/%m/%Y %H:%M') if work.data_apertura else 'N/D'}
+
+💡 <i>Ricorda di confermare l'accettazione con /accetta {work.numero_wr}</i>"""
+                telegram_utils.send_message_to_telegram(tech.telegram_id, msg)
     except Exception as e:
         # Log error but don't fail
         print(f"Notification error: {e}")

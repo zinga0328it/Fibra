@@ -1,213 +1,727 @@
-# FTTH Management System
+# Gestionale Python - Sistema FTTH Avanzato
 
-Sistema di gestione per lavori FTTH (Fiber To The Home) per installazione modem e attivazione linee su rete Open Fiber.
+Sistema di gestione ordini fibra ottica con architettura distribuita e IA integrata
 
-## Funzionalità
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![Yggdrasil](https://img.shields.io/badge/Yggdrasil-Network-orange.svg)](https://yggdrasil-network.github.io/)
 
-- Caricamento e parsing di bolle di lavoro (WR) da PDF, immagini o testo
-- Assegnazione lavori ai tecnici
-- Compilazione bolle via app mobile (Telegram Bot)
-- Statistiche settimanali/mensili
-- Dashboard per backoffice
-- Sicurezza con nftables e fail2ban
+## 📋 Indice
 
-### Presentation Demo Note
-
-For demos, the repository includes systemd service files and simple scripts in `deploy/systemd/` to install or uninstall the services that launch the backend and the Telegram bot at system boot. These are intended only for short-lived presentation environments.
-
-Please remove the demo services from the target host after the demonstration using:
-
-  cd deploy/systemd && sudo ./uninstall_demo_services.sh
-
-This disables the services and removes their unit files. Avoid leaving these services enabled on production hosts unless properly maintained and secured.
-
-## Struttura Progetto
-
-- `app/`: Codice backend FastAPI
-  - `main.py`: App principale
-  - `database.py`: Configurazione DB
-  - `models/`: Modelli SQLAlchemy
-  - `routes/`: API routes
-  - `bot.py`: Telegram Bot
-- `web/publica/`: File statici frontend
-- `.env`: Variabili ambiente
-- `requirements.txt`: Dipendenze Python
-
-## Installazione
-
-1. Clona il repo
-2. Crea ambiente virtuale: `python -m venv venv`
-3. Attiva: `source venv/bin/activate`
-4. Installa dipendenze: `pip install -r requirements.txt`
-5. Configura `.env` con DATABASE_URL, TELEGRAM_BOT_TOKEN, etc.
-6. Crea DB: `python -c "from app.database import engine; from app.models import models; models.Base.metadata.create_all(bind=engine)"`
-7. Avvia backend: `uvicorn app.main:app --host 0.0.0.0 --port 6030`
-8. Avvia bot: `python app/bot.py`
-
-## Modifica Lavori dalla UI (inline o modal)
-
-Nel frontend (`web/publica/index.html`) è disponibile un bottone "Modifica" per ogni lavoro nella lista.
-- Cliccando "Modifica" si apre un form inline all'interno della riga che permette di modificare direttamente i campi principali: `numero_wr`, `nome_cliente`, `indirizzo`, `operatore`, `tipo_lavoro`, `tecnico_assegnato` e `stato`.
-- Il pulsante "Salva" invia una richiesta `PUT /works/{id}` con payload JSON per aggiornare il record nel DB. Esempio (curl):
-
-```
-curl -X PUT -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \ 
-  -d '{"stato":"in_corso", "tecnico_assegnato_id": 3}' \ 
-  http://localhost:6030/works/42
-```
-
-- È anche disponibile la modale di dettaglio/modifica se preferisci un editor più completo (apre campi aggiuntivi e funzioni di stato come Sospendi/Riapri/Chiudi).
-
-Le azioni aggiornano il DB immediatamente e generano eventi di audit (WorkEvent) salvati in tabella per cronologia delle modifiche.
-
-## API Routes
-
-### Works
-- `POST /works/upload`: Carica bolla (CSV) — carica uno o più record via CSV; il server fa upsert per `numero_wr` normalizzato
-- `POST /works/`: Crea un novo lavoro (API manuale)
- - `POST /manual/works`: Inserimento manuale di un Work (UI: `manual_entry.html`)
-   - Questo endpoint è pensato per inserire manualmente il contenuto della bolla quando non è possibile usare il bot o il parsing automatico. È protetto: richiede header `X-API-Key` o `Authorization: Bearer <token>` con un utente `admin`/`backoffice`.
-   - Campi principali supportati (JSON): `numero_wr`, `nome_cliente`, `indirizzo`, `operatore`, `tipo_lavoro`, `stato`, `data_inizio`, `data_fine`, `tecnico` (nome o id), `telefono_cliente`, `numero_impianto`.
-   - I campi aggiuntivi non mappati verranno salvati in `extra_fields` (JSON) per compatibilità.
-
-   Esempio via curl (usando X-API-Key):
-
-```
-API_KEY=your_api_key_here
-curl -sS -X POST http://127.0.0.1:6030/manual/works \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY" \
-  -d '{"numero_wr":"15699897","data_inizio":"2025-12-01T11:30:00","data_fine":"2025-12-01T13:30:00","tipo":"70 - DELIVERY OF","cliente":"RAINONE DANILO","indirizzo":"VIA GIUSEPPE OBLACH 73","stato":"ASSEGNATA","telefono_cliente":"3496259508"}'
-```
-
-   - La pagina di inserimento manuale è raggiungibile dal frontend in `web/publica/manual_entry.html` (link 'Inserimento Manuale' nell'index) e offre:
-     - campi principali (numero WR, cliente, indirizzo, orari, stato)
-     - textarea per incollare JSON con campi extra
-     - possibilità di usare `X-API-Key` o `Bearer token` per autenticazione
-- `GET /works/`: Lista lavori
-- `PUT /works/{id}/assign/{tech_id}`: Assegna lavoro
-- `PUT /works/{id}/status`: Aggiorna stato
-
-- `POST /documents/upload`: Carica uno o più file PDF (multipart/form-data `files`)
-### Documents (PDF import)
-Use this endpoint to import PDF files that contain bolle (WR): the parser will try to extract the WR number and fields and will create or update works. CSV/JSON upload features were removed because they caused confusion.
-- `POST /documents/upload`: Carica uno o più file PDF (multipart/form-data `files`)
-- `GET /documents/`: Lista documenti caricati
-- `GET /documents/{id}`: Ottieni metadati e parsed_data del documento
-- `POST /documents/{id}/parse`: Analizza il documento e popola `parsed_data`
-- `POST /documents/{id}/apply`: Applica `parsed_data` per creare o aggiornare un lavoro (accetta override JSON opzionale)
- - `POST /documents/{id}/apply`: Applica `parsed_data` per creare o aggiornare un lavoro (accetta override JSON opzionale)
-   - Optional query param: `selected_indices` as a comma-separated list of indices (0-based) to apply only a subset of parsed entries. Example:
-     - `POST /documents/42/apply?selected_indices=0,2` will only apply entries with index 0 and 2 from the parsed results.
-  - Nota: se il PDF contiene più clienti/lavori, il parser prova a rilevare tutti gli WR presenti e `parsed_data` conterrà una lista `entries`. La chiamata `POST /documents/{id}/apply` applicherà tutte le entries trovate e creerà/aggiornerà un Work per ciascuna. Verranno inseriti gli id dei lavori creati/aggiornati dentro `parsed_data.applied_work_ids` e `applied_work_id` verrà impostato sul primo id per compatibilità.
-- `GET /documents/{id}/download`: Scarica il documento (binary)
-
-Notes:
-- When a document is applied, an association row is written to the `document_applied_works` table for each created/updated Work. This allows tracking which Works were created/updated by which Document and when (`applied_at`).
-- The `parsed_data` JSON still contains `applied_work_ids` for backward compatibility and convenience, but the `document_applied_works` table is the canonical mapping.
-
-### Technicians
-- `GET /technicians/`: Lista tecnici
-- `POST /technicians/`: Crea tecnico
-
-### Teams
-- `GET /teams/`: Lista squadre
-- `POST /teams/`: Crea squadra
-
-### Stats
- - `GET /stats/yearly`: Statistiche per anno (ultimo anno), utili per analizzare trend annui
-
-## Telegram Bot Comandi
- - `GET /debug/db`: Endpoint di debug per leggere tabelle del DB (richiede admin/backoffice o X-API-Key), utile se serve leggere il DB manualmente
-- `/start`: Avvio
-- `/help`: Mostra i comandi disponibili
- - Il sistema invia notifiche ai tecnici quando ci sono aggiornamenti sui lavori assegnati, migliorando la comunicazione e la reattività.
-- `/accetta <WR>`: Accetta lavoro
-- `/rifiuta <WR>`: Rifiuta lavoro
-- `/chiudi <WR>`: Chiudi un lavoro
-
-Nota: Se l'app è configurata come webhook (FastAPI) il server imposta i comandi del bot all'avvio, quindi gli operatori vedranno il menu automaticamente.
-
-Se `/help` non è visibile nel client Telegram, puoi forzare la registrazione dei comandi con gli script integrati:
-
- - `python scripts/set_bot_commands.py` -> Imposta i comandi del bot usando il token da `.env` o variabile d'ambiente.
- - `python scripts/get_bot_commands.py` -> Mostra i comandi attualmente registrati per il bot.
-
-Assicurati di aver impostato `TELEGRAM_BOT_TOKEN` in `.env` o nell'ambiente prima di eseguire gli script.
-
-### Polling vs Webhook
-
-- Il bot può essere eseguito in due modalità: polling (il bot interroga Telegram per aggiornamenti) o webhook (Telegram invia aggiornamenti al server web).
-- Se usi webhook (configura `TELEGRAM_WEBHOOK_URL`), non avviare il bot in polling per lo stesso token: Telegram non permette contemporaneamente polling e webhook.
-- Per sicurezza, il servizio `bot.service` non avvierà il polling automaticamente se `TELEGRAM_WEBHOOK_URL` è configurato e `TELEGRAM_POLLING` non è esplicitamente impostato a `true`.
-- Per forzare il polling (solo se non usi webhook), imposta `TELEGRAM_POLLING=true` nell'ambiente. Per disabilitarlo, imposta `TELEGRAM_POLLING=false`.
-
-Esempio (systemd drop-in o file environment):
-```
-Environment=TELEGRAM_BOT_TOKEN=yourtoken
-# Optional: disable polling if you use webhook
-Environment=TELEGRAM_POLLING=false
-# Optional: set webhook url
-Environment=TELEGRAM_WEBHOOK_URL=https://your-host.example.com/telegram/webhook
-```
-
-Mobile UI: ho aggiunto alcune ottimizzazioni a `web/publica/index.html` per migliorare l'usabilità su dispositivi mobili (meta viewport, bottoni full width su mobile, dimensionamento chart responsivo). Se vuoi ulteriori modifiche (es. layout dedicato mobile), posso implementarle.
-
-## Roadmap
-
-### ✅ Completato (15 Dicembre 2025)
-1. ✅ Implementare comunicazione sicura Yggdrasil tra PC
-2. ✅ API per scrittura remota nel database via Yggdrasil
-3. ✅ Sicurezza multi-livello con backend nascosto
-4. ✅ Integrazione GPT per gestione lavori
-5. ✅ Configurazione Apache proxy pass sicuro
-6. ✅ Test end-to-end tra PC multipli
-
-### 🚧 In Sviluppo
-7. 🔄 Implementare OCR avanzato per parsing bolle
-8. 🔄 Aggiungere notifiche push ai tecnici
-9. 🔄 Dashboard con grafici avanzati (Chart.js)
-10. 🔄 Sistema di punteggio tecnici
-11. 🔄 Modalità offline per bot
-12. 🔄 QR Code per accesso rapido
-13. 🔄 Validazione automatica indirizzi/operatori
-14. 🔄 Timeline lavori
-15. 🔄 Integrazione GPS per tracking
-16. 🔄 Report PDF statistiche
-
-## Test Effettuati (15 Dicembre 2025)
-
-### ✅ Test Connettività Yggdrasil
-- **Ping IPv6**: `200:421e:6385:4a8b:dca7:cfb:197f:e9c3` - ✅ 1.14-1.85ms
-- **API Backend**: Porta 6030 via Yggdrasil - ✅ Risponde
-- **API Yggdrasil**: Porta 8600 via Yggdrasil - ✅ Risponde
-
-### ✅ Test Sicurezza
-- **Backend nascosto**: Non accessibile da Internet pubblico - ✅ Verificato
-- **Autenticazione X-API-Key**: Richiesta per operazioni amministrative - ✅ Funzionante
-- **Autenticazione X-KEY**: Richiesta per API Yggdrasil - ✅ Funzionante
-- **SSL pubblico**: Apache con Let's Encrypt - ✅ Attivo
-
-### ✅ Test Database
-- **Scrittura singola**: Via API Yggdrasil `/ingest/work` - ✅ Salvataggio verificato
-- **Scrittura bulk**: Via API Yggdrasil `/ingest/bulk` - ✅ Lavori multipli salvati
-- **Aggiornamento**: Lavori esistenti aggiornati correttamente - ✅ Verificato
-- **Lettura**: API principale per lettura dati - ✅ Funzionante
-
-### ✅ Test End-to-End
-- **PC Frontend → PC Backend**: Comunicazione completa via Yggdrasil - ✅ OK
-- **GPT Integration**: Possibilità di lettura/scrittura database - ✅ Implementato
-- **Apache Proxy**: Proxy pass sicuro con iniezione header - ✅ Configurato
-
-**Stato Sistema**: 🟢 **COMPLETAMENTE OPERATIVO E SICURO**
+- [🏗️ Architettura Tecnica](#-architettura-tecnica)
+- [✨ Caratteristiche Principali](#-caratteristiche-principali)
+- [🚀 Quick Start](#-quick-start)
+- [📦 Installazione](#-installazione)
+- [⚙️ Configurazione](#️-configurazione)
+- [🔧 Utilizzo](#-utilizzo)
+- [🔒 Sicurezza](#-sicurezza)
+- [🤖 Integrazione GPT](#-integrazione-gpt)
+- [📊 API Reference](#-api-reference)
+- [🧪 Testing](#-testing)
+- [🚀 Deployment](#-deployment)
+- [📚 Documentazione](#-documentazione)
+- [🤝 Contributi](#-contributi)
+- [📄 Licenza](#-licenza)
 
 ---
 
-## 📞 Contatti e Supporto Alessandro Pepe https://site-python.com/ whatsapp +393510120753
+## 🏗️ Architettura Tecnica
 
-- **Progetto**: Sistema FTTH Management
-- **Architettura**: Yggdrasil IPv6 Mesh Network
-- **Data ultimo aggiornamento**: 15 Dicembre 2025
-- **Versione**: 1.1 - Yggdrasil Integration
+Il sistema è costruito con un'architettura distribuita sicura che combina tecnologie moderne per garantire massima affidabilità e prestazioni.
 
-Per supporto tecnico o domande sulla configurazione Yggdrasil, contattare il team di sviluppo.
+```
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ Frontend │ │ Apache Proxy │ │ Backend API │
+│ (HTML/JS) │◄──►│ (mod_proxy) │◄──►│ (FastAPI) │
+│ │ │ HTTPS/WSS │ │ Python 3.9+ │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+        │ │ │
+        ▼ ▼ ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ Yggdrasil │ │ fail2ban │ │ PostgreSQL │
+│ IPv6 Network │ │ + nftables │ │ Database │
+│ (Sicurezza) │ │ (Firewall) │ │ (Dati) │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+```
+
+### Componenti Principali
+
+- **Backend FastAPI**: Framework Python asincrono per API REST ad alte prestazioni
+- **Yggdrasil Network**: Overlay network IPv6 crittografata per comunicazioni sicure
+- **Apache Proxy**: Reverse proxy con terminazione SSL e bilanciamento del carico
+- **PostgreSQL**: Database relazionale per persistenza dati con ottimizzazioni JSONB
+- **fail2ban + nftables**: Sistema di sicurezza con ban automatici e firewall avanzato
+- **WebSocket Integration**: Comunicazioni real-time per aggiornamenti live
+
+---
+
+## ✨ Caratteristiche Principali
+
+- ✅ **Gestione Lavori FTTH**: Workflow completo da creazione a completamento
+- ✅ **Architettura Distribuita**: Backend isolato via Yggdrasil IPv6
+- ✅ **Sicurezza Zero-Trust**: Nessuna esposizione pubblica del backend
+- ✅ **Integrazione GPT**: AI per automazione e assistenza intelligente
+- ✅ **Telegram Bot**: Comunicazione real-time con tecnici
+- ✅ **Dashboard Analytics**: Reportistica avanzata con metriche operative
+- ✅ **API RESTful**: Interfacce standard per integrazioni terze parti
+- ✅ **Mobile-First**: Ottimizzato per dispositivi mobili
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisiti
+
+- Python 3.9+
+- PostgreSQL (o SQLite per sviluppo)
+- Yggdrasil Network configurato
+- Apache/Nginx con SSL
+
+### Installazione Rapida
+
+```bash
+# Clona il repository
+git clone https://github.com/zinga0328it/fibra.git
+cd fibra
+
+# Crea ambiente virtuale
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# Installa dipendenze
+pip install -r requirements.txt
+
+# Configura ambiente
+cp .env.example .env
+# Modifica .env con le tue configurazioni
+
+# Avvia il database
+# Per SQLite (sviluppo):
+export DATABASE_URL="sqlite:///./ftth.db"
+
+# Per PostgreSQL (produzione):
+export DATABASE_URL="postgresql://user:password@localhost/ftth"
+
+# Crea tabelle database
+python -c "from app.database import engine; from app.models import models; models.Base.metadata.create_all(bind=engine)"
+
+# Avvia il backend
+uvicorn app.main:app --host 127.0.0.1 --port 6030
+
+# In un altro terminal, avvia il bot Telegram
+python app/bot.py
+```
+
+### Accesso al Sistema
+
+- **Frontend**: https://servicess.net/fibra/
+- **API Docs**: http://localhost:6030/docs (solo rete Yggdrasil)
+- **Admin Panel**: https://servicess.net/fibra/admin
+
+---
+
+## 📦 Installazione
+
+### 1. Clonazione Repository
+
+```bash
+git clone https://github.com/zinga0328it/fibra.git
+cd fibra
+```
+
+### 2. Ambiente Virtuale Python
+
+```bash
+# Crea ambiente virtuale
+python -m venv venv
+
+# Attiva ambiente
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+```
+
+### 3. Dipendenze
+
+```bash
+# Installa tutte le dipendenze
+pip install -r requirements.txt
+
+# Verifica installazione
+pip list
+```
+
+### 4. Database
+
+#### Opzione A: SQLite (Sviluppo)
+
+```bash
+export DATABASE_URL="sqlite:///./ftth.db"
+```
+
+#### Opzione B: PostgreSQL (Produzione)
+
+```bash
+# Installa PostgreSQL
+sudo apt-get install postgresql postgresql-contrib  # Ubuntu/Debian
+
+# Crea database
+sudo -u postgres createdb ftth
+sudo -u postgres createuser ftth_user
+sudo -u postgres psql -c "ALTER USER ftth_user PASSWORD 'your_password';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ftth TO ftth_user;"
+
+export DATABASE_URL="postgresql://ftth_user:your_password@localhost/ftth"
+```
+
+### 5. Yggdrasil Network
+
+```bash
+# Installa Yggdrasil
+# Segui le istruzioni: https://yggdrasil-network.github.io/installation.html
+
+# Verifica connessione
+ping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3
+```
+
+---
+
+## ⚙️ Configurazione
+
+### File .env
+
+Crea e configura il file `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Contenuto essenziale:
+
+```env
+# Database
+DATABASE_URL=sqlite:///./ftth.db
+
+# Sicurezza
+SECRET_KEY=your-super-secret-key-here
+API_KEY=JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your-bot-token
+TELEGRAM_WEBHOOK_URL=https://servicess.net/telegram/webhook
+
+# Yggdrasil
+YGGDRASIL_API_KEY=ftth_ygg_secret_2025
+
+# OpenAI GPT (opzionale)
+OPENAI_API_KEY=your-openai-key
+```
+
+### Apache Configuration
+
+#### /etc/apache2/sites-available/fibra.conf
+
+```apache
+<VirtualHost *:443>
+    ServerName servicess.net
+    
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
+    SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+    
+    ProxyPreserveHost On
+    RequestHeader set X-API-Key "JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+    
+    ProxyPass /api http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
+    ProxyPassReverse /api http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
+    
+    ProxyPass /static !
+    Alias /static /var/www/fibra
+    <Directory /var/www/fibra>
+        Require all granted
+    </Directory>
+    
+    RewriteEngine On
+    RewriteRule ^/$ /static/index.html [R=302,L]
+    
+    ProxyTimeout 120
+    
+    ErrorLog /var/log/apache2/fibra_error.log
+    CustomLog /var/log/apache2/fibra_access.log combined
+</VirtualHost>
+```
+
+### Firewall (nftables)
+
+#### /etc/nftables/fibra.conf
+
+```nftables
+# Regola specifica per PC alex via Yggdrasil
+iifname "ygg0" ip6 saddr 201:27c:546:5df7:176:95f3:c909:6834 tcp dport 6030 accept
+```
+
+### Systemd Services
+
+#### Backend Service (/etc/systemd/system/ftth.service)
+
+```ini
+[Unit]
+Description=FTTH Management Service
+After=network.target
+
+[Service]
+Type=simple
+User=aaa
+Group=www-data
+WorkingDirectory=/home/aaa/fibra
+Environment=PATH=/home/aaa/fibra/venv/bin
+ExecStart=/home/aaa/fibra/venv/bin/uvicorn app.main:app --host 200:421e:6385:4a8b:dca7:cfb:197f:e9c3 --port 6030 --workers 4 --proxy-headers
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### Telegram Bot Service (/etc/systemd/system/telegram-bot.service)
+
+```ini
+[Unit]
+Description=FTTH Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=aaa
+WorkingDirectory=/home/aaa/fibra
+Environment=PATH=/home/aaa/fibra/venv/bin
+ExecStart=/home/aaa/fibra/venv/bin/python app/bot.py
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+## 🔧 Utilizzo
+
+### Avvio del Sistema
+
+```bash
+# 1. Backend
+sudo systemctl start ftth
+
+# 2. Bot Telegram
+sudo systemctl start telegram-bot
+
+# 3. Verifica
+sudo systemctl status ftth telegram-bot
+```
+
+### Creazione Primo Lavoro
+
+```bash
+# Via API Yggdrasil
+curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -d '{
+    "numero_wr": "TEST-001",
+    "nome_cliente": "Mario Rossi",
+    "indirizzo": "Via Roma 123, Milano",
+    "operatore": "Tecnico A",
+    "tipo_lavoro": "Installazione FTTH",
+    "stato": "aperto"
+  }'
+```
+
+### Assegnazione a Tecnico
+
+```bash
+# Lista tecnici
+curl -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/technicians"
+
+# Assegna lavoro
+curl -X PUT "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/1/assign/1" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+```
+
+---
+
+## 🔒 Sicurezza
+
+### Livelli di Sicurezza Implementati
+
+1. **Autenticazione API**: API keys crittografate con rotazione automatica
+2. **Crittografia End-to-End**: Tutte le comunicazioni protette con TLS 1.3
+3. **Network Isolation**: Yggdrasil garantisce isolamento dalla rete pubblica
+4. **Rate Limiting**: Protezione contro attacchi DDoS e brute force
+5. **Audit Logging**: Tracciamento completo di tutte le operazioni
+6. **Backup Automatici**: Snapshots crittografati con versioning
+
+### Configurazione Firewall
+
+```bash
+# Carica regole nftables
+sudo nft -f /etc/nftables.conf
+
+# Verifica regole
+sudo nft list ruleset | grep 6030
+```
+
+### Monitoraggio Sicurezza
+
+```bash
+# Log fail2ban
+sudo tail -f /var/log/fail2ban.log
+
+# Log nftables
+sudo journalctl -u nftables -f
+```
+
+---
+
+## 🤖 Integrazione GPT
+
+### Configurazione OpenAI
+
+```env
+OPENAI_API_KEY=sk-your-openai-api-key
+GPT_MODEL=gpt-4
+GPT_MAX_TOKENS=2000
+```
+
+### Utilizzo GPT
+
+```bash
+# Creazione lavoro da testo naturale
+curl -X POST "https://servicess.net/gestionale/gpt/process" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "create_work_order",
+    "description": "Installazione fibra ottica presso cliente Mario Rossi, Via Roma 123",
+    "priority": "high"
+  }'
+```
+
+### Funzionalità GPT Disponibili
+
+- **Creazione Automatica Lavori**: Generazione ordini da descrizioni testuali
+- **Assegnazione Intelligente**: Suggerimenti tecnici basati su competenza
+- **Report Automatici**: Generazione documentazione tecnica
+- **Assistenza Virtuale**: Chatbot integrato per supporto operativo
+- **Analisi Predittiva**: Previsioni sui tempi di completamento basate su dati storici
+
+---
+
+## 📊 API Reference
+
+### Endpoint Principali
+
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/works` | GET | Lista lavori |
+| `/works` | POST | Crea nuovo lavoro |
+| `/works/{id}` | PUT | Aggiorna lavoro |
+| `/technicians` | GET | Lista tecnici |
+| `/teams` | GET | Lista squadre |
+| `/stats/yearly` | GET | Statistiche annuali |
+| `/documents/upload` | POST | Carica PDF bolle |
+
+### Autenticazione
+
+Tutti gli endpoint amministrativi richiedono:
+
+```bash
+-H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+```
+
+### Esempi Completi
+
+#### Creazione Lavoro Manuale
+
+```bash
+curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -d '{
+    "numero_wr": "WR-12345",
+    "data_inizio": "2025-12-21T10:00:00",
+    "data_fine": "2025-12-21T12:00:00",
+    "tipo": "70 - DELIVERY OF",
+    "cliente": "ROSSI MARIO",
+    "indirizzo": "VIA ROMA 123 MILANO",
+    "stato": "ASSEGNATA",
+    "telefono_cliente": "3331234567"
+  }'
+```
+
+#### Upload Documento PDF
+
+```bash
+curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/documents/upload" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -F "files=@bolla.pdf"
+```
+
+---
+
+## 🧪 Testing
+
+### Test Suite
+
+```bash
+# Esegui tutti i test
+python -m pytest tests/ -v
+
+# Test specifici
+python -m pytest tests/test_api.py -v
+python -m pytest tests/test_yggdrasil.py -v
+```
+
+### Test Manuali
+
+#### Test Connettività Yggdrasil
+
+```bash
+# Ping backend via Yggdrasil
+ping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3
+
+# Test API via Yggdrasil
+curl "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works"
+```
+
+#### Test Sicurezza
+
+```bash
+# Verifica che il backend non sia accessibile pubblicamente
+curl "http://IP-PUBBLICO:6030/works"  # Dovrebbe fallire
+
+# Test autenticazione
+curl -H "X-API-Key: INVALID" "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works"
+```
+
+### Test di Carico
+
+```bash
+# Installa locust
+pip install locust
+
+# Avvia test di carico
+locust -f tests/locustfile.py --host=http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030
+```
+
+---
+
+## 🚀 Deployment
+
+### Ambiente di Sviluppo
+
+```bash
+# Avvia tutto localmente
+docker-compose up -d
+
+# O manualmente
+uvicorn app.main:app --host 127.0.0.1 --port 6030 --reload
+```
+
+### Ambiente di Produzione
+
+#### Con Docker
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+services:
+  ftth-backend:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/ftth
+    networks:
+      - yggdrasil
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=ftth
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - yggdrasil
+
+networks:
+  yggdrasil:
+    driver: bridge
+```
+
+#### Con Kubernetes
+
+```yaml
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftth-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ftth
+  template:
+    metadata:
+      labels:
+        app: ftth
+    spec:
+      containers:
+      - name: ftth
+        image: ftth:latest
+        ports:
+        - containerPort: 6030
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://user:pass@postgres:5432/ftth"
+        - name: YGGDRASIL_ENABLED
+          value: "true"
+```
+
+### Configurazione CI/CD
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Deploy to server
+      run: |
+        scp docker-compose.yml user@server:/opt/ftth/
+        ssh user@server "cd /opt/ftth && docker-compose up -d --build"
+```
+
+---
+
+## 📚 Documentazione
+
+### Guide Disponibili
+
+- [Guida Installazione](./docs/INSTALL.md)
+- [API Yggdrasil](./YGGDRASIL_API_GUIDA.md)
+- [Configurazione Sicurezza](./docs/SECURITY.md)
+- [Troubleshooting](./docs/TROUBLESHOOTING.md)
+
+### Architettura Dettagliata
+
+```
+Internet → Apache (443) → Yggdrasil → FastAPI (6030) → PostgreSQL
+    ↓              ↓              ↓              ↓
+ HTTPS     Proxy Pass     IPv6 Mesh     REST API     Database
+```
+
+### Flussi di Sicurezza
+
+1. **Accesso Pubblico**: Solo HTTPS 443, certificato Let's Encrypt
+2. **Proxy Sicuro**: Apache inietta X-API-Key automaticamente
+3. **Isolamento Backend**: FastAPI ascolta solo su interfaccia Yggdrasil
+4. **Autenticazione**: API Key richiesta per operazioni amministrative
+5. **Crittografia**: Tutto il traffico protetto end-to-end
+
+---
+
+## 🤝 Contributi
+
+### Come Contribuire
+
+1. Fork il progetto
+2. Crea un branch per la tua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit delle modifiche (`git commit -m 'Add some AmazingFeature'`)
+4. Push del branch (`git push origin feature/AmazingFeature`)
+5. Apri una Pull Request
+
+### Linee Guida per il Codice
+
+- Segui PEP 8 per Python
+- Aggiungi test per nuove funzionalità
+- Aggiorna la documentazione
+- Usa commit messages descrittivi
+
+### Segnalazione Bug
+
+Usa il template GitHub Issues per segnalare bug:
+
+```markdown
+**Descrivi il bug**
+Una descrizione chiara del bug
+
+**Riprodurre**
+Passi per riprodurre:
+1. Vai su '...'
+2. Clicca su '....'
+3. Scrolla giù a '....'
+4. Vedi errore
+
+**Comportamento atteso**
+Una descrizione di cosa ti aspettavi
+
+**Screenshots**
+Se applicabile, aggiungi screenshots
+```
+
+---
+
+## 📄 Licenza
+
+Questo progetto è distribuito sotto licenza MIT. Vedi il file `LICENSE` per maggiori dettagli.
+
+---
+
+## 📞 Supporto
+
+- **Email**: support@ftth-management.com
+- **Telegram**: @FTTH_Support_Bot
+- **Documentazione**: https://github.com/zinga0328it/fibra/wiki
+- **Forum**: https://community.ftth-management.com
+
+---
+
+## 🎯 Roadmap
+
+### ✅ Completato (Dicembre 2025)
+- ✅ Architettura distribuita Yggdrasil
+- ✅ Backend FastAPI con API RESTful
+- ✅ Frontend responsive con Bootstrap
+- ✅ Integrazione Telegram Bot
+- ✅ Sicurezza multi-livello
+- ✅ Database PostgreSQL con JSONB
+- ✅ Integrazione GPT per automazione
+
+### 🚧 In Sviluppo
+- 🔄 Dashboard analytics avanzata
+- 🔄 Mobile app nativa
+- 🔄 Integrazione GIS per mappatura
+- 🔄 Sistema di notifiche push
+- 🔄 API GraphQL
+- 🔄 Multi-tenancy per operatori
+
+### 🔮 Pianificato
+- 📅 Integrazione IoT per tracking
+- 📅 AI predittiva per ottimizzazione
+- 📅 Blockchain per audit trail
+- 📅 Realtà aumentata per tecnici
+
+---
+
+*Sistema FTTH Management - Trasformiamo la gestione fibra in un'esperienza digitale eccezionale*

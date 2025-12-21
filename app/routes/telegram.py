@@ -293,3 +293,120 @@ def telegram_status():
     except Exception as e:
         status['webhookInfo'] = {'error': str(e)}
     return status
+
+
+# ============ GPT Integration Endpoints ============
+
+@router.post('/gpt/status')
+def enable_gpt_telegram(enabled: bool = Body(..., embed=True), current_user = Depends(auth_required(['admin','backoffice']))):
+    """Abilita/disabilita l'invio di messaggi Telegram da parte di GPT"""
+    # Salva lo stato in un file o database per persistenza
+    status_file = os.path.join(os.path.dirname(__file__), '..', 'gpt_telegram_enabled.json')
+    try:
+        with open(status_file, 'w') as f:
+            json.dump({'enabled': enabled, 'updated_at': datetime.now().isoformat()}, f)
+        return {"ok": True, "message": f"GPT Telegram {'abilitato' if enabled else 'disabilitato'}", "enabled": enabled}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nel salvare lo stato: {str(e)}")
+
+
+@router.post('/gpt/send')
+def send_gpt_message(payload: dict = Body(...), db: Session = Depends(get_db), current_user = Depends(auth_required(['admin','backoffice']))):
+    """Riceve comandi da GPT e invia messaggi Telegram ai tecnici o squadre"""
+
+    # Verifica se GPT è abilitato
+    status_file = os.path.join(os.path.dirname(__file__), '..', 'gpt_telegram_enabled.json')
+    try:
+        if os.path.exists(status_file):
+            with open(status_file, 'r') as f:
+                status_data = json.load(f)
+                if not status_data.get('enabled', False):
+                    raise HTTPException(status_code=403, detail="Invio messaggi GPT disabilitato")
+    except Exception:
+        pass  # Se non riesce a leggere, permette l'invio
+
+    # Estrai parametri dal payload GPT
+    action = payload.get('action', '').lower()
+    target_type = payload.get('target_type', 'technician')  # 'technician' o 'team'
+    target_id = payload.get('target_id')  # ID del tecnico o squadra
+    message = payload.get('message', '')
+    work_id = payload.get('work_id')  # Opzionale, per messaggi relativi a lavori
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Messaggio obbligatorio")
+
+    # Trova i destinatari
+    recipients = []
+
+    if target_type == 'technician':
+        if not target_id:
+            raise HTTPException(status_code=400, detail="target_id obbligatorio per technician")
+        tech = db.query(Technician).filter(Technician.id == target_id).first()
+        if not tech:
+            raise HTTPException(status_code=404, detail="Tecnico non trovato")
+        if tech.telegram_id:
+            recipients.append({'id': tech.telegram_id, 'name': f"{tech.nome} {tech.cognome}"})
+
+    elif target_type == 'team':
+        if not target_id:
+            raise HTTPException(status_code=400, detail="target_id obbligatorio per team")
+        team_techs = db.query(Technician).filter(Technician.squadra_id == target_id).all()
+        for tech in team_techs:
+            if tech.telegram_id:
+                recipients.append({'id': tech.telegram_id, 'name': f"{tech.nome} {tech.cognome}"})
+
+    else:
+        raise HTTPException(status_code=400, detail="target_type deve essere 'technician' o 'team'")
+
+    if not recipients:
+        raise HTTPException(status_code=404, detail="Nessun destinatario trovato con Telegram collegato")
+
+    # Invia messaggi
+    sent_count = 0
+    failed_count = 0
+    results = []
+
+    for recipient in recipients:
+        try:
+            # Aggiungi contesto se è relativo a un lavoro
+            full_message = message
+            if work_id:
+                work = db.query(Work).filter(Work.id == work_id).first()
+                if work:
+                    full_message = f"📋 LAVORO: {work.numero_wr}\n\n{message}"
+
+            success = _safe_send(recipient['id'], full_message)
+            if success:
+                sent_count += 1
+                results.append({'recipient': recipient['name'], 'status': 'sent'})
+            else:
+                failed_count += 1
+                results.append({'recipient': recipient['name'], 'status': 'failed'})
+
+        except Exception as e:
+            failed_count += 1
+            results.append({'recipient': recipient['name'], 'status': 'error', 'error': str(e)})
+            logger.error(f"Errore invio messaggio a {recipient['name']}: {str(e)}")
+
+    # Log dell'evento
+    if work_id:
+        work = db.query(Work).filter(Work.id == work_id).first()
+        if work:
+            event = WorkEvent(
+                work_id=work.id,
+                timestamp=datetime.now(),
+                event_type="gpt_message",
+                description=f"GPT sent message to {len(recipients)} recipients",
+                user_id=current_user.get('id') if current_user else None
+            )
+            db.add(event)
+            db.commit()
+
+    return {
+        "ok": True,
+        "message": f"Messaggio inviato a {sent_count} destinatari",
+        "sent": sent_count,
+        "failed": failed_count,
+        "total_recipients": len(recipients),
+        "results": results
+    }

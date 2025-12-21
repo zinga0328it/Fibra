@@ -330,6 +330,18 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nome Squadra</label>
+                            <input type="text" class="form-control" id="nome_squadra" placeholder="es: Squadra Nord">
+                            <small class="form-helper">Nome della squadra di appartenenza</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ID Telegram</label>
+                            <input type="text" class="form-control" id="telegram_id" placeholder="es: 123456789">
+                            <small class="form-helper">ID Telegram del tecnico (cerca @userinfobot)</small>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
                             <input type="checkbox" id="notify_telegram" style="width: 18px; height: 18px; cursor: pointer;">
@@ -470,6 +482,60 @@
                     });
                 }
                 
+                // Gestione dati Telegram e squadra del tecnico
+                var assignedTechId = document.getElementById('tecnico_select').value;
+                var nomeSquadra = document.getElementById('nome_squadra').value.trim();
+                var telegramId = document.getElementById('telegram_id').value.trim();
+                
+                if (assignedTechId && (nomeSquadra || telegramId)) {
+                    // Prepara i dati da aggiornare
+                    var updateData = {};
+                    if (nomeSquadra) {
+                        updateData.squadra_nome = nomeSquadra;
+                    }
+                    if (telegramId) {
+                        updateData.telegram_id = telegramId;
+                    }
+                    
+                    // Prima carica le squadre esistenti per vedere se esiste già
+                    apiFetch('/teams/')
+                        .then(function(teamsRes) {
+                            return teamsRes.json();
+                        })
+                        .then(function(teams) {
+                            var teamExists = teams.find(function(t) { return t.nome.toLowerCase() === nomeSquadra.toLowerCase(); });
+                            var teamId = teamExists ? teamExists.id : null;
+                            
+                            if (nomeSquadra && !teamExists) {
+                                // Crea nuova squadra se non esiste
+                                return apiFetch('/teams/', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ nome: nomeSquadra })
+                                })
+                                .then(function(newTeamRes) {
+                                    return newTeamRes.json();
+                                })
+                                .then(function(newTeam) {
+                                    updateData.squadra_id = newTeam.id;
+                                    return updateTechnicianData(assignedTechId, updateData);
+                                });
+                            } else if (nomeSquadra && teamExists) {
+                                updateData.squadra_id = teamId;
+                                return updateTechnicianData(assignedTechId, updateData);
+                            } else {
+                                return updateTechnicianData(assignedTechId, updateData);
+                            }
+                        })
+                        .then(function() {
+                            showToast('Dati tecnico aggiornati!', 'success');
+                        })
+                        .catch(function(e) {
+                            console.error('Errore aggiornamento tecnico:', e);
+                            showToast('Lavoro creato ma errore aggiornamento tecnico', 'error');
+                        });
+                }
+                
                 document.getElementById('workForm').reset();
                 setTimeout(function() {
                     window.location.href = '/static/gestionale.html';
@@ -479,6 +545,14 @@
                 showToast('Errore: ' + error.message, 'error');
             });
         });
+        
+        function updateTechnicianData(techId, data) {
+            return apiFetch('/technicians/' + techId, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
         
         function showToast(message, type) {
             var toast = document.createElement('div');

@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "security_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔐 Security & Firewall Module\n\n**Zero-Trust Architecture**\n\n- **Firewall**: nftables\n- **VPN**: Yggdrasil-only access\n- **Backend**: Completely isolated\n- **Frontend**: Public but secure\n- **Monitoring**: Fail2Ban integration\n\n**Status**: ✅ Maximum Security"
+    },
+    {
+      "id": "nftables_config",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 🔥 nftables Configuration\n\n**File**: `/etc/nftables/fibra.conf`\n\n```nft\ntable inet fibra {\n    chain input {\n        type filter hook input priority 0; policy drop;\n        \n        # Allow loopback\n        iifname lo accept\n        \n        # Allow established connections\n        ct state established,related accept\n        \n        # Yggdrasil-only backend access\n        iifname \"ygg0\" ip6 saddr 201:27c:546:5df7:176:95f3:c909:6834 \\\n            tcp dport 6030 accept\n        \n        # Allow HTTP/HTTPS public\n        tcp dport {80, 443} accept\n        \n        # Allow SSH (restricted)\n        tcp dport 22 accept\n    }\n}\n```\n\n**Only PC alex can access backend!**"
+    },
+    {
+      "id": "zero_trust_principles",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🛡️ Zero-Trust Principles\n\n## Never Trust, Always Verify\n- **No public API exposure**\n- **Yggdrasil authentication**\n- **IP-based access control**\n- **Encrypted communication**\n\n## Defense in Depth\n1. **Network isolation**\n2. **Firewall rules**\n3. **Application security**\n4. **Monitoring & logging**\n\n## Security Zones\n- **🔴 Public**: Apache only\n- **🟢 Trusted**: Yggdrasil network\n- **🔵 Admin**: Local system"
+    },
+    {
+      "id": "fail2ban_integration",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🚫 Fail2Ban Integration\n\n## Apache Monitoring\n```ini\n[apache-noscript]\nenabled = true\nport = http,https\nfilter = apache-noscript\nlogpath = /var/log/apache2/access.log\nmaxretry = 6\n```\n\n## Uvicorn API Protection\n```ini\n[ftth-api]\nenabled = true\nport = 6030\nfilter = uvicorn-filter\nlogpath = /opt/ftth/logs/ftth.log\nmaxretry = 5\nbantime = 3600\n```\n\n## Automatic Banning\n- Failed auth attempts\n- Brute force attacks\n- Suspicious patterns"
+    },
+    {
+      "id": "access_control",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# 🎫 Access Control Matrix\n\n## Backend API (Port 6030)\n- **Who**: Only PC alex\n- **How**: Yggdrasil IPv6\n- **IP**: 201:27c:546:5df7:176:95f3:c909:6834\n- **Authentication**: API Key + JWT\n\n## Frontend Web (Ports 80/443)\n- **Who**: Everyone (public)\n- **How**: HTTPS only\n- **Content**: Static files only\n- **Backend**: NO ACCESS\n\n## SSH (Port 22)\n- **Who**: Admin only\n- **How**: Key-based auth\n- **Restrictions**: IP whitelist"
+    },
+    {
+      "id": "troubleshooting_security",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Firewall Issues\n- **Traffic blocked**\n- **Rules not applied**\n- **Yggdrasil not working**\n\n## Access Problems\n- **Can't reach backend**\n- **Frontend down**\n- **Authentication failed**\n\n## Quick Commands\n```bash\n# Check rules\nsudo nft list ruleset\n\n# Test connectivity\nping6 backend-ip\n\n# View bans\nsudo fail2ban-client status\n\n# Reload firewall\nsudo systemctl restart nftables\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "security_to_nftables",
+      "fromNode": "security_overview",
+      "fromSide": "right",
+      "toNode": "nftables_config",
+      "toSide": "left",
+      "label": "implemented with"
+    },
+    {
+      "id": "security_to_zero_trust",
+      "fromNode": "security_overview",
+      "fromSide": "bottom",
+      "toNode": "zero_trust_principles",
+      "toSide": "top",
+      "label": "follows"
+    },
+    {
+      "id": "nftables_to_fail2ban",
+      "fromNode": "nftables_config",
+      "fromSide": "bottom",
+      "toNode": "fail2ban_integration",
+      "toSide": "top",
+      "label": "enhanced by"
+    },
+    {
+      "id": "zero_trust_to_access",
+      "fromNode": "zero_trust_principles",
+      "fromSide": "bottom",
+      "toNode": "access_control",
+      "toSide": "left",
+      "label": "defines"
+    },
+    {
+      "id": "fail2ban_to_access",
+      "fromNode": "fail2ban_integration",
+      "fromSide": "bottom",
+      "toNode": "access_control",
+      "toSide": "right",
+      "label": "protects"
+    },
+    {
+      "id": "access_to_troubleshooting",
+      "fromNode": "access_control",
+      "fromSide": "right",
+      "toNode": "troubleshooting_security",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

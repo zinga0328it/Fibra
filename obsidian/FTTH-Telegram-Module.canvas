@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "telegram_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 📱 Telegram Bot Module\n\n**Mobile Communication Hub**\n\n- **Bot**: @FTTH_Bot\n- **Features**: Real-time notifications\n- **Integration**: Work requests updates\n- **Security**: Token-based auth\n- **Mode**: Polling (production)\n\n**Status**: ✅ Active"
+    },
+    {
+      "id": "bot_configuration",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# ⚙️ Bot Configuration\n\n## Environment Variables\n```env\nTELEGRAM_BOT_TOKEN=987654321:ABCdefGHIjklMNOpqrsTUVwxyz\nTELEGRAM_WEBHOOK_URL=https://api.ftth-management.com/telegram/webhook\nTELEGRAM_POLLING=false\n```\n\n## Bot Commands\n- `/start` - Inizializzazione\n- `/status` - Stato corrente\n- `/works` - Lista WR attivi\n- `/update <id> <status>` - Aggiorna WR\n\n## Webhook vs Polling\n- **Production**: Webhook (efficiente)\n- **Development**: Polling (semplice)"
+    },
+    {
+      "id": "notification_system",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔔 Notification System\n\n## Event Triggers\n- **New WR**: Notifica creazione\n- **Status Change**: Aggiornamenti stato\n- **Assignment**: Assegnazione tecnico\n- **Completion**: WR completato\n\n## Message Format\n```\n🆕 Nuovo WR #123\nCliente: Mario Rossi\nIndirizzo: Via Roma 15\nPriorità: Alta\n```\n\n## Real-time Updates\n- Instant notifications\n- Status tracking\n- Performance metrics"
+    },
+    {
+      "id": "systemd_service",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# ⚙️ Systemd Service\n\n**File**: `/etc/systemd/system/telegram-bot.service`\n\n```ini\n[Unit]\nDescription=FTTH Telegram Bot\nAfter=network.target\n\n[Service]\nExecStart=/opt/ftth/venv/bin/python telegram_bot.py\nWorkingDirectory=/opt/ftth\nUser=ftth\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n```\n\n**Management**: `systemctl [start|stop|restart] telegram-bot`"
+    },
+    {
+      "id": "mobile_integration",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# 📲 Mobile Integration\n\n## Technician Workflow\n1. **Receive Notification**\n2. **View WR Details**\n3. **Update Status via Bot**\n4. **Upload Photos/Evidence**\n5. **Mark Complete**\n\n## Features\n- ✅ Location tracking\n- ✅ Photo upload\n- ✅ Status updates\n- ✅ Real-time sync\n- ✅ Offline capability\n\n## Security\n- Encrypted communication\n- Token authentication\n- Rate limiting"
+    },
+    {
+      "id": "troubleshooting_telegram",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **Bot not responding**\n- **Token invalid**\n- **Webhook failed**\n- **Rate limited**\n\n## Quick Commands\n```bash\n# Test bot\ntelnet api.telegram.org 443\n\n# Check token\ncurl https://api.telegram.org/bot$TOKEN/getMe\n\n# View logs\nsudo journalctl -u telegram-bot -f\n\n# Restart service\nsudo systemctl restart telegram-bot\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "telegram_to_config",
+      "fromNode": "telegram_overview",
+      "fromSide": "right",
+      "toNode": "bot_configuration",
+      "toSide": "left",
+      "label": "configured by"
+    },
+    {
+      "id": "telegram_to_notifications",
+      "fromNode": "telegram_overview",
+      "fromSide": "bottom",
+      "toNode": "notification_system",
+      "toSide": "top",
+      "label": "sends"
+    },
+    {
+      "id": "config_to_service",
+      "fromNode": "bot_configuration",
+      "fromSide": "bottom",
+      "toNode": "systemd_service",
+      "toSide": "top",
+      "label": "runs as"
+    },
+    {
+      "id": "notifications_to_mobile",
+      "fromNode": "notification_system",
+      "fromSide": "bottom",
+      "toNode": "mobile_integration",
+      "toSide": "left",
+      "label": "enables"
+    },
+    {
+      "id": "service_to_mobile",
+      "fromNode": "systemd_service",
+      "fromSide": "bottom",
+      "toNode": "mobile_integration",
+      "toSide": "right",
+      "label": "powers"
+    },
+    {
+      "id": "mobile_to_troubleshooting",
+      "fromNode": "mobile_integration",
+      "fromSide": "right",
+      "toNode": "troubleshooting_telegram",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

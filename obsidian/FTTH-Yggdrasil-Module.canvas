@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "yggdrasil_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🕸️ Yggdrasil Network Module\n\n**Zero-Trust Security Core**\n\n- **Type**: IPv6 Mesh VPN\n- **Encryption**: End-to-end\n- **Backend IP**: 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\n- **Client IP**: 201:27c:546:5df7:176:95f3:c909:6834\n- **Interface**: ygg0\n\n**Status**: ✅ Active & Secure"
+    },
+    {
+      "id": "yggdrasil_config",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# ⚙️ Configuration\n\n**File**: `/etc/yggdrasil.conf`\n\n```yaml\nPeers: []\nListen: []\n\nInterfacePeers: {}\n\nNodeInfo: {}\nNodeInfoPrivacy: false\n\n# Generated automatically\n# DO NOT EDIT MANUALLY\n```\n\n**Generation**: `yggdrasil -genconf`\n**Reload**: `systemctl restart yggdrasil`"
+    },
+    {
+      "id": "network_topology",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌐 Network Topology\n\n## Architecture\n```\nInternet Public\n    ↓\nApache Frontend (HTTPS)\n    ↓\nYggdrasil Mesh VPN\n    ↓\nFastAPI Backend (Isolated)\n```\n\n## Security Zones\n- **🔴 Public**: Apache only\n- **🟢 Private**: Yggdrasil only\n- **🔵 Local**: System services"
+    },
+    {
+      "id": "firewall_rules",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔥 Firewall Integration\n\n**File**: `/etc/nftables/fibra.conf`\n\n```nft\n# Yggdrasil-only access\ntable inet fibra {\n  chain input {\n    iifname \"ygg0\" ip6 saddr 201:27c:546:5df7:176:95f3:c909:6834 \\\n      tcp dport 6030 accept\n  }\n}\n```\n\n**Only PC alex can access backend!**"
+    },
+    {
+      "id": "connectivity_test",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# 🧪 Connectivity Testing\n\n## From PC alex:\n```bash\n# Test Yggdrasil ping\nping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\n\n# Test API access\ncurl \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works\"\n```\n\n## Local checks:\n```bash\n# Interface status\nip addr show ygg0\n\n# Service status\nsystemctl status yggdrasil\n```"
+    },
+    {
+      "id": "troubleshooting_ygg",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Issues\n- **No connectivity**\n- **IP address changed**\n- **Firewall blocks**\n- **Service not running**\n\n## Solutions\n```bash\n# Check interface\nip link show ygg0\n\n# Restart service\nsudo systemctl restart yggdrasil\n\n# Regenerate config\nyggdrasil -genconf > /etc/yggdrasil.conf\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "ygg_to_config",
+      "fromNode": "yggdrasil_overview",
+      "fromSide": "right",
+      "toNode": "yggdrasil_config",
+      "toSide": "left",
+      "label": "configured by"
+    },
+    {
+      "id": "ygg_to_topology",
+      "fromNode": "yggdrasil_overview",
+      "fromSide": "bottom",
+      "toNode": "network_topology",
+      "toSide": "top",
+      "label": "enables"
+    },
+    {
+      "id": "config_to_firewall",
+      "fromNode": "yggdrasil_config",
+      "fromSide": "bottom",
+      "toNode": "firewall_rules",
+      "toSide": "top",
+      "label": "secures"
+    },
+    {
+      "id": "topology_to_connectivity",
+      "fromNode": "network_topology",
+      "fromSide": "bottom",
+      "toNode": "connectivity_test",
+      "toSide": "left",
+      "label": "tested by"
+    },
+    {
+      "id": "firewall_to_connectivity",
+      "fromNode": "firewall_rules",
+      "fromSide": "bottom",
+      "toNode": "connectivity_test",
+      "toSide": "right",
+      "label": "controls"
+    },
+    {
+      "id": "connectivity_to_troubleshooting",
+      "fromNode": "connectivity_test",
+      "fromSide": "right",
+      "toNode": "troubleshooting_ygg",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "nodes": [
+    {
+      "id": "architecture_overview",
+      "x": -400,
+      "y": -200,
+      "width": 300,
+      "height": 200,
+      "type": "text",
+      "text": "# 🏗️ FTTH Management System Architecture\n\n**Sistema di Gestione FTTH Enterprise**\n\n- ✅ Backend FastAPI isolato su Yggdrasil\n- ✅ Frontend Apache con SSL pubblico\n- ✅ Database PostgreSQL/SQLite\n- ✅ Sicurezza Zero-Trust\n- ✅ Telegram Bot integrato\n\n**Stato**: Production Ready"
+    },
+    {
+      "id": "core_components",
+      "x": 0,
+      "y": -200,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🔧 Core Components\n\n## Backend Layer\n- **FastAPI** (Porta 6030)\n- **Yggdrasil IPv6**: 200:421e:...\n- **Database**: PostgreSQL/SQLite\n\n## Frontend Layer\n- **Apache2** con SSL\n- **Domain**: servicess.net\n\n## Security Layer\n- **nftables** firewall\n- **Yggdrasil-only** access"
+    },
+    {
+      "id": "workflow_daily",
+      "x": -400,
+      "y": 50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔄 Daily Workflow\n\n## Morning Check\n1. **System Status**\n2. **Log Review**\n3. **Backup Verify**\n\n## Operations\n- Monitor WR processing\n- Check technician updates\n- Review analytics\n\n## Maintenance\n- Update SSL certs\n- Clean old logs"
+    },
+    {
+      "id": "troubleshooting",
+      "x": 200,
+      "y": 50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- 🔴 Backend not responding\n- 🔴 Yggdrasil connection\n- 🔴 Database errors\n- 🔴 Telegram bot issues\n\n## Quick Fixes\n- Check systemd status\n- Verify Yggdrasil IP\n- Test database connection\n- Restart services"
+    },
+    {
+      "id": "module_canvas_links",
+      "x": -100,
+      "y": 250,
+      "width": 400,
+      "height": 200,
+      "type": "text",
+      "text": "# 📚 Module Canvas\n\n## Core Modules\n- [[FTTH-Backend-Module.canvas|Backend FastAPI]]\n- [[FTTH-Yggdrasil-Module.canvas|Yggdrasil Network]]\n- [[FTTH-Apache-Module.canvas|Apache Frontend]]\n- [[FTTH-Database-Module.canvas|Database Layer]]\n\n## Integration Modules\n- [[FTTH-Telegram-Module.canvas|Telegram Bot]]\n- [[FTTH-Security-Module.canvas|Security & Firewall]]\n- [[FTTH-Monitoring-Module.canvas|Monitoring & Logs]]"
+    },
+    {
+      "id": "installation_flow",
+      "x": -600,
+      "y": 50,
+      "width": 180,
+      "height": 120,
+      "type": "text",
+      "text": "# 📦 Installation Flow\n\n## Phase 1: Infrastructure\n1. **System Setup**\n2. **Yggdrasil Install**\n3. **Database Config**\n\n## Phase 2: Application\n4. **Backend Deploy**\n5. **Frontend Setup**\n6. **Security Config**\n\n## Phase 3: Testing\n7. **Integration Test**\n8. **Production Go-live**"
+    },
+    {
+      "id": "network_topology",
+      "x": 400,
+      "y": -200,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🌐 Network Topology\n\n## Public Internet\n```\nHTTPS (443) → Apache SSL\n↓\nStatic Frontend Only\n```\n\n## Yggdrasil Mesh VPN\n```\nIPv6: 200:421e:...:6030\n↓\nFastAPI Backend (Isolated)\n↓\nDatabase & Telegram Bot\n```\n\n## Security Zones\n- **Red**: Public Internet\n- **Green**: Yggdrasil VPN\n- **Blue**: Local Services"
+    }
+  ],
+  "edges": [
+    {
+      "id": "arch_to_components",
+      "fromNode": "architecture_overview",
+      "fromSide": "right",
+      "toNode": "core_components",
+      "toSide": "left",
+      "label": "implements"
+    },
+    {
+      "id": "arch_to_network",
+      "fromNode": "architecture_overview",
+      "fromSide": "bottom",
+      "toNode": "network_topology",
+      "toSide": "left",
+      "label": "secured by"
+    },
+    {
+      "id": "workflow_to_troubleshooting",
+      "fromNode": "workflow_daily",
+      "fromSide": "right",
+      "toNode": "troubleshooting",
+      "toSide": "left",
+      "label": "when issues"
+    },
+    {
+      "id": "install_to_workflow",
+      "fromNode": "installation_flow",
+      "fromSide": "right",
+      "toNode": "workflow_daily",
+      "toSide": "left",
+      "label": "leads to"
+    },
+    {
+      "id": "components_to_modules",
+      "fromNode": "core_components",
+      "fromSide": "bottom",
+      "toNode": "module_canvas_links",
+      "toSide": "top",
+      "label": "detailed in"
+    },
+    {
+      "id": "troubleshooting_to_modules",
+      "fromNode": "troubleshooting",
+      "fromSide": "bottom",
+      "toNode": "module_canvas_links",
+      "toSide": "right",
+      "label": "solved in"
+    }
+  ]
+}

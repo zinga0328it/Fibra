@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "id": "database_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🗄️ Database Module\n\n**Data Persistence Layer**\n\n- **Production**: PostgreSQL 13+\n- **Development**: SQLite\n- **ORM**: SQLAlchemy\n- **Migrations**: Alembic\n- **Backup**: Automatic daily\n\n**Status**: ✅ Operational"
+    },
+    {
+      "id": "database_models",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 📋 Data Models\n\n## Core Tables\n- **work_requests**: WR principali\n  - id, title, description\n  - status, priority, technician_id\n  - created_at, updated_at\n\n- **technicians**: Tecnici campo\n  - id, name, phone, email\n  - active_works, performance_score\n\n- **analytics**: Statistiche KPI\n  - date, metric_type, value\n  - work_request_id (optional)\n\n## Relationships\n- WR → Technician (many-to-one)\n- Analytics → WR (one-to-many)"
+    },
+    {
+      "id": "postgresql_config",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🐘 PostgreSQL Setup\n\n## Installation\n```bash\nsudo apt install postgresql postgresql-contrib\nsudo systemctl enable postgresql\n```\n\n## Database Creation\n```bash\nsudo -u postgres psql\nCREATE DATABASE ftth;\nCREATE USER ftth_user WITH PASSWORD 'secure_pass';\nGRANT ALL ON DATABASE ftth TO ftth_user;\n```\n\n## Connection String\n`postgresql://ftth_user:pass@localhost:5432/ftth`"
+    },
+    {
+      "id": "sqlite_config",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 📱 SQLite Setup\n\n## For Development\n```bash\n# No installation needed\n# File-based database\n```\n\n## Connection String\n`sqlite:///./ftth.db`\n\n## Advantages\n- ✅ Zero configuration\n- ✅ Single file\n- ✅ Easy backup\n- ✅ Fast for development\n\n## Limitations\n- ❌ No concurrent writes\n- ❌ No user authentication\n- ❌ Limited scalability"
+    },
+    {
+      "id": "backup_system",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# 💾 Backup System\n\n## PostgreSQL Backup\n```bash\n# Daily backup script\npg_dump ftth > backup_$(date +%Y%m%d).sql\n\n# Restore\npsql ftth < backup_file.sql\n```\n\n## SQLite Backup\n```bash\n# Simple file copy\ncp ftth.db ftth_backup.db\n```\n\n## Automation\n- Cron job: `0 2 * * *`\n- Retention: 30 days\n- Location: `/opt/ftth/backups/`"
+    },
+    {
+      "id": "troubleshooting_db",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## PostgreSQL Issues\n- **Connection refused**\n- **Authentication failed**\n- **Database corrupted**\n\n## SQLite Issues\n- **Database locked**\n- **File permissions**\n- **Corruption**\n\n## Quick Commands\n```bash\n# Test connection\npsql \"$DATABASE_URL\" -c \"SELECT 1;\"\n\n# Check disk space\ndf -h\n\n# View logs\nsudo tail -f /var/log/postgresql/postgresql-*.log\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "db_to_models",
+      "fromNode": "database_overview",
+      "fromSide": "right",
+      "toNode": "database_models",
+      "toSide": "left",
+      "label": "contains"
+    },
+    {
+      "id": "db_to_postgres",
+      "fromNode": "database_overview",
+      "fromSide": "bottom",
+      "toNode": "postgresql_config",
+      "toSide": "top",
+      "label": "implemented as"
+    },
+    {
+      "id": "models_to_postgres",
+      "fromNode": "database_models",
+      "fromSide": "bottom",
+      "toNode": "postgresql_config",
+      "toSide": "right",
+      "label": "stored in"
+    },
+    {
+      "id": "models_to_sqlite",
+      "fromNode": "database_models",
+      "fromSide": "bottom",
+      "toNode": "sqlite_config",
+      "toSide": "left",
+      "label": "or stored in"
+    },
+    {
+      "id": "postgres_to_backup",
+      "fromNode": "postgresql_config",
+      "fromSide": "bottom",
+      "toNode": "backup_system",
+      "toSide": "left",
+      "label": "backed up via"
+    },
+    {
+      "id": "sqlite_to_backup",
+      "fromNode": "sqlite_config",
+      "fromSide": "bottom",
+      "toNode": "backup_system",
+      "toSide": "right",
+      "label": "backed up via"
+    },
+    {
+      "id": "backup_to_troubleshooting",
+      "fromNode": "backup_system",
+      "fromSide": "right",
+      "toNode": "troubleshooting_db",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

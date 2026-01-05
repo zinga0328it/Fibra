@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "backend_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🚀 FastAPI Backend Module\n\n**Core Business Logic**\n\n- **Framework**: FastAPI (Python)\n- **Port**: 6030\n- **Host**: Yggdrasil IPv6 only\n- **Database**: SQLAlchemy + PostgreSQL\n- **Security**: API Key + JWT\n\n**Status**: ✅ Operational"
+    },
+    {
+      "id": "api_endpoints",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 200,
+      "type": "text",
+      "text": "# 📡 API Endpoints\n\n## Work Requests (WR)\n- `GET /works` - Lista WR\n- `POST /works` - Nuovo WR\n- `PUT /works/{id}` - Aggiorna WR\n- `DELETE /works/{id}` - Elimina WR\n\n## Upload & Processing\n- `POST /works/upload` - Upload PDF\n- `GET /works/{id}/pdf` - Download PDF\n\n## Analytics\n- `GET /analytics/summary` - Statistiche\n- `GET /analytics/performance` - KPI"
+    },
+    {
+      "id": "database_layer",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🗄️ Database Layer\n\n## Models\n- **WorkRequest**: WR principali\n- **Technician**: Tecnici campo\n- **Analytics**: Statistiche\n\n## Configuration\n- **SQLite**: Sviluppo\n- **PostgreSQL**: Produzione\n- **Migrations**: Alembic\n\n## Security\n- Connection pooling\n- Prepared statements\n- Input validation"
+    },
+    {
+      "id": "security_config",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔐 Security Configuration\n\n## Authentication\n- **API Key**: JHzxUzdAK8L...\n- **JWT Tokens**: Session management\n- **Rate Limiting**: 100 req/min\n\n## Access Control\n- **Yggdrasil Only**: IPv6 binding\n- **No Public Exposure**: Isolated network\n- **Audit Logging**: All operations\n\n## Encryption\n- HTTPS frontend\n- Database encryption\n- Secure secrets"
+    },
+    {
+      "id": "systemd_service",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# ⚙️ Systemd Service\n\n**File**: `/etc/systemd/system/ftth.service`\n\n```ini\n[Unit]\nDescription=FTTH Management API\n\n[Service]\nExecStart=/opt/ftth/venv/bin/uvicorn main:app --host 200:421e:... --port 6030\nWorkingDirectory=/opt/ftth\nUser=ftth\n\n[Install]\nWantedBy=multi-user.target\n```\n\n**Status Check**: `systemctl status ftth`"
+    },
+    {
+      "id": "troubleshooting_backend",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **Port 6030 busy**\n- **Database connection**\n- **Yggdrasil binding**\n- **Memory issues**\n\n## Quick Commands\n```bash\n# Check service\nsudo systemctl status ftth\n\n# View logs\nsudo journalctl -u ftth -f\n\n# Test API\ncurl http://[ygg-ip]:6030/health\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "backend_to_endpoints",
+      "fromNode": "backend_overview",
+      "fromSide": "right",
+      "toNode": "api_endpoints",
+      "toSide": "left",
+      "label": "exposes"
+    },
+    {
+      "id": "backend_to_database",
+      "fromNode": "backend_overview",
+      "fromSide": "bottom",
+      "toNode": "database_layer",
+      "toSide": "top",
+      "label": "uses"
+    },
+    {
+      "id": "endpoints_to_security",
+      "fromNode": "api_endpoints",
+      "fromSide": "bottom",
+      "toNode": "security_config",
+      "toSide": "top",
+      "label": "protected by"
+    },
+    {
+      "id": "database_to_service",
+      "fromNode": "database_layer",
+      "fromSide": "bottom",
+      "toNode": "systemd_service",
+      "toSide": "left",
+      "label": "managed by"
+    },
+    {
+      "id": "security_to_service",
+      "fromNode": "security_config",
+      "fromSide": "bottom",
+      "toNode": "systemd_service",
+      "toSide": "right",
+      "label": "enforced by"
+    },
+    {
+      "id": "service_to_troubleshooting",
+      "fromNode": "systemd_service",
+      "fromSide": "right",
+      "toNode": "troubleshooting_backend",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

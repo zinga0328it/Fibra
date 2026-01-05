@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "apache_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌐 Apache Frontend Module\n\n**Public Web Interface**\n\n- **Domain**: servicess.net\n- **SSL**: Let's Encrypt\n- **Port**: 443 (HTTPS)\n- **Content**: Static frontend only\n- **Backend**: NO proxy (Security!)\n\n**Status**: ✅ Public & Secure"
+    },
+    {
+      "id": "apache_config",
+      "x": 50,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# ⚙️ Configuration\n\n**File**: `/etc/apache2/sites-available/fibra.conf`\n\n```apache\n<VirtualHost *:443>\n    ServerName servicess.net\n    DocumentRoot /var/www/fibra\n    \n    SSLEngine on\n    SSLCertificateFile /etc/letsencrypt/live/servicess.net/fullchain.pem\n    SSLCertificateKeyFile /etc/letsencrypt/live/servicess.net/privkey.pem\n    \n    # NO PROXY TO BACKEND - SECURITY!\n    <Directory /var/www/fibra>\n        Require all granted\n    </Directory>\n</VirtualHost>\n```\n\n**Security**: Backend completely isolated!"
+    },
+    {
+      "id": "ssl_certificates",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔒 SSL Certificates\n\n## Let's Encrypt Setup\n```bash\n# Install certbot\nsudo apt install certbot python3-certbot-apache\n\n# Get certificate\nsudo certbot --apache -d servicess.net\n\n# Auto-renewal\nsudo systemctl status certbot.timer\n```\n\n## Certificate Files\n- **Full Chain**: `/etc/letsencrypt/live/servicess.net/fullchain.pem`\n- **Private Key**: `/etc/letsencrypt/live/servicess.net/privkey.pem`\n- **Auto-renewal**: Every 60 days"
+    },
+    {
+      "id": "static_frontend",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 📄 Static Frontend\n\n## Content Structure\n```bash\n/var/www/fibra/\n├── index.html          # Dashboard principale\n├── css/\n│   └── bootstrap.min.css\n├── js/\n│   ├── jquery.min.js\n│   └── app.js\n└── api/\n    └── client.js       # AJAX to backend\n```\n\n## Features\n- ✅ Work Requests list\n- ✅ Upload forms\n- ✅ Real-time updates\n- ✅ Mobile responsive"
+    },
+    {
+      "id": "security_measures",
+      "x": -100,
+      "y": 250,
+      "width": 300,
+      "height": 120,
+      "type": "text",
+      "text": "# 🛡️ Security Measures\n\n## No Backend Exposure\n- ❌ **NO** proxy to FastAPI\n- ❌ **NO** API endpoints public\n- ✅ **ONLY** static content\n\n## DDoS Protection\n- Rate limiting configured\n- Fail2Ban monitoring\n- SSL/TLS encryption\n\n## Access Control\n- HTTPS only (redirect)\n- Secure headers\n- CORS properly configured"
+    },
+    {
+      "id": "troubleshooting_apache",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **SSL certificate expired**\n- **502 Bad Gateway** (shouldn't happen)\n- **403 Forbidden**\n- **Slow loading**\n\n## Quick Commands\n```bash\n# Check config\nsudo apache2ctl configtest\n\n# Reload service\nsudo systemctl reload apache2\n\n# Check logs\nsudo tail -f /var/log/apache2/error.log\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "apache_to_config",
+      "fromNode": "apache_overview",
+      "fromSide": "right",
+      "toNode": "apache_config",
+      "toSide": "left",
+      "label": "configured by"
+    },
+    {
+      "id": "apache_to_ssl",
+      "fromNode": "apache_overview",
+      "fromSide": "bottom",
+      "toNode": "ssl_certificates",
+      "toSide": "top",
+      "label": "secured with"
+    },
+    {
+      "id": "config_to_static",
+      "fromNode": "apache_config",
+      "fromSide": "bottom",
+      "toNode": "static_frontend",
+      "toSide": "top",
+      "label": "serves"
+    },
+    {
+      "id": "ssl_to_security",
+      "fromNode": "ssl_certificates",
+      "fromSide": "bottom",
+      "toNode": "security_measures",
+      "toSide": "left",
+      "label": "enables"
+    },
+    {
+      "id": "static_to_security",
+      "fromNode": "static_frontend",
+      "fromSide": "bottom",
+      "toNode": "security_measures",
+      "toSide": "right",
+      "label": "protected by"
+    },
+    {
+      "id": "security_to_troubleshooting",
+      "fromNode": "security_measures",
+      "fromSide": "right",
+      "toNode": "troubleshooting_apache",
+      "toSide": "left",
+      "label": "debug with"
+    }
+  ]
+}

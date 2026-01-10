@@ -1,0 +1,134 @@
+{
+  "nodes": [
+    {
+      "id": "deployment_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🚀 Enterprise Deployment Architecture\n\n**Production-Ready Deployment**\n\n- **Containerization**: Docker ecosystem\n- **Orchestration**: Docker Compose\n- **CI/CD**: Automated pipelines\n- **Infrastructure**: Multi-environment\n- **Monitoring**: Full observability\n- **Security**: Zero-trust deployment\n\n**Status**: ✅ Enterprise Deployment Ready"
+    },
+    {
+      "id": "docker_ecosystem",
+      "x": 50,
+      "y": -200,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 🐳 Docker Ecosystem (5 Services)\n\n## Service Architecture\n```yaml\ndocker-compose.yml\n├── ftth-backend      # FastAPI application\n├── postgres          # Primary database\n├── redis             # Cache & sessions\n├── telegram-bot      # Bot service\n├── prometheus        # Metrics collection\n└── grafana           # Visualization\n```\n\n## Container Configuration\n```yaml\nversion: '3.8'\nservices:\n  ftth-backend:\n    build: .\n    ports: [\"6030:6030\"]\n    environment:\n      - DATABASE_URL=postgresql://...\n      - REDIS_URL=redis://redis:6379\n    depends_on: [postgres, redis]\n    \n  postgres:\n    image: postgres:15-alpine\n    environment:\n      POSTGRES_DB: ftth\n      POSTGRES_USER: ftth_user\n    volumes: [postgres_data:/var/lib/postgresql/data]\n    \n  redis:\n    image: redis:7-alpine\n    volumes: [redis_data:/data]\n    \n  telegram-bot:\n    build: .\n    environment:\n      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}\n    depends_on: [ftth-backend]\n    \n  prometheus:\n    image: prom/prometheus:latest\n    volumes: [./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml]\n    \n  grafana:\n    image: grafana/grafana:latest\n    environment:\n      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}\n```\n\n## Host Services Integration\n- **Apache2**: Reverse proxy (Ubuntu host)\n- **Yggdrasil**: Mesh networking (systemd)\n- **nftables**: Firewall (Ubuntu host)\n- **fail2ban**: IDS/IPS (Ubuntu host)\n\n## Networking\n```yaml\nnetworks:\n  ftth-network:\n    driver: bridge\n    ipam:\n      config:\n        - subnet: 172.20.0.0/16\n```\n\n## Volumes & Persistence\n```yaml\nvolumes:\n  postgres_data:\n  redis_data:\n  prometheus_data:\n  grafana_data:\n```"
+    },
+    {
+      "id": "ci_cd_pipeline",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔄 CI/CD Pipeline\n\n## GitHub Actions Workflow\n```yaml\n# .github/workflows/deploy.yml\nname: Deploy to Production\non:\n  push:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run tests\n        run: |\n          docker-compose -f docker-compose.test.yml up --abort-on-container-exit\n\n  build:\n    needs: test\n    runs-on: ubuntu-latest\n    steps:\n      - name: Build and push images\n        run: |\n          docker build -t ftth-backend:${{ github.sha }} .\n          docker push ftth-backend:${{ github.sha }}\n\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    steps:\n      - name: Deploy to production\n        run: |\n          ssh user@server \"cd /opt/ftth && docker-compose pull && docker-compose up -d\"\n```\n\n## Pipeline Stages\n1. **Code Quality**: Linting, type checking\n2. **Security Scan**: Dependency vulnerabilities\n3. **Unit Tests**: FastAPI test suite\n4. **Integration Tests**: Full stack testing\n5. **Build**: Multi-stage Docker images\n6. **Deploy**: Rolling updates\n7. **Monitor**: Post-deployment verification"
+    },
+    {
+      "id": "environment_management",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌍 Multi-Environment Management\n\n## Environment Configuration\n```bash\n# .env files structure\n.env.development\n.env.staging\n.env.production\n\n# Environment variables\nDATABASE_URL=postgresql://user:pass@host:5432/db\nREDIS_URL=redis://host:6379\nJWT_SECRET_KEY=your-secret-key\nGRAFANA_PASSWORD=secure-password\n```\n\n## Environment Types\n- **Development**: Local development\n- **Staging**: Pre-production testing\n- **Production**: Live system\n- **DR**: Disaster recovery\n\n## Configuration Management\n```python\n# Dynamic configuration loading\nfrom pydantic import BaseSettings\n\nclass Settings(BaseSettings):\n    database_url: str\n    redis_url: str\n    jwt_secret_key: str\n    environment: str = \"development\"\n\n    class Config:\n        env_file = f\".env.{os.getenv('ENVIRONMENT', 'development')}\"\n\nsettings = Settings()\n```\n\n## Secrets Management\n- **Docker Secrets**: Runtime secrets\n- **Environment Variables**: Configuration\n- **Vault**: Enterprise secret storage\n- **Key Rotation**: Automated rotation"
+    },
+    {
+      "id": "deployment_strategies",
+      "x": -100,
+      "y": 250,
+      "width": 350,
+      "height": 120,
+      "type": "text",
+      "text": "# 📦 Deployment Strategies\n\n## Blue-Green Deployment\n```bash\n# Blue-green deployment script\ndeploy_blue_green() {\n    # Deploy to blue environment\n    docker-compose -f docker-compose.blue.yml up -d\n    \n    # Health check\n    if health_check_blue; then\n        # Switch traffic to blue\n        switch_traffic blue\n        \n        # Shutdown green\n        docker-compose -f docker-compose.green.yml down\n    else\n        # Rollback\n        docker-compose -f docker-compose.blue.yml down\n    fi\n}\n```\n\n## Rolling Updates\n```yaml\n# docker-compose.yml with rolling updates\ndocker-compose.yml:\n  deploy:\n    replicas: 3\n    update_config:\n      parallelism: 1\n      delay: 10s\n      failure_action: rollback\n      monitor: 10s\n      max_failure_ratio: 0.3\n```\n\n## Canary Deployments\n- **Traffic Splitting**: 5% to new version\n- **Metrics Monitoring**: Error rates, performance\n- **Gradual Rollout**: Increase traffic incrementally\n- **Automatic Rollback**: On threshold breach\n\n## Backup & Recovery\n- **Database Backups**: Daily automated\n- **File Backups**: Document storage\n- **Configuration Backup**: Environment files\n- **Disaster Recovery**: Offsite replication"
+    },
+    {
+      "id": "infrastructure_monitoring",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 📊 Infrastructure Monitoring\n\n## Resource Monitoring\n```yaml\n# Docker monitoring\nversion: '3.8'\nservices:\n  cadvisor:\n    image: gcr.io/cadvisor/cadvisor:latest\n    volumes:\n      - /:/rootfs:ro\n      - /var/run:/var/run:ro\n      - /sys:/sys:ro\n      - /var/lib/docker/:/var/lib/docker:ro\n    ports:\n      - \"8080:8080\"\n```\n\n## Performance Metrics\n- **CPU Usage**: Container resource limits\n- **Memory Usage**: Heap monitoring\n- **Disk I/O**: Storage performance\n- **Network I/O**: Traffic monitoring\n- **Database Connections**: Pool monitoring\n- **Cache Hit Rates**: Redis performance\n\n## Alert Thresholds\n- **CPU > 80%**: Scale up containers\n- **Memory > 85%**: Restart containers\n- **Disk > 90%**: Cleanup old logs\n- **Error Rate > 5%**: Investigate issues\n- **Response Time > 2s**: Performance alert\n\n## Capacity Planning\n- **Auto-scaling**: Based on metrics\n- **Resource Limits**: Prevent resource exhaustion\n- **Load Testing**: Performance validation\n- **Cost Optimization**: Right-sizing resources"
+    },
+    {
+      "id": "deployment_troubleshooting",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Deployment Troubleshooting\n\n## Common Issues\n- **Container Won't Start**: Check logs, dependencies\n- **Service Unhealthy**: Health check failures\n- **Network Issues**: DNS, firewall, connectivity\n- **Database Connection**: Credentials, network\n- **Memory Issues**: Resource limits, leaks\n\n## Debugging Commands\n```bash\n# Check container status\ndocker-compose ps\n\n# View logs\ndocker-compose logs -f ftth-backend\n\n# Enter container\ndocker-compose exec ftth-backend bash\n\n# Check health\ndocker-compose exec ftth-backend curl http://localhost:6030/health\n\n# Network debugging\ndocker network ls\ndocker network inspect ftth_ftth_network\n```\n\n## Rollback Procedures\n```bash\n# Emergency rollback\ndocker-compose down\ndocker-compose pull --ignore-pull-failures\ngit checkout previous-version-tag\ndocker-compose up -d\n\n# Verify rollback\ncurl http://localhost/health\n```\n\n## Performance Tuning\n- **Database Optimization**: Query tuning, indexing\n- **Cache Configuration**: Redis optimization\n- **Container Limits**: Resource allocation\n- **Network Optimization**: Connection pooling"
+    },
+    {
+      "id": "docker_services",
+      "x": 200,
+      "y": -50,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🐳 Docker Services (6 Container) - Aggiornato\n\n## Core Services\n1. **⚡ ftth-backend**: FastAPI (porta 6030)\n   - Applicazione principale FTTH\n   - Accessibile solo da Yggdrasil\n   \n2. **📊 postgres**: Database (porta 5432)\n   - PostgreSQL con dati FTTH\n   - Backup automatici configurati\n\n## Cache & Storage\n3. **🚀 redis**: Cache (porta 6379)\n   - Sessione e caching API\n   - Persistenza configurata\n\n## Monitoring (Da Completare)\n4. **📈 prometheus**: Metrics (porta 9090)\n   - Configurazione da creare\n   - Metrics collection pending\n   \n5. **📊 grafana**: Dashboard (porta 3000)\n   - Provisioning da configurare\n   - Dashboard da creare\n\n## Nota Importante\n❌ **nginx rimosso**: Non necessario - Apache sul host gestisce tutto\n- Era ridondante con Apache\n- Rimosso per semplificare architettura\n- Reverse proxy gestito da Apache host\n\n## Container Metrics\n- **Total Images**: 5 container (nginx rimosso)\n- **Build Time**: <5 minuti\n- **Startup Time**: <30 secondi\n- **Resource Usage**: Monitorato\n- **Health Checks**: Tutti attivi"
+    }
+  ],
+  "edges": [
+    {
+      "id": "deployment_to_docker",
+      "fromNode": "deployment_overview",
+      "fromSide": "right",
+      "toNode": "docker_ecosystem",
+      "toSide": "left",
+      "label": "orchestrates with"
+    },
+    {
+      "id": "deployment_to_ci",
+      "fromNode": "deployment_overview",
+      "fromSide": "bottom",
+      "toNode": "ci_cd_pipeline",
+      "toSide": "top",
+      "label": "automates via"
+    },
+    {
+      "id": "docker_to_environments",
+      "fromNode": "docker_ecosystem",
+      "fromSide": "bottom",
+      "toNode": "environment_management",
+      "toSide": "top",
+      "label": "configures"
+    },
+    {
+      "id": "ci_to_environments",
+      "fromNode": "ci_cd_pipeline",
+      "fromSide": "bottom",
+      "toNode": "environment_management",
+      "toSide": "left",
+      "label": "deploys to"
+    },
+    {
+      "id": "environments_to_strategies",
+      "fromNode": "environment_management",
+      "fromSide": "bottom",
+      "toNode": "deployment_strategies",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "strategies_to_monitoring",
+      "fromNode": "deployment_strategies",
+      "fromSide": "right",
+      "toNode": "infrastructure_monitoring",
+      "toSide": "left",
+      "label": "monitored by"
+    },
+    {
+      "id": "monitoring_to_troubleshooting",
+      "fromNode": "infrastructure_monitoring",
+      "fromSide": "bottom",
+      "toNode": "deployment_troubleshooting",
+      "toSide": "top",
+      "label": "debugs with"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 L'API Yggdrasil permette ai PC remoti connessi alla rete Yggdrasil di aggiungere e aggiornare lavori nel database centrale del sistema FTTH.
 
-**Endpoint Base:** `http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:8600`
+**Endpoint Base:** `http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030`
 
 **Autenticazione:** Header `X-KEY: ftth_ygg_secret_2025`
 
@@ -119,7 +119,7 @@ L'API Yggdrasil permette ai PC remoti connessi alla rete Yggdrasil di aggiungere
 import requests
 
 # Configurazione
-BASE_URL = "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:8600"
+BASE_URL = "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030"
 API_KEY = "ftth_ygg_secret_2025"
 
 # Invio singolo lavoro
@@ -144,7 +144,7 @@ print(response.json())
 
 ### cURL
 ```bash
-curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:8600/ingest/work" \
+curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/ingest/work" \
   -H "Content-Type: application/json" \
   -H "X-KEY: ftth_ygg_secret_2025" \
   -d '{

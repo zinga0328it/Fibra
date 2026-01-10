@@ -72,4 +72,72 @@ def yearly_closed(db: Session = Depends(get_db)):
         out.append({"date": m, "closed": data_map.get(m, 0)})
     return out
 
-# Add more stats as needed
+@router.get("/equipment")
+def get_equipment_stats(db: Session = Depends(get_db)):
+    """Get ONT and Modem statistics"""
+    from app.models.models import ONT, Modem
+    
+    ont_stats = {
+        "total": db.query(func.count(ONT.id)).scalar(),
+        "available": db.query(func.count(ONT.id)).filter(ONT.status == "available").scalar(),
+        "assigned": db.query(func.count(ONT.id)).filter(ONT.status == "assigned").scalar(),
+        "installed": db.query(func.count(ONT.id)).filter(ONT.status == "installed").scalar(),
+        "faulty": db.query(func.count(ONT.id)).filter(ONT.status == "faulty").scalar()
+    }
+    
+    modem_stats = {
+        "total": db.query(func.count(Modem.id)).scalar(),
+        "available": db.query(func.count(Modem.id)).filter(Modem.status == "available").scalar(),
+        "assigned": db.query(func.count(Modem.id)).filter(Modem.status == "assigned").scalar(),
+        "configured": db.query(func.count(Modem.id)).filter(Modem.status == "configured").scalar(),
+        "installed": db.query(func.count(Modem.id)).filter(Modem.status == "installed").scalar()
+    }
+    
+    # Monthly installations
+    now = datetime.now()
+    start = (now.replace(day=1) - timedelta(days=365)).replace(day=1)
+    
+    month_format = None
+    if engine.dialect.name == 'sqlite':
+        month_format = func.strftime('%Y-%m', ONT.installed_at)
+    else:
+        month_format = func.to_char(ONT.installed_at, 'YYYY-MM')
+    
+    ont_installations = db.query(month_format.label('month'), func.count(ONT.id).label('installed')).filter(ONT.installed_at != None, ONT.installed_at >= start).group_by('month').all()
+    ont_install_map = {r[0]: r[1] for r in ont_installations}
+    
+    if engine.dialect.name == 'sqlite':
+        month_format = func.strftime('%Y-%m', Modem.installed_at)
+    else:
+        month_format = func.to_char(Modem.installed_at, 'YYYY-MM')
+    
+    modem_installations = db.query(month_format.label('month'), func.count(Modem.id).label('installed')).filter(Modem.installed_at != None, Modem.installed_at >= start).group_by('month').all()
+    modem_install_map = {r[0]: r[1] for r in modem_installations}
+    
+    return {
+        "ont": ont_stats,
+        "modem": modem_stats,
+        "monthly_ont_installations": ont_install_map,
+        "monthly_modem_installations": modem_install_map
+    }
+
+@router.get("/installations")
+def get_installation_stats(db: Session = Depends(get_db)):
+    """Get installation statistics with sync information"""
+    from app.models.models import ONTModemSync
+    
+    total_syncs = db.query(func.count(ONTModemSync.id)).scalar()
+    completed_syncs = db.query(func.count(ONTModemSync.id)).filter(ONTModemSync.sync_status == "completed").scalar()
+    failed_syncs = db.query(func.count(ONTModemSync.id)).filter(ONTModemSync.sync_status == "failed").scalar()
+    
+    # Sync methods distribution
+    sync_methods = db.query(ONTModemSync.sync_method, func.count(ONTModemSync.id)).group_by(ONTModemSync.sync_method).all()
+    sync_method_stats = {method: count for method, count in sync_methods}
+    
+    return {
+        "total_syncs": total_syncs,
+        "completed_syncs": completed_syncs,
+        "failed_syncs": failed_syncs,
+        "success_rate": (completed_syncs / total_syncs * 100) if total_syncs > 0 else 0,
+        "sync_methods": sync_method_stats
+    }

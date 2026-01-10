@@ -311,6 +311,17 @@
                         👤 ${work.nome_cliente || 'Cliente non specificato'}<br>
                         🏢 ${work.operatore || 'N/A'} | 🔧 ${work.tipo_lavoro || 'N/A'}
                     </div>
+                    
+                    <!-- Equipment Information -->
+                    ${(work.requires_ont || work.requires_modem) ? `
+                    <div class="work-equipment mt-2 mb-2 p-2 bg-light rounded">
+                        <small><strong>📦 Equipaggiamento:</strong></small><br>
+                        ${work.requires_ont ? `<small>📡 ONT: ${work.ont ? `SN:${work.ont.serial_number} (${work.ont.status})` : 'Da assegnare'}</small><br>` : ''}
+                        ${work.requires_modem ? `<small>📶 Modem: ${work.modem ? `SN:${work.modem.serial_number} (${work.modem.status})` : 'Da assegnare'}</small><br>` : ''}
+                        ${(work.ont_cost > 0 || work.modem_cost > 0) ? `<small>💰 Costi: ${work.ont_cost > 0 ? `ONT €${work.ont_cost}` : ''} ${work.modem_cost > 0 ? `Modem €${work.modem_cost}` : ''}</small>` : ''}
+                    </div>
+                    ` : ''}
+                    
                     ${techInfo}
                     <hr>
                     ${actionButtons}

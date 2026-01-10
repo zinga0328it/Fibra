@@ -7,102 +7,119 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 📊 Monitoring & Logs Module\n\n**System Observability**\n\n- **Logs**: Centralized logging\n- **Metrics**: Performance monitoring\n- **Alerts**: Automatic notifications\n- **Health Checks**: System status\n- **Analytics**: Usage statistics\n\n**Status**: ✅ Full Observability"
+      "text": "# 📊 Monitoring & Observability\n\n**Enterprise Monitoring Stack**\n\n- **Metrics**: Prometheus time-series DB\n- **Visualization**: Grafana dashboards\n- **Logs**: Centralized JSON logging\n- **Health Checks**: All services monitored\n- **Alerts**: Automated notifications\n\n**Status**: ✅ Full Enterprise Observability"
     },
     {
-      "id": "logging_system",
+      "id": "prometheus_config",
       "x": 50,
       "y": -200,
-      "width": 300,
+      "width": 350,
       "height": 180,
       "type": "text",
-      "text": "# 📝 Logging System\n\n## Log Files Structure\n```bash\nlogs/\n├── ftth.log          # Application logs\n├── telegram_bot.log  # Bot communications\n├── backup.log        # Backup operations\n└── security.log      # Security events\n```\n\n## Log Levels\n- **DEBUG**: Detailed debugging\n- **INFO**: General information\n- **WARNING**: Warning conditions\n- **ERROR**: Error conditions\n- **CRITICAL**: Critical errors\n\n## Rotation\n- Max size: 10MB\n- Backup count: 5\n- Automatic compression"
+      "text": "# 📈 Prometheus Configuration\n\n## Docker Setup\n```yaml\nprometheus:\n  image: prom/prometheus:latest\n  ports: \"9090:9090\"\n  volumes:\n    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro\n    - prometheus_data:/prometheus\n  command:\n    - '--config.file=/etc/prometheus/prometheus.yml'\n    - '--storage.tsdb.path=/prometheus'\n    - '--web.enable-lifecycle'\n```\n\n## Targets Configuration\n```yaml\n# /monitoring/prometheus.yml\nglobal:\n  scrape_interval: 15s\n\nscrape_configs:\n  - job_name: 'ftth-backend'\n    static_configs:\n      - targets: ['ftth-backend:6030']\n  - job_name: 'postgres'\n    static_configs:\n      - targets: ['postgres:5432']\n  - job_name: 'redis'\n    static_configs:\n      - targets: ['redis:6379']\n```"
     },
     {
-      "id": "systemd_monitoring",
+      "id": "grafana_config",
       "x": -300,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# ⚙️ Systemd Monitoring\n\n## Service Status\n```bash\n# Check all services\nsudo systemctl status ftth postgresql apache2 yggdrasil\n\n# View service logs\nsudo journalctl -u ftth -f\n\n# Follow all logs\nsudo journalctl -f\n```\n\n## Automatic Restart\n- On failure: `Restart=always`\n- Restart limit: 5 per 10min\n- Backoff delay: exponential\n\n## Health Checks\n- Startup probe\n- Liveness probe\n- Readiness probe"
+      "text": "# 📊 Grafana Dashboards\n\n## Docker Setup\n```yaml\ngrafana:\n  image: grafana/grafana:latest\n  environment:\n    GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}\n  ports: \"3000:3000\"\n  volumes:\n    - grafana_data:/var/lib/grafana\n    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro\n    - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro\n```\n\n## Pre-configured Dashboards\n- **FTTH Overview**: System metrics\n- **API Performance**: Response times, error rates\n- **Database Health**: Connections, queries\n- **Business KPIs**: WR completion rates\n\n## Data Sources\n- **Prometheus**: Metrics backend\n- **PostgreSQL**: Business data\n- **Loki**: Log aggregation (future)"
     },
     {
-      "id": "performance_metrics",
+      "id": "logging_system",
       "x": 50,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 📈 Performance Metrics\n\n## Application Metrics\n- **Response Time**: API latency\n- **Throughput**: Requests/second\n- **Error Rate**: Failed requests\n- **Active Connections**: Concurrent users\n\n## System Metrics\n- **CPU Usage**: Core utilization\n- **Memory Usage**: RAM consumption\n- **Disk I/O**: Storage performance\n- **Network I/O**: Bandwidth usage\n\n## Business Metrics\n- **WR Processed**: Daily throughput\n- **Technician Performance**: Completion rates\n- **SLA Compliance**: On-time delivery"
+      "text": "# 📝 Advanced Logging System\n\n## JSON Structured Logs\n```json\n{\n  \"timestamp\": \"2025-01-05T10:30:00Z\",\n  \"level\": \"INFO\",\n  \"service\": \"ftth-backend\",\n  \"message\": \"WR created\",\n  \"wr_id\": 123,\n  \"user\": \"technician_001\"\n}\n```\n\n## Log Files Structure\n```bash\nlogs/\n├── ftth.log          # Application logs\n├── telegram_bot.log  # Bot communications\n├── backup.log        # Backup operations\n└── security.log      # Security events\n```\n\n## Log Rotation\n- **Max size**: 10MB per file\n- **Retention**: 5 backup files\n- **Compression**: Automatic gzip\n- **Syslog**: System integration"
     },
     {
       "id": "alert_system",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 🚨 Alert System\n\n## Alert Types\n- **Service Down**: Systemd failures\n- **High Error Rate**: >5% errors\n- **Performance Issues**: Slow responses\n- **Security Events**: Failed auth attempts\n- **Storage Issues**: Low disk space\n\n## Notification Channels\n- **Telegram Bot**: Instant alerts\n- **Email**: Daily reports\n- **Logs**: Persistent records\n\n## Escalation\n1. **Warning**: Log + Telegram\n2. **Critical**: Email + Telegram\n3. **Emergency**: Phone call (future)"
+      "text": "# 🚨 Alert Management\n\n## Prometheus Alert Rules\n```yaml\n# /monitoring/prometheus/alert_rules.yml\ngroups:\n  - name: ftth_alerts\n    rules:\n      - alert: HighErrorRate\n        expr: rate(http_requests_total{status=~\"5..\"}[5m]) > 0.1\n        for: 5m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"High error rate detected\"\n```\n\n## Alert Channels\n- **Email**: Critical alerts\n- **Telegram Bot**: All notifications\n- **PagerDuty**: Emergency escalation\n- **Slack**: Team notifications\n\n## Alert Types\n- **Service Down**: Container failures\n- **High Error Rate**: >5% errors\n- **Performance Issues**: Slow responses\n- **Security Events**: Failed authentications"
     },
     {
-      "id": "troubleshooting_monitoring",
+      "id": "health_checks",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Log Analysis\n- **Search patterns**\n- **Time-based filtering**\n- **Error correlation**\n\n## Performance Issues\n- **Identify bottlenecks**\n- **Resource monitoring**\n- **Optimization**\n\n## Quick Commands\n```bash\n# View recent logs\ntail -f logs/ftth.log\n\n# Search errors\ngrep ERROR logs/*.log\n\n# System resources\ntop -p $(pgrep -f ftth)\n\n# Check services\nsudo systemctl --failed\n```"
+      "text": "# 🏥 Health Check System\n\n## Container Health Checks\n```yaml\n# All services have health checks\nhealthcheck:\n  test: [\"CMD\", \"curl\", \"-f\", \"http://localhost/health\"]\n  interval: 30s\n  timeout: 10s\n  retries: 3\n  start_period: 40s\n```\n\n## Application Endpoints\n- **`/health`**: Basic health check\n- **`/health/detailed`**: Comprehensive check\n- **`/metrics`**: Prometheus metrics\n- **`/status`**: System status\n\n## Dependencies Check\n- **Database**: Connection test\n- **Redis**: Ping test\n- **Yggdrasil**: Network connectivity\n- **External APIs**: GPT, Telegram"
+    },
+    {
+      "id": "troubleshooting_monitoring",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Prometheus Issues\n- **No metrics**: Check target configuration\n- **Data gaps**: Verify service health\n- **Storage full**: Clean old data\n\n## Grafana Issues\n- **No dashboards**: Check provisioning\n- **Auth failed**: Verify admin password\n- **Data source down**: Check Prometheus\n\n## Logging Issues\n- **Logs not written**: Check permissions\n- **Rotation failed**: Verify disk space\n- **Format errors**: Check JSON structure\n\n## Quick Commands\n```bash\n# Check Prometheus\ntargets: http://localhost:9090/targets\n\n# Grafana access\nhttp://localhost:3000 (admin/admin)\n\n# View logs\ntail -f logs/ftth.log\n\n# Health status\ncurl http://localhost:6030/health\n```"
     }
   ],
   "edges": [
     {
-      "id": "monitoring_to_logging",
+      "id": "monitoring_to_prometheus",
       "fromNode": "monitoring_overview",
       "fromSide": "right",
-      "toNode": "logging_system",
+      "toNode": "prometheus_config",
       "toSide": "left",
-      "label": "includes"
+      "label": "collects via"
     },
     {
-      "id": "monitoring_to_systemd",
+      "id": "monitoring_to_grafana",
       "fromNode": "monitoring_overview",
       "fromSide": "bottom",
-      "toNode": "systemd_monitoring",
+      "toNode": "grafana_config",
       "toSide": "top",
-      "label": "monitors"
+      "label": "visualizes with"
     },
     {
-      "id": "logging_to_performance",
-      "fromNode": "logging_system",
+      "id": "prometheus_to_logging",
+      "fromNode": "prometheus_config",
       "fromSide": "bottom",
-      "toNode": "performance_metrics",
+      "toNode": "logging_system",
       "toSide": "top",
-      "label": "feeds"
+      "label": "enriches"
     },
     {
-      "id": "systemd_to_alerts",
-      "fromNode": "systemd_monitoring",
+      "id": "grafana_to_alerts",
+      "fromNode": "grafana_config",
       "fromSide": "bottom",
       "toNode": "alert_system",
       "toSide": "left",
       "label": "triggers"
     },
     {
-      "id": "performance_to_alerts",
-      "fromNode": "performance_metrics",
+      "id": "logging_to_alerts",
+      "fromNode": "logging_system",
       "fromSide": "bottom",
       "toNode": "alert_system",
       "toSide": "right",
-      "label": "generates"
+      "label": "feeds"
     },
     {
-      "id": "alerts_to_troubleshooting",
+      "id": "alerts_to_health",
       "fromNode": "alert_system",
       "fromSide": "right",
-      "toNode": "troubleshooting_monitoring",
+      "toNode": "health_checks",
       "toSide": "left",
-      "label": "aids"
+      "label": "monitors"
+    },
+    {
+      "id": "health_to_troubleshooting",
+      "fromNode": "health_checks",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting_monitoring",
+      "toSide": "top",
+      "label": "debug with"
     }
   ]
 }

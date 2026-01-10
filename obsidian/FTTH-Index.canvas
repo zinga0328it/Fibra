@@ -7,7 +7,7 @@
       "width": 300,
       "height": 200,
       "type": "text",
-      "text": "# 🏗️ FTTH Management System Architecture\n\n**Sistema di Gestione FTTH Enterprise**\n\n- ✅ Backend FastAPI isolato su Yggdrasil\n- ✅ Frontend Apache con SSL pubblico\n- ✅ Database PostgreSQL/SQLite\n- ✅ Sicurezza Zero-Trust\n- ✅ Telegram Bot integrato\n\n**Stato**: Production Ready"
+      "text": "# 🏗️ FTTH Management System Architecture\n\n**Sistema Gestionale FTTH Enterprise Completo**\n\n- ✅ **Backend FastAPI**: 11 moduli API (works, technicians, teams, stats, auth, telegram, documents, health, manual, debug)\n- ✅ **Database Complesso**: 7 modelli (Work, Technician, Team, WorkEvent, Document, User, DocumentAppliedWork)\n- ✅ **Architettura Containerizzata**: 7 servizi Docker (backend, postgres, redis, nginx, telegram-bot, prometheus, grafana)\n- ✅ **Sicurezza Zero-Trust**: Yggdrasil IPv6 + API separata dedicata\n- ✅ **Integrazioni Avanzate**: Telegram Bot, OCR, GPT-4, WebSocket\n\n**Status**: Production Ready & Enterprise-Grade"
     },
     {
       "id": "core_components",
@@ -16,7 +16,7 @@
       "width": 250,
       "height": 180,
       "type": "text",
-      "text": "# 🔧 Core Components\n\n## Backend Layer\n- **FastAPI** (Porta 6030)\n- **Yggdrasil IPv6**: 200:421e:...\n- **Database**: PostgreSQL/SQLite\n\n## Frontend Layer\n- **Apache2** con SSL\n- **Domain**: servicess.net\n\n## Security Layer\n- **nftables** firewall\n- **Yggdrasil-only** access"
+      "text": "# 🔧 Core Components\n\n## Backend Layer (FastAPI)\n- **11 Route Modules**: works, technicians, teams, stats, auth, telegram, documents, health, manual, debug\n- **Database ORM**: SQLAlchemy con PostgreSQL\n- **Security**: JWT + API Keys + CORS\n\n## Container Ecosystem\n- **7 Docker Services**: backend, postgres, redis, nginx, telegram-bot, prometheus, grafana\n- **Networks**: ftth-network bridge\n- **Volumes**: Persistent data storage\n\n## Advanced Features\n- **OCR Integration**: pytesseract + pdfplumber\n- **GPT-4 Integration**: AI-powered automation\n- **WebSocket Support**: Real-time updates"
     },
     {
       "id": "workflow_daily",
@@ -25,7 +25,7 @@
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🔄 Daily Workflow\n\n## Morning Check\n1. **System Status**\n2. **Log Review**\n3. **Backup Verify**\n\n## Operations\n- Monitor WR processing\n- Check technician updates\n- Review analytics\n\n## Maintenance\n- Update SSL certs\n- Clean old logs"
+      "text": "# 🔄 Daily Workflow\n\n## Morning Check\n1. **Container Status**: `docker-compose ps`\n2. **API Health**: `/health` endpoint\n3. **Database**: PostgreSQL connectivity\n4. **Yggdrasil**: Network status\n\n## Operations\n- Monitor WR processing via Telegram\n- Check OCR document parsing\n- Review GPT automation logs\n- Validate real-time sync\n\n## Maintenance\n- Update SSL certificates\n- Clean Docker logs\n- Backup PostgreSQL data"
     },
     {
       "id": "troubleshooting",
@@ -34,7 +34,7 @@
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- 🔴 Backend not responding\n- 🔴 Yggdrasil connection\n- 🔴 Database errors\n- 🔴 Telegram bot issues\n\n## Quick Fixes\n- Check systemd status\n- Verify Yggdrasil IP\n- Test database connection\n- Restart services"
+      "text": "# 🆘 Troubleshooting\n\n## Container Issues\n- 🔴 Docker services down\n- 🔴 Network connectivity\n- 🔴 Volume permissions\n- 🔴 Health checks failing\n\n## API Issues\n- 🔴 FastAPI routes not responding\n- 🔴 Database connection errors\n- 🔴 Authentication failures\n- 🔴 OCR/GPT integration problems\n\n## Integration Issues\n- 🔴 Telegram bot not responding\n- 🔴 Yggdrasil API unreachable\n- 🔴 WebSocket connections failing"
     },
     {
       "id": "module_canvas_links",
@@ -43,7 +43,7 @@
       "width": 400,
       "height": 200,
       "type": "text",
-      "text": "# 📚 Module Canvas\n\n## Core Modules\n- [[FTTH-Backend-Module.canvas|Backend FastAPI]]\n- [[FTTH-Yggdrasil-Module.canvas|Yggdrasil Network]]\n- [[FTTH-Apache-Module.canvas|Apache Frontend]]\n- [[FTTH-Database-Module.canvas|Database Layer]]\n\n## Integration Modules\n- [[FTTH-Telegram-Module.canvas|Telegram Bot]]\n- [[FTTH-Security-Module.canvas|Security & Firewall]]\n- [[FTTH-Monitoring-Module.canvas|Monitoring & Logs]]"
+      "text": "# 📚 Module Canvas\n\n## Core Modules\n- [[FTTH-Backend-Module.canvas|Backend FastAPI (11 routes)]]\n- [[FTTH-Yggdrasil-Module.canvas|Yggdrasil Network & API]]\n- [[FTTH-Apache-Module.canvas|Apache Reverse Proxy]]\n- [[FTTH-Database-Module.canvas|PostgreSQL + Redis]]\n- [[FTTH-Telegram-Module.canvas|Telegram Bot Integration]]\n- [[FTTH-Security-Module.canvas|Zero-Trust Security]]\n- [[FTTH-Monitoring-Module.canvas|Prometheus + Grafana]]\n\n## Advanced Features\n- [[FTTH-AI-OCR-Module.canvas|AI & OCR Processing]]\n- [[FTTH-WebSocket-Module.canvas|WebSocket Real-Time]]\n- [[FTTH-Utils-Modules.canvas|Utils & Helper Functions]]\n\n## New Discoveries\n- **OCR Processing**: pytesseract integration\n- **GPT-4 Automation**: AI-powered workflow\n- **WebSocket Real-time**: Live updates\n- **Utils Collection**: 6 utility modules\n- **Enterprise Security**: Multi-layer protection"
     },
     {
       "id": "installation_flow",
@@ -52,7 +52,7 @@
       "width": 180,
       "height": 120,
       "type": "text",
-      "text": "# 📦 Installation Flow\n\n## Phase 1: Infrastructure\n1. **System Setup**\n2. **Yggdrasil Install**\n3. **Database Config**\n\n## Phase 2: Application\n4. **Backend Deploy**\n5. **Frontend Setup**\n6. **Security Config**\n\n## Phase 3: Testing\n7. **Integration Test**\n8. **Production Go-live**"
+      "text": "# 📦 Installation Flow\n\n## Phase 1: Infrastructure\n1. **Yggdrasil Setup**\n2. **Docker Environment**\n3. **SSL Certificates**\n\n## Phase 2: Core Services\n4. **PostgreSQL + Redis**\n5. **FastAPI Backend**\n6. **Nginx Reverse Proxy**\n\n## Phase 3: Integration\n7. **Telegram Bot**\n8. **Monitoring Stack**\n9. **Yggdrasil API**"
     },
     {
       "id": "network_topology",
@@ -61,7 +61,25 @@
       "width": 250,
       "height": 180,
       "type": "text",
-      "text": "# 🌐 Network Topology\n\n## Public Internet\n```\nHTTPS (443) → Apache SSL\n↓\nStatic Frontend Only\n```\n\n## Yggdrasil Mesh VPN\n```\nIPv6: 200:421e:...:6030\n↓\nFastAPI Backend (Isolated)\n↓\nDatabase & Telegram Bot\n```\n\n## Security Zones\n- **Red**: Public Internet\n- **Green**: Yggdrasil VPN\n- **Blue**: Local Services"
+      "text": "# 🌐 Network Topology\n\n## Docker Network (172.20.0.0/16)\n```\nNginx (80/443) → FastAPI (6030)\n    ↓              ↓\nPostgreSQL       Redis\n    ↓              ↓\nPrometheus → Grafana (3000)\n    ↓\nTelegram Bot\n```\n\n## Yggdrasil Overlay Network\n```\nIPv6 Mesh: 200:421e:...\n↓\nDedicated Yggdrasil API (6040)\n↓\nSecure Backend Communication\n```\n\n## Security Zones\n- **🔴 Public**: Nginx SSL termination\n- **🟢 Container**: Docker bridge network\n- **🔵 Yggdrasil**: Private IPv6 mesh"
+    },
+    {
+      "id": "new_features_discovered",
+      "x": 400,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# ✨ New Features Discovered\n\n## Advanced Integrations\n- **OCR Processing**: Document parsing\n- **GPT-4 Automation**: AI assistance\n- **WebSocket Real-time**: Live updates\n- **PDF Processing**: pdfplumber\n\n## Enterprise Features\n- **Health Checks**: All services\n- **Metrics Collection**: Prometheus\n- **Visualization**: Grafana dashboards\n- **Automated Backups**: PostgreSQL\n\n## Security Enhancements\n- **API Key Rotation**\n- **JWT Authentication**\n- **CORS Configuration**\n- **Request Validation**"
+    },
+    {
+      "id": "development_workflow",
+      "x": -600,
+      "y": 300,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 💻 Development Workflow\n\n## Workflow Sviluppatore\n**Scriviamo codice Python → Testiamo su PC alex via Yggdrasil**\n\n### 1. Sviluppo Backend\n- **Scrivi API FastAPI**: Modifica file `.py` nelle routes\n- **Test locale**: `uvicorn main:app --reload` (porta 8000)\n- **Deploy container**: `docker-compose restart ftth-backend`\n\n### 2. Testing Frontend\n- **Pagine HTML statiche**: Cartella `web/publica/`\n- **Servite da Apache**: Accessibili su HTTPS\n- **API calls dinamici**: JavaScript con `fetch()`\n- **Configurazione automatica**: `API_BASE` punta a porta 6030\n\n### 3. Accesso da PC alex\n- **VPN Yggdrasil**: Connessione sicura IPv6\n- **IP autorizzato**: Solo `201:27c:546:5df7:176:95f3:c909:6834`\n- **Accesso diretto**: Alle porte 6030 (main API) e 6040 (Ygg API)\n- **Testing real-time**: Modifiche immediate visibili\n\n### 4. Debug & Troubleshooting\n- **Logs container**: `docker-compose logs ftth-backend`\n- **Network testing**: `curl` da PC alex\n- **Database check**: Query diretta PostgreSQL\n- **API documentation**: `/docs` endpoint\n\n## File di Test\n- **index.html**: Dashboard principale con statistiche\n- **gestionale.html**: Interfaccia gestionale completa\n- **manual_entry.html**: Inserimento manuale WR\n- **dashboard.html**: Dashboard tecnici\n- **db_viewer.html**: Visualizzatore database"
     }
   ],
   "edges": [
@@ -80,6 +98,14 @@
       "toNode": "network_topology",
       "toSide": "left",
       "label": "secured by"
+    },
+    {
+      "id": "arch_to_new_features",
+      "fromNode": "architecture_overview",
+      "fromSide": "right",
+      "toNode": "new_features_discovered",
+      "toSide": "left",
+      "label": "enhanced with"
     },
     {
       "id": "workflow_to_troubleshooting",
@@ -112,6 +138,22 @@
       "toNode": "module_canvas_links",
       "toSide": "right",
       "label": "solved in"
+    },
+    {
+      "id": "network_to_troubleshooting",
+      "fromNode": "network_topology",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting",
+      "toSide": "top",
+      "label": "affects"
+    },
+    {
+      "id": "workflow_to_development",
+      "fromNode": "workflow_daily",
+      "fromSide": "right",
+      "toNode": "development_workflow",
+      "toSide": "left",
+      "label": "includes"
     }
   ]
 }

@@ -58,6 +58,10 @@ class WorkCreate(BaseModel):
     tipo_lavoro: str = Field(default="attivazione")
     note: Optional[str] = None
     extra_fields: Optional[Dict] = Field(default_factory=dict)
+    
+    # Equipment requirements
+    requires_modem: Optional[bool] = False
+    requires_ont: Optional[bool] = False
 
     @field_validator('numero_wr')
     @classmethod
@@ -111,6 +115,12 @@ class WorkUpdate(BaseModel):
     stato: Optional[str] = None
     note: Optional[str] = None
     tecnico_assegnato_id: Optional[int] = None
+    
+    # Equipment requirements and delivery status
+    requires_modem: Optional[bool] = None
+    requires_ont: Optional[bool] = None
+    modem_delivered: Optional[bool] = None
+    ont_delivered: Optional[bool] = None
 
     @field_validator('stato')
     @classmethod

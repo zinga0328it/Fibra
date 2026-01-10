@@ -1,0 +1,142 @@
+{
+  "nodes": [
+    {
+      "id": "backup_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 💾 Enterprise Backup & Recovery\n\n**Comprehensive Data Protection**\n\n- **Automated Backups**: Scheduled database dumps\n- **File Backups**: Document and media storage\n- **Multi-Location**: On-site + off-site storage\n- **Encryption**: Secure backup transmission\n- **Testing**: Regular recovery validation\n- **Monitoring**: Backup status and alerts\n\n**Status**: ✅ Production Backup System"
+    },
+    {
+      "id": "database_backup",
+      "x": 50,
+      "y": -200,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 🗄️ Database Backup Strategy\n\n## Automated PostgreSQL Backups\n```bash\n#!/bin/bash\n# backup_postgres.sh\n\nBACKUP_DIR=\"/backups/postgres\"\nTIMESTAMP=$(date +\"%Y%m%d_%H%M%S\")\nBACKUP_FILE=\"$BACKUP_DIR/ftth_backup_$TIMESTAMP.sql\"\n\n# Create backup directory if it doesn't exist\nmkdir -p $BACKUP_DIR\n\n# Perform backup with pg_dump\ndocker-compose exec -T postgres pg_dump \\\n  -U $POSTGRES_USER \\\n  -h localhost \\\n  --no-password \\\n  --format=custom \\\n  --compress=9 \\\n  --verbose \\\n  $POSTGRES_DB \\\n  > $BACKUP_FILE\n\n# Verify backup integrity\nif [ $? -eq 0 ]; then\n    echo \"✅ Backup completed successfully: $BACKUP_FILE\"\n    \n    # Encrypt backup\n    gpg --encrypt --recipient backup-key $BACKUP_FILE\n    rm $BACKUP_FILE\n    \n    # Upload to remote storage\n    rclone copy $BACKUP_FILE.gpg remote:backups/postgres/\n    \n    # Cleanup old backups (keep last 30 days)\n    find $BACKUP_DIR -name \"*.gpg\" -mtime +30 -delete\n    \nelse\n    echo \"❌ Backup failed!\"\n    exit 1\nfi\n```\n\n## Backup Schedule\n```yaml\n# Cron schedule in docker-compose\nbackup-service:\n  image: postgres:15-alpine\n  volumes:\n    - postgres_data:/var/lib/postgresql/data:ro\n    - backups:/backups\n  command: >\n    sh -c \"\n    echo '0 2 * * * /usr/local/bin/backup_postgres.sh' > /etc/crontabs/root &&\n    crond -f\n    \"\n  environment:\n    - POSTGRES_USER=${POSTGRES_USER}\n    - POSTGRES_DB=${POSTGRES_DB}\n```\n\n## Backup Types\n- **Full Backups**: Complete database dump (daily)\n- **Incremental**: WAL archiving (hourly)\n- **Point-in-Time Recovery**: Continuous archiving\n- **Schema-Only**: Structure backup (weekly)\n\n## Retention Policy\n- **Daily**: 30 days retention\n- **Weekly**: 12 weeks retention\n- **Monthly**: 12 months retention\n- **Yearly**: Indefinite retention"
+    },
+    {
+      "id": "file_backup",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 📁 File & Document Backup\n\n## Document Storage Backup\n```bash\n#!/bin/bash\n# backup_files.sh\n\nSOURCE_DIR=\"/app/uploads\"\nBACKUP_DIR=\"/backups/files\"\nTIMESTAMP=$(date +\"%Y%m%d_%H%M%S\")\n\n# Create incremental backup using rsync\nrsync -av --delete \\\n  --link-dest=$BACKUP_DIR/latest \\\n  $SOURCE_DIR \\\n  $BACKUP_DIR/backup_$TIMESTAMP\n\n# Update latest symlink\nrm -f $BACKUP_DIR/latest\nln -s backup_$TIMESTAMP $BACKUP_DIR/latest\n\n# Compress and encrypt\ntar -czf $BACKUP_DIR/backup_$TIMESTAMP.tar.gz \\\n  -C $BACKUP_DIR backup_$TIMESTAMP\n\n# Encrypt with GPG\ngpg --encrypt --recipient backup-key \\\n  $BACKUP_DIR/backup_$TIMESTAMP.tar.gz\n\n# Upload to cloud storage\nrclone copy $BACKUP_DIR/backup_$TIMESTAMP.tar.gz.gpg \\\n  remote:backups/files/\n\n# Cleanup (keep last 30 backups)\nls -t $BACKUP_DIR/backup_*.tar.gz.gpg | tail -n +31 | xargs rm -f\n```\n\n## Media & Logs Backup\n```yaml\n# Docker service for file backups\nfile-backup:\n  image: alpine:latest\n  volumes:\n    - uploads:/app/uploads:ro\n    - logs:/app/logs:ro\n    - backups:/backups\n  command: >\n    sh -c \"\n    apk add --no-cache rsync gpg rclone &&\n    echo '0 3 * * * /usr/local/bin/backup_files.sh' > /etc/crontabs/root &&\n    crond -f\n    \"\n```\n\n## File Backup Features\n- **Incremental Backups**: Only changed files\n- **Compression**: gzip compression\n- **Encryption**: GPG encryption at rest\n- **Deduplication**: Hard links for unchanged files\n- **Integrity Checks**: MD5/SHA256 verification"
+    },
+    {
+      "id": "disaster_recovery",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🚨 Disaster Recovery Plan\n\n## Recovery Procedures\n```bash\n#!/bin/bash\n# disaster_recovery.sh\n\n# 1. Stop all services\ndocker-compose down\n\n# 2. Restore database from backup\nLATEST_BACKUP=$(ls -t /backups/postgres/*.gpg | head -1)\n\ngpg --decrypt $LATEST_BACKUP > /tmp/latest_backup.sql\n\ndocker-compose exec -T postgres psql \\\n  -U $POSTGRES_USER \\\n  -h localhost \\\n  --no-password \\\n  $POSTGRES_DB \\\n  < /tmp/latest_backup.sql\n\n# 3. Restore files\nLATEST_FILE_BACKUP=$(ls -t /backups/files/*.gpg | head -1)\n\ngpg --decrypt $LATEST_FILE_BACKUP > /tmp/files_backup.tar.gz\ngunzip /tmp/files_backup.tar.gz\ntar -xf /tmp/files_backup.tar -C /app/uploads\n\n# 4. Start services\ndocker-compose up -d\n\n# 5. Verify recovery\ncurl -f http://localhost:6030/health\nif [ $? -eq 0 ]; then\n    echo \"✅ Recovery successful\"\nelse\n    echo \"❌ Recovery verification failed\"\nfi\n```\n\n## Recovery Time Objectives\n- **RTO (Recovery Time Objective)**: 4 hours\n- **RPO (Recovery Point Objective)**: 1 hour\n- **Data Loss Tolerance**: Maximum 1 hour of data\n- **Service Restoration**: Critical services first\n\n## Recovery Scenarios\n- **Complete System Failure**: Full restore from backups\n- **Database Corruption**: Point-in-time recovery\n- **File System Issues**: File restore + DB integrity check\n- **Network Issues**: Failover to backup site\n- **Cyber Attack**: Clean restore + security audit"
+    },
+    {
+      "id": "backup_monitoring",
+      "x": -100,
+      "y": 250,
+      "width": 350,
+      "height": 120,
+      "type": "text",
+      "text": "# 📊 Backup Monitoring & Alerts\n\n## Backup Health Checks\n```python\n# backup_monitor.py\nimport asyncio\nfrom datetime import datetime, timedelta\n\nclass BackupMonitor:\n    def __init__(self):\n        self.redis = redis.Redis.from_url(settings.redis_url)\n        self.alert_thresholds = {\n            'max_age_hours': 25,  # Alert if backup older than 25h\n            'min_size_mb': 100,   # Alert if backup too small\n            'success_rate': 0.95  # Alert if success rate < 95%\n        }\n    \n    async def check_backup_health(self):\n        \"\"\"Comprehensive backup health check\"\"\"\n        issues = []\n        \n        # Check latest backup age\n        latest_backup = await self.get_latest_backup_info()\n        if latest_backup:\n            age_hours = (datetime.now() - latest_backup['timestamp']).total_seconds() / 3600\n            if age_hours > self.alert_thresholds['max_age_hours']:\n                issues.append(f\"Latest backup is {age_hours:.1f} hours old\")\n            \n            # Check backup size\n            if latest_backup['size_mb'] < self.alert_thresholds['min_size_mb']:\n                issues.append(f\"Backup size too small: {latest_backup['size_mb']}MB\")\n        else:\n            issues.append(\"No recent backups found\")\n        \n        # Check success rate (last 30 days)\n        success_rate = await self.calculate_success_rate()\n        if success_rate < self.alert_thresholds['success_rate']:\n            issues.append(f\"Backup success rate: {success_rate:.1%}\")\n        \n        # Check storage space\n        storage_info = await self.check_storage_space()\n        if storage_info['usage_percent'] > 90:\n            issues.append(f\"Backup storage {storage_info['usage_percent']:.1f}% full\")\n        \n        if issues:\n            await self.send_alert(\"Backup Health Issues\", \"\\n\".join(issues))\n        \n        return len(issues) == 0\n    \n    async def send_alert(self, title: str, message: str):\n        \"\"\"Send alert through multiple channels\"\"\"\n        # Telegram alert\n        await telegram_bot.send_system_alert(\"BACKUP\", f\"{title}: {message}\")\n        \n        # Email alert (if configured)\n        if settings.email_alerts_enabled:\n            await send_email_alert(title, message)\n        \n        # Log to monitoring system\n        logger.warning(f\"Backup Alert: {title} - {message}\")\n\n# Scheduled monitoring\nasync def backup_monitoring_worker():\n    \"\"\"Run backup health checks every 4 hours\"\"\"\n    monitor = BackupMonitor()\n    while True:\n        try:\n            await monitor.check_backup_health()\n        except Exception as e:\n            logger.error(f\"Backup monitoring error: {e}\")\n        \n        await asyncio.sleep(4 * 3600)  # 4 hours\n```\n\n## Monitoring Metrics\n- **Backup Age**: Time since last successful backup\n- **Backup Size**: Size of backup files\n- **Success Rate**: Percentage of successful backups\n- **Storage Usage**: Available backup storage space\n- **Transfer Speed**: Backup upload/download speeds\n- **Integrity Checks**: Backup file corruption detection\n\n## Alert Types\n- **Backup Failures**: Immediate alerts for failed backups\n- **Age Thresholds**: Warnings for outdated backups\n- **Size Anomalies**: Alerts for unusually small/large backups\n- **Storage Issues**: Warnings for low storage space\n- **Integrity Problems**: Alerts for corrupted backup files"
+    },
+    {
+      "id": "backup_security",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔐 Backup Security & Encryption\n\n## Encryption Strategy\n```bash\n# GPG key management\ngpg --gen-key --batch <<EOF\nKey-Type: RSA\nKey-Length: 4096\nName-Real: FTTH Backup Key\nName-Email: backup@ftth.local\nExpire-Date: 0\n%commit\nEOF\n\n# Export public key for backup servers\ngpg --export --armor backup@ftth.local > backup_key.asc\n\n# Encrypt backups\ngpg --encrypt --recipient backup@ftth.local \\\n  --output backup.sql.gpg backup.sql\n\n# Decrypt for recovery\ngpg --decrypt --output backup.sql backup.sql.gpg\n```\n\n## Secure Transmission\n```bash\n# SSH key-based authentication\nssh-keygen -t ed25519 -f ~/.ssh/backup_key -N \"\"\n\n# Configure rclone for secure transfer\nrclone config create remote s3 \\\n  provider AWS \\\n  env_auth true \\\n  region eu-west-1 \\\n  acl private\n\n# Secure copy with verification\nrclone copy --checksum backup.sql.gpg remote:backups/ \\\n  --progress --verbose\n```\n\n## Security Measures\n- **Encryption at Rest**: AES-256 encryption for all backups\n- **Encryption in Transit**: TLS/SSL for data transfer\n- **Access Control**: Restricted access to backup files\n- **Key Management**: Secure key storage and rotation\n- **Integrity Verification**: Cryptographic checksums\n- **Audit Logging**: All backup operations logged"
+    },
+    {
+      "id": "backup_testing",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🧪 Backup Testing & Validation\n\n## Recovery Testing Procedures\n```bash\n#!/bin/bash\n# test_backup_recovery.sh\n\n# Create test environment\ndocker-compose -f docker-compose.test.yml up -d\n\n# Wait for services to be ready\nsleep 30\n\n# Perform recovery test\nLATEST_BACKUP=$(ls -t /backups/postgres/*.gpg | head -1)\n\ngpg --decrypt $LATEST_BACKUP > /tmp/test_backup.sql\n\ndocker-compose -f docker-compose.test.yml exec -T postgres psql \\\n  -U $POSTGRES_USER \\\n  -h localhost \\\n  --no-password \\\n  $POSTGRES_DB \\\n  < /tmp/test_backup.sql\n\n# Run integrity checks\nnpm run test:db-integrity\n\n# Verify data consistency\npython scripts/verify_backup_integrity.py\n\n# Clean up test environment\ndocker-compose -f docker-compose.test.yml down -v\n\n# Report results\necho \"✅ Backup recovery test completed\"\n```\n\n## Validation Checks\n- **Data Integrity**: Row counts, foreign key constraints\n- **Application Functionality**: Basic operations work\n- **Performance**: Recovery time within RTO\n- **Data Consistency**: No orphaned records\n- **Configuration**: Settings properly restored\n\n## Testing Schedule\n- **Monthly**: Full recovery test\n- **Weekly**: Integrity validation\n- **Daily**: Automated checksum verification\n- **After Changes**: Post-deployment testing\n\n## Test Environment\n```yaml\n# docker-compose.test.yml\nversion: '3.8'\nservices:\n  postgres-test:\n    image: postgres:15\n    environment:\n      POSTGRES_DB: ftth_test\n      POSTGRES_USER: test_user\n    volumes:\n      - postgres_test_data:/var/lib/postgresql/data\n    ports:\n      - \"5433:5432\"\n```\n\n## Success Criteria\n- **Recovery Time**: < 2 hours for full recovery\n- **Data Loss**: Zero data loss in tested scenarios\n- **Application State**: All services start successfully\n- **Data Consistency**: 100% referential integrity\n- **Performance**: No degradation post-recovery"
+    },
+    {
+      "id": "manual_backup",
+      "x": 400,
+      "y": -200,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 💼 Manual Workstation Backup\n\n## Automated Backup Script\n```bash\n#!/bin/bash\n# backup_fibra.sh - Automated backup script\nTIMESTAMP=$(date +%Y%m%d_%H%M%S)\nBACKUP_NAME=\"fibra_backup_${TIMESTAMP}.tar.gz\"\nBACKUP_PATH=\"backups/${BACKUP_NAME}\"\n\n# Create compressed backup\necho \"Creazione backup: ${BACKUP_NAME}\"\ntar -czf \"${BACKUP_PATH}\" fibra\n\n# Verify backup integrity\nif [ $? -eq 0 ]; then\n    echo \"✅ Backup completato: ${BACKUP_PATH}\"\n    echo \"Dimensione: $(du -h \"${BACKUP_PATH}\" | cut -f1)\"\n    echo \"File totali: $(tar -tzf \"${BACKUP_PATH}\" | wc -l)\"\nelse\n    echo \"❌ Errore nella creazione del backup\"\n    exit 1\nfi\n```\n\n## Latest Backup Status\n```\n📅 Data: 2026-01-05 19:43:11\n📁 File: fibra_backup_20260105_194311.tar.gz\n📏 Dimensione: 52MB (compresso da 158MB)\n📂 Posizione: /home/aaa/backups/\n✅ Integrità: Verificata\n```\n\n## Backup Contents\n- **Source Code**: Tutti i file Python, configs, scripts\n- **Documentation**: Canvas Obsidian completi\n- **Database**: SQLite shared (ftth.db)\n- **Configurations**: Apache, nftables, systemd services\n- **Scripts**: Utility e deployment scripts\n- **Logs**: File di log e troubleshooting\n\n## Usage\n```bash\n# Eseguire backup manuale\ncd /home/aaa\n./backup_fibra.sh\n\n# Verificare backup\ntar -tzf backups/fibra_backup_*.tar.gz | head -10\n\n# Ripristinare backup\ntar -xzf backups/fibra_backup_*.tar.gz\n```\n\n## Retention Policy\n- **Daily Backups**: Mantenuti per 30 giorni\n- **Weekly Snapshots**: Mantenuti per 12 settimane\n- **Monthly Archives**: Mantenuti per 12 mesi\n- **Manual Backups**: Conservati fino a cancellazione manuale"
+    }
+  ],
+  "edges": [
+    {
+      "id": "backup_to_database",
+      "fromNode": "backup_overview",
+      "fromSide": "right",
+      "toNode": "database_backup",
+      "toSide": "left",
+      "label": "includes"
+    },
+    {
+      "id": "backup_to_files",
+      "fromNode": "backup_overview",
+      "fromSide": "bottom",
+      "toNode": "file_backup",
+      "toSide": "top",
+      "label": "includes"
+    },
+    {
+      "id": "database_to_recovery",
+      "fromNode": "database_backup",
+      "fromSide": "bottom",
+      "toNode": "disaster_recovery",
+      "toSide": "top",
+      "label": "enables"
+    },
+    {
+      "id": "files_to_recovery",
+      "fromNode": "file_backup",
+      "fromSide": "bottom",
+      "toNode": "disaster_recovery",
+      "toSide": "left",
+      "label": "enables"
+    },
+    {
+      "id": "recovery_to_monitoring",
+      "fromNode": "disaster_recovery",
+      "fromSide": "bottom",
+      "toNode": "backup_monitoring",
+      "toSide": "left",
+      "label": "monitored by"
+    },
+    {
+      "id": "monitoring_to_security",
+      "fromNode": "backup_monitoring",
+      "fromSide": "right",
+      "toNode": "backup_security",
+      "toSide": "left",
+      "label": "secured with"
+    },
+    {
+      "id": "security_to_testing",
+      "fromNode": "backup_security",
+      "fromSide": "bottom",
+      "toNode": "backup_testing",
+      "toSide": "top",
+      "label": "validated by"
+    },
+    {
+      "id": "overview_to_manual",
+      "fromNode": "backup_overview",
+      "fromSide": "right",
+      "toNode": "manual_backup",
+      "toSide": "left",
+      "label": "includes"
+    }
+  ]
+}

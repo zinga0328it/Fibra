@@ -7,16 +7,16 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🚀 FastAPI Backend Module\n\n**Core Business Logic**\n\n- **Framework**: FastAPI (Python)\n- **Port**: 6030\n- **Host**: Yggdrasil IPv6 only\n- **Database**: SQLAlchemy + PostgreSQL\n- **Security**: API Key + JWT\n\n**Status**: ✅ Operational"
+      "text": "# 🚀 FastAPI Backend Module\n\n**Enterprise API con 11 Moduli Route**\n\n- **Framework**: FastAPI (Python async)\n- **Route Modules**: 11 routers inclusi\n- **Database**: SQLAlchemy + PostgreSQL/Redis\n- **Security**: JWT + API Keys + CORS\n- **Features**: OCR, GPT-4, WebSocket, Telegram\n\n**Status**: ✅ Production Enterprise-Grade"
     },
     {
       "id": "api_endpoints",
       "x": 50,
       "y": -200,
-      "width": 300,
+      "width": 350,
       "height": 200,
       "type": "text",
-      "text": "# 📡 API Endpoints\n\n## Work Requests (WR)\n- `GET /works` - Lista WR\n- `POST /works` - Nuovo WR\n- `PUT /works/{id}` - Aggiorna WR\n- `DELETE /works/{id}` - Elimina WR\n\n## Upload & Processing\n- `POST /works/upload` - Upload PDF\n- `GET /works/{id}/pdf` - Download PDF\n\n## Analytics\n- `GET /analytics/summary` - Statistiche\n- `GET /analytics/performance` - KPI"
+      "text": "# 📡 API Endpoints (11 Moduli)\n\n## Core Business Logic\n- **`works.py`**: CRUD WR, assegnazione tecnici, status updates\n- **`technicians.py`**: Gestione tecnici, squadre, telegram_id\n- **`teams.py`**: Organizzazione squadre di lavoro\n- **`stats.py`**: Analytics, KPI, reportistica\n\n## Security & Auth\n- **`auth.py`**: JWT authentication, user management\n- **`health.py`**: Health checks, system status\n\n## Advanced Features\n- **`telegram.py`**: Bot integration, webhook handling\n- **`documents.py`**: OCR processing, PDF parsing\n- **`manual.py`**: Manual operations, admin tools\n- **`debug.py`**: Debug endpoints, system info\n\n## External Integrations\n- **telegram_endpoints.py**: Additional bot endpoints"
     },
     {
       "id": "database_layer",
@@ -25,7 +25,7 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🗄️ Database Layer\n\n## Models\n- **WorkRequest**: WR principali\n- **Technician**: Tecnici campo\n- **Analytics**: Statistiche\n\n## Configuration\n- **SQLite**: Sviluppo\n- **PostgreSQL**: Produzione\n- **Migrations**: Alembic\n\n## Security\n- Connection pooling\n- Prepared statements\n- Input validation"
+      "text": "# 🗄️ Database Layer (7 Modelli)\n\n## Core Models\n- **Work**: WR principali con relazioni\n- **Technician**: Tecnici con telegram_id\n- **Team**: Organizzazione squadre\n- **User**: Authentication users\n\n## Advanced Models\n- **WorkEvent**: Audit trail eventi\n- **Document**: OCR processing, PDF storage\n- **DocumentAppliedWork**: Many-to-many relations\n\n## Features\n- **JSONB Fields**: Flexible data storage\n- **Foreign Keys**: Complex relationships\n- **Indexes**: Performance optimization\n- **Constraints**: Data integrity"
     },
     {
       "id": "security_config",
@@ -34,25 +34,34 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🔐 Security Configuration\n\n## Authentication\n- **API Key**: JHzxUzdAK8L...\n- **JWT Tokens**: Session management\n- **Rate Limiting**: 100 req/min\n\n## Access Control\n- **Yggdrasil Only**: IPv6 binding\n- **No Public Exposure**: Isolated network\n- **Audit Logging**: All operations\n\n## Encryption\n- HTTPS frontend\n- Database encryption\n- Secure secrets"
+      "text": "# 🔐 Security Configuration\n\n## Authentication\n- **JWT Tokens**: Session management\n- **API Keys**: X-API-Key header\n- **CORS**: Cross-origin configuration\n- **Rate Limiting**: Request throttling\n\n## Data Protection\n- **Input Validation**: Pydantic models\n- **SQL Injection Prevention**: Parameterized queries\n- **XSS Protection**: Sanitization\n- **Audit Logging**: All operations tracked\n\n## Advanced Security\n- **Yggdrasil Binding**: IPv6-only access\n- **HTTPS Enforcement**: SSL/TLS required\n- **Secrets Management**: Environment variables"
     },
     {
-      "id": "systemd_service",
+      "id": "advanced_features",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# ⚙️ Systemd Service\n\n**File**: `/etc/systemd/system/ftth.service`\n\n```ini\n[Unit]\nDescription=FTTH Management API\n\n[Service]\nExecStart=/opt/ftth/venv/bin/uvicorn main:app --host 200:421e:... --port 6030\nWorkingDirectory=/opt/ftth\nUser=ftth\n\n[Install]\nWantedBy=multi-user.target\n```\n\n**Status Check**: `systemctl status ftth`"
+      "text": "# ⚡ Advanced Features\n\n## AI Integration\n- **OCR Processing**: pytesseract + pdfplumber\n- **GPT-4 Automation**: OpenAI API integration\n- **Document Intelligence**: PDF text extraction\n\n## Real-time Communication\n- **WebSocket Support**: Live updates\n- **Telegram Integration**: Bot notifications\n- **Event Streaming**: Real-time data flow\n\n## Enterprise Features\n- **Health Checks**: Comprehensive monitoring\n- **Metrics Collection**: Performance tracking\n- **Error Handling**: Graceful degradation\n- **Logging**: Structured JSON logs"
     },
     {
-      "id": "troubleshooting_backend",
+      "id": "docker_config",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **Port 6030 busy**\n- **Database connection**\n- **Yggdrasil binding**\n- **Memory issues**\n\n## Quick Commands\n```bash\n# Check service\nsudo systemctl status ftth\n\n# View logs\nsudo journalctl -u ftth -f\n\n# Test API\ncurl http://[ygg-ip]:6030/health\n```"
+      "text": "# 🐳 Docker Configuration\n\n## Container Setup\n```yaml\nftth-backend:\n  build: .\n  ports: \"6030:6030\"\n  environment:\n    - DATABASE_URL=postgresql://...\n    - API_KEY=${API_KEY}\n  depends_on:\n    - postgres\n    - redis\n```\n\n## Health Checks\n- HTTP endpoint monitoring\n- Database connectivity\n- Dependency checks\n\n## Resource Limits\n- Memory: Configurable\n- CPU: Multi-worker setup\n- Restart: unless-stopped"
+    },
+    {
+      "id": "troubleshooting_backend",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Container Issues\n- **Port conflicts**: Check 6030 availability\n- **Database connection**: Verify PostgreSQL\n- **Environment vars**: Check .env file\n\n## API Issues\n- **Route not found**: Check router inclusion\n- **Auth failures**: Verify JWT/API keys\n- **CORS errors**: Check middleware config\n\n## Performance\n- **Slow responses**: Check database indexes\n- **Memory leaks**: Monitor container resources\n- **Worker overload**: Adjust Gunicorn workers"
     }
   ],
   "edges": [
@@ -81,27 +90,35 @@
       "label": "protected by"
     },
     {
-      "id": "database_to_service",
+      "id": "database_to_advanced",
       "fromNode": "database_layer",
       "fromSide": "bottom",
-      "toNode": "systemd_service",
+      "toNode": "advanced_features",
       "toSide": "left",
-      "label": "managed by"
+      "label": "enables"
     },
     {
-      "id": "security_to_service",
+      "id": "security_to_advanced",
       "fromNode": "security_config",
       "fromSide": "bottom",
-      "toNode": "systemd_service",
+      "toNode": "advanced_features",
       "toSide": "right",
-      "label": "enforced by"
+      "label": "secures"
     },
     {
-      "id": "service_to_troubleshooting",
-      "fromNode": "systemd_service",
+      "id": "advanced_to_docker",
+      "fromNode": "advanced_features",
       "fromSide": "right",
-      "toNode": "troubleshooting_backend",
+      "toNode": "docker_config",
       "toSide": "left",
+      "label": "containerized in"
+    },
+    {
+      "id": "docker_to_troubleshooting",
+      "fromNode": "docker_config",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting_backend",
+      "toSide": "top",
       "label": "debug with"
     }
   ]

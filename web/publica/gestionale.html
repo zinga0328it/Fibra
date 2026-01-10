@@ -63,6 +63,12 @@
         .stat-box.in-consegna .stat-number { color: #ffc107; }
         .stat-box.completati .stat-number { color: #28a745; }
         
+        /* Equipment Stats Colors */
+        .stat-box.equipment.modem .stat-number { color: #667eea; }
+        .stat-box.equipment.ont .stat-number { color: #764ba2; }
+        .stat-box.equipment.total .stat-number { color: #28a745; }
+        .stat-box.equipment.pending .stat-number { color: #ffc107; }
+        
         .main-content {
             background: white;
             border-radius: 12px;
@@ -377,6 +383,26 @@
             </div>
         </div>
 
+        <!-- Equipment Stats -->
+        <div class="stats-container">
+            <div class="stat-box equipment modem">
+                <p class="stat-number" id="statModemConsegnati">0</p>
+                <p class="stat-label">📡 Modem Consegnati</p>
+            </div>
+            <div class="stat-box equipment ont">
+                <p class="stat-number" id="statOntConsegnati">0</p>
+                <p class="stat-label">🔌 ONT Consegnati</p>
+            </div>
+            <div class="stat-box equipment total">
+                <p class="stat-number" id="statApparatiTotali">0</p>
+                <p class="stat-label">📦 Apparati Totali</p>
+            </div>
+            <div class="stat-box equipment pending">
+                <p class="stat-number" id="statApparatiDaConsegnare">0</p>
+                <p class="stat-label">⏳ Da Consegnare</p>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="main-content">
             <!-- Tabs -->
@@ -395,6 +421,9 @@
                 </button>
                 <button class="tab-button" data-tab="tutte" onclick="switchTab('tutte')">
                     📊 Tutte
+                </button>
+                <button class="tab-button" data-tab="equipaggiamento" onclick="switchTab('equipaggiamento')">
+                    📡 Equipaggiamento
                 </button>
             </div>
 
@@ -433,6 +462,97 @@
             <!-- Tab Content: Tutte -->
             <div class="tab-content" id="tab-tutte">
                 <div id="ordersList-tutte"></div>
+            </div>
+
+            <!-- Tab Content: Equipaggiamento -->
+            <div class="tab-content" id="tab-equipaggiamento">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>📡 Gestione Equipaggiamento</h3>
+                    <div>
+                        <button class="btn-small btn-edit" onclick="refreshEquipment()">🔄 Aggiorna</button>
+                    </div>
+                </div>
+
+                <!-- Equipment Stats -->
+                <div class="stats-container mb-4">
+                    <div class="stat-box">
+                        <div class="stat-number" id="ontTotal">0</div>
+                        <div class="stat-label">📡 ONT Totali</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="ontAvailable">0</div>
+                        <div class="stat-label">📡 ONT Disponibili</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="modemTotal">0</div>
+                        <div class="stat-label">📶 Modem Totali</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="modemAvailable">0</div>
+                        <div class="stat-label">📶 Modem Disponibili</div>
+                    </div>
+                </div>
+
+                <!-- Equipment Management -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>📡 Gestione ONT</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <button class="btn-small btn-edit w-100" onclick="showONTModal()">➕ Aggiungi ONT</button>
+                                </div>
+                                <div id="ontList" class="equipment-list">
+                                    <!-- ONT list will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>📶 Gestione Modem</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <button class="btn-small btn-edit w-100" onclick="showModemModal()">➕ Aggiungi Modem</button>
+                                </div>
+                                <div id="modemList" class="equipment-list">
+                                    <!-- Modem list will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>🔗 Assegnazione Equipaggiamento</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Seleziona Lavoro (WR)</label>
+                                <select class="form-select" id="assignWorkSelect">
+                                    <option value="">-- Seleziona lavoro --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Seleziona Dispositivo</label>
+                                <select class="form-select" id="assignDeviceSelect">
+                                    <option value="">-- Seleziona dispositivo --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn-small btn-edit" onclick="assignEquipment()">🔗 Assegna</button>
+                            <button class="btn-small" style="background:#dc3545" onclick="unassignEquipment()">❌ Rimuovi Assegnazione</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -517,17 +637,48 @@
                 chiuso: 0
             };
             
+            // Statistiche apparati
+            const equipmentStats = {
+                modemConsegnati: 0,
+                ontConsegnati: 0,
+                apparatiTotali: 0,
+                apparatiDaConsegnare: 0
+            };
+            
             allOrders.forEach(order => {
                 if (stats[order.stato] !== undefined) {
                     stats[order.stato]++;
                 }
+                
+                // Calcola statistiche apparati
+                if (order.modem_delivered) {
+                    equipmentStats.modemConsegnati++;
+                }
+                if (order.ont_delivered) {
+                    equipmentStats.ontConsegnati++;
+                }
+                if (order.requires_modem && !order.modem_delivered) {
+                    equipmentStats.apparatiDaConsegnare++;
+                }
+                if (order.requires_ont && !order.ont_delivered) {
+                    equipmentStats.apparatiDaConsegnare++;
+                }
             });
+            
+            // Calcola totale apparati consegnati
+            equipmentStats.apparatiTotali = equipmentStats.modemConsegnati + equipmentStats.ontConsegnati;
 
             // Mappa stati ai contatori del gestionale
             document.getElementById('statAperti').textContent = stats.aperto;
             document.getElementById('statConfermati').textContent = stats.in_corso;
             document.getElementById('statInConsegna').textContent = stats.sospeso;
             document.getElementById('statCompletati').textContent = stats.chiuso;
+            
+            // Mappa statistiche apparati
+            document.getElementById('statModemConsegnati').textContent = equipmentStats.modemConsegnati;
+            document.getElementById('statOntConsegnati').textContent = equipmentStats.ontConsegnati;
+            document.getElementById('statApparatiTotali').textContent = equipmentStats.apparatiTotali;
+            document.getElementById('statApparatiDaConsegnare').textContent = equipmentStats.apparatiDaConsegnare;
         }
 
         function renderOrders() {
@@ -914,78 +1065,317 @@
             });
         }
 
-        // Load technicians when switching to gestione tab
-        function switchTab(tabName) {
-            currentTab = tabName;
-            
-            // Update active button
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-            // Update active content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-
-            // Clear search
-            document.getElementById('searchInput').value = '';
-            filterOrders();
-
-            // Load technicians when switching to gestione tab
-            if (tabName === 'gestione') {
-                loadTechnicians();
-            }
-        }
-
-        function filterOrders() {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            document.querySelectorAll('.order-card').forEach(card => {
-                const cardText = card.dataset.searchText;
-                if (cardText.includes(searchText)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        function showNotification(message, type) {
-            const colors = {
-                success: '#28a745',
-                error: '#dc3545',
-                info: '#17a2b8'
-            };
-
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${colors[type] || colors.info};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 9999;
-                font-weight: bold;
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             loadOrders();
             // Auto-refresh every 30 seconds
             setInterval(loadOrders, 30000);
         });
+
+        // ===== EQUIPMENT MANAGEMENT FUNCTIONS =====
+
+        let allONTs = [];
+        let allModems = [];
+
+        async function refreshEquipment() {
+            await Promise.all([loadONTs(), loadModems(), loadEquipmentStats()]);
+            showNotification('Equipaggiamento aggiornato', 'success');
+        }
+
+        async function loadEquipmentStats() {
+            try {
+                const response = await apiFetchSecure('/stats/equipment');
+                const stats = await response.json();
+                
+                document.getElementById('ontTotal').textContent = stats.ont.total;
+                document.getElementById('ontAvailable').textContent = stats.ont.available;
+                document.getElementById('modemTotal').textContent = stats.modem.total;
+                document.getElementById('modemAvailable').textContent = stats.modem.available;
+            } catch (e) {
+                console.error('Errore caricamento statistiche equipaggiamento:', e);
+            }
+        }
+
+        async function loadONTs() {
+            try {
+                const response = await apiFetchSecure('/onts/');
+                allONTs = await response.json();
+                renderONTList();
+            } catch (e) {
+                console.error('Errore caricamento ONT:', e);
+            }
+        }
+
+        async function loadModems() {
+            try {
+                const response = await apiFetchSecure('/modems/');
+                allModems = await response.json();
+                renderModemList();
+            } catch (e) {
+                console.error('Errore caricamento modem:', e);
+            }
+        }
+
+        function renderONTList() {
+            const container = document.getElementById('ontList');
+            if (allONTs.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nessun ONT presente</p>';
+                return;
+            }
+
+            container.innerHTML = allONTs.map(ont => `
+                <div class="equipment-item p-2 border rounded mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${ont.model}</strong> - SN: ${ont.serial_number}<br>
+                            <small class="text-muted">${ont.manufacturer} | Stato: ${ont.status}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewONTDetails(${ont.id})">👁️</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteONT(${ont.id})">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderModemList() {
+            const container = document.getElementById('modemList');
+            if (allModems.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nessun modem presente</p>';
+                return;
+            }
+
+            container.innerHTML = allModems.map(modem => `
+                <div class="equipment-item p-2 border rounded mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${modem.model}</strong> - SN: ${modem.serial_number}<br>
+                            <small class="text-muted">${modem.manufacturer} | Stato: ${modem.status}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewModemDetails(${modem.id})">👁️</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteModem(${modem.id})">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showONTModal(ont = null) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); z-index: 1000;
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%;">
+                    <h3>${ont ? 'Modifica ONT' : 'Aggiungi ONT'}</h3>
+                    <form id="ontForm">
+                        <div class="mb-3">
+                            <label class="form-label">Serial Number *</label>
+                            <input type="text" class="form-control" id="ontSerial" required value="${ont?.serial_number || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Modello *</label>
+                            <input type="text" class="form-control" id="ontModel" required value="${ont?.model || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Produttore</label>
+                            <input type="text" class="form-control" id="ontManufacturer" value="${ont?.manufacturer || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Porta PON</label>
+                            <input type="text" class="form-control" id="ontPonPort" value="${ont?.pon_port || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">VLAN ID</label>
+                            <input type="number" class="form-control" id="ontVlanId" value="${ont?.vlan_id || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Indirizzo IP</label>
+                            <input type="text" class="form-control" id="ontIpAddress" value="${ont?.ip_address || ''}">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('div').parentElement.remove()">Annulla</button>
+                            <button type="submit" class="btn btn-primary">Salva</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            document.getElementById('ontForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    serial_number: document.getElementById('ontSerial').value,
+                    model: document.getElementById('ontModel').value,
+                    manufacturer: document.getElementById('ontManufacturer').value || null,
+                    pon_port: document.getElementById('ontPonPort').value || null,
+                    vlan_id: parseInt(document.getElementById('ontVlanId').value) || null,
+                    ip_address: document.getElementById('ontIpAddress').value || null
+                };
+                
+                try {
+                    if (ont) {
+                        await apiFetchSecure('/onts/' + ont.id, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    } else {
+                        await apiFetchSecure('/onts/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    }
+                    modal.remove();
+                    refreshEquipment();
+                    showNotification('ONT salvato con successo', 'success');
+                } catch (e) {
+                    showNotification('Errore salvataggio ONT', 'error');
+                }
+            });
+        }
+
+        function showModemModal(modem = null) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); z-index: 1000;
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%;">
+                    <h3>${modem ? 'Modifica Modem' : 'Aggiungi Modem'}</h3>
+                    <form id="modemForm">
+                        <div class="mb-3">
+                            <label class="form-label">Serial Number *</label>
+                            <input type="text" class="form-control" id="modemSerial" required value="${modem?.serial_number || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Modello *</label>
+                            <input type="text" class="form-control" id="modemModel" required value="${modem?.model || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo *</label>
+                            <select class="form-select" id="modemType" required>
+                                <option value="adsl" ${modem?.type === 'adsl' ? 'selected' : ''}>ADSL</option>
+                                <option value="vdsl" ${modem?.type === 'vdsl' ? 'selected' : ''}>VDSL</option>
+                                <option value="fiber" ${modem?.type === 'fiber' ? 'selected' : ''}>Fibra</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Produttore</label>
+                            <input type="text" class="form-control" id="modemManufacturer" value="${modem?.manufacturer || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SSID WiFi</label>
+                            <input type="text" class="form-control" id="modemSsid" value="${modem?.wifi_ssid || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password WiFi</label>
+                            <input type="password" class="form-control" id="modemWifiPass" value="${modem?.wifi_password || ''}">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('div').parentElement.remove()">Annulla</button>
+                            <button type="submit" class="btn btn-primary">Salva</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            document.getElementById('modemForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    serial_number: document.getElementById('modemSerial').value,
+                    model: document.getElementById('modemModel').value,
+                    type: document.getElementById('modemType').value,
+                    manufacturer: document.getElementById('modemManufacturer').value || null,
+                    wifi_ssid: document.getElementById('modemSsid').value || null,
+                    wifi_password: document.getElementById('modemWifiPass').value || null
+                };
+                
+                try {
+                    if (modem) {
+                        await apiFetchSecure('/modems/' + modem.id, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    } else {
+                        await apiFetchSecure('/modems/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    }
+                    modal.remove();
+                    refreshEquipment();
+                    showNotification('Modem salvato con successo', 'success');
+                } catch (e) {
+                    showNotification('Errore salvataggio modem', 'error');
+                }
+            });
+        }
+
+        async function assignEquipment() {
+            const workId = document.getElementById('assignWorkSelect').value;
+            const deviceType = document.getElementById('assignDeviceSelect').value;
+            
+            if (!workId || !deviceType) {
+                showNotification('Seleziona lavoro e dispositivo', 'error');
+                return;
+            }
+            
+            const [type, id] = deviceType.split('-');
+            
+            try {
+                if (type === 'ont') {
+                    await apiFetchSecure(`/works/${workId}/ont/${id}`, { method: 'PUT' });
+                    showNotification('ONT assegnato al lavoro', 'success');
+                } else if (type === 'modem') {
+                    await apiFetchSecure(`/works/${workId}/modem/${id}`, { method: 'PUT' });
+                    showNotification('Modem assegnato al lavoro', 'success');
+                }
+                refreshEquipment();
+            } catch (e) {
+                showNotification('Errore assegnazione dispositivo', 'error');
+            }
+        }
+
+        async function unassignEquipment() {
+            const workId = document.getElementById('assignWorkSelect').value;
+            if (!workId) {
+                showNotification('Seleziona un lavoro', 'error');
+                return;
+            }
+            
+            // This would need additional implementation for unassignment
+            showNotification('Funzionalità di rimozione da implementare', 'info');
+        }
+
+        // Load equipment when switching to equipment tab
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabName}`);
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            
+            if (tabName === 'equipaggiamento') {
+                refreshEquipment();
+            }
+        }
     </script>
 </body>
 </html>

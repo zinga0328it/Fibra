@@ -1,16 +1,16 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from logging.handlers import RotatingFileHandler, SysLogHandler
-from pythonjsonlogger import jsonlogger
 import os
 from dotenv import load_dotenv
 from telegram import Bot, BotCommand
 from app.utils.bot_commands import set_bot_commands_async, get_token_from_env, BOT_COMMANDS
 from app.database import engine
 from app.models import models
+from pythonjsonlogger import jsonlogger
 
 try:
 	models.Base.metadata.create_all(bind=engine)
@@ -50,7 +50,7 @@ except Exception:
 	pass
 
 # Include routers
-from app.routes import works, technicians, teams, stats, auth, telegram, documents, health, manual, debug
+from app.routes import works, technicians, teams, stats, auth, telegram, documents, health, manual, debug, onts, modems, sync
 from telegram_endpoints import router as telegram_router
 app.include_router(works.router)
 app.include_router(technicians.router)
@@ -63,6 +63,9 @@ app.include_router(documents.router)
 app.include_router(health.router)
 app.include_router(manual.router)
 app.include_router(debug.router)
+app.include_router(onts.router)
+app.include_router(modems.router)
+app.include_router(sync.router)
 
 
 @app.exception_handler(Exception)
@@ -113,3 +116,29 @@ async def set_bot_commands_on_startup():
 			logging.getLogger('uvicorn.error').info(f"Webhook set to {webhook_url}")
 		except Exception as e:
 			logging.getLogger('uvicorn.error').exception(f"Failed to set webhook to {webhook_url}: {e}")
+
+
+# Routes for HTML pages
+@app.get("/")
+async def read_root():
+    return FileResponse("web/publica/index.html")
+
+@app.get("/gestionale.html")
+async def read_gestionale():
+    return FileResponse("web/publica/gestionale.html")
+
+@app.get("/dashboard.html")
+async def read_dashboard():
+    return FileResponse("web/publica/dashboard.html")
+
+@app.get("/manual_entry.html")
+async def read_manual_entry():
+    return FileResponse("web/publica/manual_entry.html")
+
+@app.get("/pc_alex_gestionale.html")
+async def read_pc_alex_gestionale():
+    return FileResponse("web/publica/pc_alex_gestionale.html")
+
+@app.get("/db_viewer.html")
+async def read_db_viewer():
+    return FileResponse("web/publica/db_viewer.html")

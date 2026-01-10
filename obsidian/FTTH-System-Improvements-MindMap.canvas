@@ -1,0 +1,43 @@
+{
+  "nodes": [
+    {
+      "id": "system_improvements_overview",
+      "x": -400,
+      "y": -300,
+      "width": 300,
+      "height": 200,
+      "type": "text",
+      "text": "# 🚀 System Improvements & Optimizations\n\n## Analisi del Sistema FTTH\n\n### ✅ Punti di Forza\n- **Architettura Sicura**: Yggdrasil + nftables + Tor\n- **11 Route API**: Coverage completa del workflow\n- **7 Modelli DB**: Relazioni ben strutturate\n- **7 Container Docker**: Orchestrazione funzionante\n- **Monitoring Stack**: Prometheus + Grafana\n- **AI Integration**: OCR + GPT-4 funzionanti\n- **Telegram Bot**: Comunicazione real-time\n\n### ⚠️ Problemi Identificati\n- **File Mancanti**: nginx.conf, monitoring configs\n- **Dipendenze**: requirements.txt incompleto\n- **Sicurezza**: CORS troppo permissivo\n- **Configurazione**: Environment variables esposte\n- **Performance**: No caching avanzato\n- **Monitoring**: Configurazioni mancanti\n- **Backup**: Strategia non implementata\n\n### 🎯 Miglioramenti Prioritari\n1. **Completare Configurazioni**\n2. **Migliorare Sicurezza**\n3. **Ottimizzare Performance**\n4. **Implementare Monitoring**\n5. **Aggiungere Backup Strategy**\n6. **Documentazione Living**"
+    },
+    {
+      "id": "missing_configurations",
+      "x": 0,
+      "y": -300,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 📁 Configurazioni Mancanti\n\n## File Non Trovati\n### nginx.conf\n- **Problema**: docker-compose.yml referenzia `./nginx/nginx.conf`\n- **Stato**: File non esiste\n- **Impatto**: Container nginx non può partire\n\n### monitoring/\n- **Problema**: docker-compose.yml referenzia `./monitoring/`\n- **Stato**: Directory non esiste\n- **Impatto**: Prometheus e Grafana non configurati\n\n### prometheus.yml\n- **Problema**: Configurazione Prometheus mancante\n- **Stato**: File non esiste\n- **Impatto**: No metrics collection\n\n### grafana/provisioning/\n- **Problema**: Configurazione Grafana mancante\n- **Stato**: Directory vuota\n- **Impatto**: No dashboards automatici\n\n## Soluzioni\n```bash\n# Creare struttura monitoring/\nmkdir -p monitoring/grafana/{provisioning/datasources,provisioning/dashboards,dashboards}\n\n# Creare nginx.conf basato su deploy/nginx/ftth.conf\ncp deploy/nginx/ftth.conf nginx/nginx.conf\n\n# Configurare Prometheus per servizi locali\n# Configurare Grafana datasources e dashboards\n```"
+    },
+    {
+      "id": "security_improvements",
+      "x": -400,
+      "y": -50,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🔒 Miglioramenti Sicurezza\n\n## CORS Permissivo\n```python\n# main.py - ATTUALE (NON SICURO)\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],  # ❌ TROppo permissivo\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n```\n\n## Environment Variables\n- **Problema**: API_KEY esposta nei logs\n- **Rischio**: Credential leakage\n- **Soluzione**: Mascherare secrets nei logs\n\n## API Security\n- **Problema**: No rate limiting per endpoint\n- **Rischio**: DDoS su API specifiche\n- **Soluzione**: Middleware rate limiting\n\n## Database Security\n- **Problema**: Password in chiaro in docker-compose\n- **Rischio**: Exposure in git\n- **Soluzione**: Docker secrets o external config\n\n## File Permissions\n- **Problema**: Logs accessibili da tutti\n- **Rischio**: Information disclosure\n- **Soluzione**: Permessi restrictivi\n\n## Sicurezza Migliorata\n```python\n# CORS sicuro\nallow_origins = os.getenv(\"ALLOWED_ORIGINS\", \"http://localhost:3000\").split(\",\")\n\n# Rate limiting\n@app.middleware(\"http\")\nasync def rate_limit_middleware(request, call_next):\n    # Implementare rate limiting\n    pass\n```"
+    },
+    {
+      "id": "performance_optimizations",
+      "x": 0,
+      "y": -50,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# ⚡ Ottimizzazioni Performance\n\n## Database Optimization\n- **Problema**: No connection pooling\n- **Impatto**: Connessioni inefficienti\n- **Soluzione**: SQLAlchemy pool configuration\n\n## Caching Strategy\n- **Problema**: No caching layer\n- **Impatto**: Query ripetute al DB\n- **Soluzione**: Redis per API responses\n\n## Async Operations\n- **Problema**: Operazioni sincrone bloccanti\n- **Impatto**: Performance degradation\n- **Soluzione**: Convertire a async/await\n\n## File Upload Optimization\n- **Problema**: No streaming per upload grandi\n- **Impatto**: Memory exhaustion\n- **Soluzione**: Streaming upload con chunking\n\n## API Response Caching\n```python\n# Redis caching\nfrom redis import Redis\nredis_client = Redis(host='redis', port=6379)\n\n@app.middleware(\"http\")\nasync def cache_middleware(request, call_next):\n    cache_key = f\"{request.method}:{request.url.path}\"\n    cached_response = redis_client.get(cache_key)\n    if cached_response:\n        return JSONResponse(content=json.loads(cached_response))\n    \n    response = await call_next(request)\n    if response.status_code == 200:\n        redis_client.setex(cache_key, 300, response.body)\n    return response\n```\n\n## Database Pooling\n```python\n# SQLAlchemy engine con pooling\nengine = create_engine(\n    DATABASE_URL,\n    pool_size=10,\n    max_overflow=20,\n    pool_timeout=30,\n    pool_recycle=3600\n)\n```"
+    },
+    {
+      "id": "monitoring_implementation",
+      "x": -200,
+      "y": 200,
+      "width">300

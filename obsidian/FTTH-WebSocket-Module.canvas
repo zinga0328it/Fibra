@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "id": "websocket_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔌 WebSocket Real-Time Module\n\n**Live Communication System**\n\n- **Protocol**: WebSocket (RFC 6455)\n- **Framework**: FastAPI WebSocket support\n- **Real-Time Updates**: Instant notifications\n- **Bi-Directional**: Full-duplex communication\n- **Connection Management**: Auto-reconnect\n- **Security**: WSS encryption\n\n**Status**: ✅ Real-Time Operations Ready"
+    },
+    {
+      "id": "websocket_architecture",
+      "x": 50,
+      "y": -200,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 🏗️ WebSocket Architecture\n\n## FastAPI WebSocket Implementation\n```python\nfrom fastapi import FastAPI, WebSocket, WebSocketDisconnect\nfrom fastapi.responses import HTMLResponse\nimport json\nimport asyncio\nfrom typing import List, Dict\n\napp = FastAPI()\n\n# Connection manager\nclass ConnectionManager:\n    def __init__(self):\n        self.active_connections: List[WebSocket] = []\n        self.user_connections: Dict[int, WebSocket] = {}\n    \n    async def connect(self, websocket: WebSocket, user_id: int):\n        await websocket.accept()\n        self.active_connections.append(websocket)\n        self.user_connections[user_id] = websocket\n    \n    def disconnect(self, websocket: WebSocket, user_id: int):\n        self.active_connections.remove(websocket)\n        if user_id in self.user_connections:\n            del self.user_connections[user_id]\n    \n    async def send_personal_message(self, message: str, user_id: int):\n        if user_id in self.user_connections:\n            await self.user_connections[user_id].send_text(message)\n    \n    async def broadcast(self, message: str):\n        for connection in self.active_connections:\n            await connection.send_text(message)\n\nmanager = ConnectionManager()\n\n# WebSocket endpoint\n@app.websocket(\"/ws/{user_id}\")\nasync def websocket_endpoint(websocket: WebSocket, user_id: int):\n    await manager.connect(websocket, user_id)\n    try:\n        while True:\n            data = await websocket.receive_text()\n            # Process incoming messages\n            await process_websocket_message(user_id, data)\n    except WebSocketDisconnect:\n        manager.disconnect(websocket, user_id)\n        # Handle disconnection\n        await handle_user_disconnect(user_id)\n```\n\n## Connection Lifecycle\n- **Handshake**: HTTP upgrade to WebSocket\n- **Authentication**: JWT token validation\n- **Heartbeat**: Connection health monitoring\n- **Reconnection**: Automatic failover\n- **Cleanup**: Resource management"
+    },
+    {
+      "id": "real_time_features",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# ⚡ Real-Time Features\n\n## Live Updates\n```python\n# Work order status updates\nasync def notify_work_order_update(work_order_id: int, status: str, user_id: int):\n    message = {\n        \"type\": \"work_order_update\",\n        \"data\": {\n            \"work_order_id\": work_order_id,\n            \"status\": status,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    }\n    \n    await manager.send_personal_message(json.dumps(message), user_id)\n\n# Team notifications\nasync def notify_team_update(team_id: int, message: str):\n    team_members = await get_team_members(team_id)\n    \n    notification = {\n        \"type\": \"team_notification\",\n        \"data\": {\n            \"message\": message,\n            \"team_id\": team_id,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    }\n    \n    for member in team_members:\n        await manager.send_personal_message(json.dumps(notification), member.id)\n\n# System alerts\nasync def broadcast_system_alert(alert_type: str, message: str, priority: str = \"normal\"):\n    alert = {\n        \"type\": \"system_alert\",\n        \"data\": {\n            \"alert_type\": alert_type,\n            \"message\": message,\n            \"priority\": priority,\n            \"timestamp\": datetime.utcnow().isoformat()\n        }\n    }\n    \n    await manager.broadcast(json.dumps(alert))\n```\n\n## Event Types\n- **Work Order Events**: Assignment, status changes, completion\n- **Team Coordination**: New assignments, schedule updates\n- **System Notifications**: Maintenance, alerts, announcements\n- **User Activity**: Login/logout, location updates\n- **Document Updates**: New uploads, processing completion"
+    },
+    {
+      "id": "frontend_integration",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌐 Frontend WebSocket Integration\n\n## JavaScript WebSocket Client\n```javascript\n// WebSocket connection management\nclass WebSocketManager {\n    constructor(userId) {\n        this.userId = userId;\n        this.ws = null;\n        this.reconnectAttempts = 0;\n        this.maxReconnectAttempts = 5;\n        this.reconnectInterval = 1000; // Start with 1 second\n    }\n    \n    connect() {\n        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';\n        const wsUrl = `${protocol}//${window.location.host}/ws/${this.userId}`;\n        \n        this.ws = new WebSocket(wsUrl);\n        \n        this.ws.onopen = (event) => {\n            console.log('WebSocket connected');\n            this.reconnectAttempts = 0;\n            this.updateConnectionStatus(true);\n        };\n        \n        this.ws.onmessage = (event) => {\n            const message = JSON.parse(event.data);\n            this.handleMessage(message);\n        };\n        \n        this.ws.onclose = (event) => {\n            console.log('WebSocket disconnected');\n            this.updateConnectionStatus(false);\n            this.handleReconnect();\n        };\n        \n        this.ws.onerror = (error) => {\n            console.error('WebSocket error:', error);\n        };\n    }\n    \n    handleMessage(message) {\n        switch(message.type) {\n            case 'work_order_update':\n                this.handleWorkOrderUpdate(message.data);\n                break;\n            case 'team_notification':\n                this.handleTeamNotification(message.data);\n                break;\n            case 'system_alert':\n                this.handleSystemAlert(message.data);\n                break;\n            default:\n                console.log('Unknown message type:', message.type);\n        }\n    }\n    \n    handleReconnect() {\n        if (this.reconnectAttempts < this.maxReconnectAttempts) {\n            setTimeout(() => {\n                this.reconnectAttempts++;\n                console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);\n                this.connect();\n            }, this.reconnectInterval * this.reconnectAttempts); // Exponential backoff\n        } else {\n            console.error('Max reconnection attempts reached');\n            this.showReconnectFailedMessage();\n        }\n    }\n}\n\n// Initialize WebSocket for current user\nconst wsManager = new WebSocketManager(currentUserId);\nwsManager.connect();\n```\n\n## UI Updates\n```javascript\n// Handle work order updates\nfunction handleWorkOrderUpdate(data) {\n    const workOrderElement = document.getElementById(`wo-${data.work_order_id}`);\n    if (workOrderElement) {\n        // Update status badge\n        const statusBadge = workOrderElement.querySelector('.status-badge');\n        statusBadge.textContent = data.status;\n        statusBadge.className = `status-badge status-${data.status.toLowerCase()}`;\n        \n        // Show notification\n        showToast(`Work Order ${data.work_order_id} updated to ${data.status}`, 'info');\n        \n        // Refresh data if needed\n        if (currentView === 'work-orders') {\n            refreshWorkOrdersList();\n        }\n    }\n}\n\n// Handle team notifications\nfunction handleTeamNotification(data) {\n    showToast(data.message, 'team');\n    \n    // Update team activity feed\n    addToActivityFeed({\n        type: 'team',\n        message: data.message,\n        timestamp: new Date(data.timestamp)\n    });\n}\n\n// Handle system alerts\nfunction handleSystemAlert(data) {\n    const alertClass = data.priority === 'high' ? 'danger' : 'warning';\n    showToast(data.message, alertClass);\n    \n    // Log to console for debugging\n    console.log(`System Alert [${data.alert_type}]:`, data.message);\n}\n```\n\n## Connection Status\n- **Visual Indicators**: Connection status display\n- **Auto-Reconnect**: Seamless reconnection logic\n- **Error Handling**: User-friendly error messages\n- **Performance**: Efficient message processing"
+    },
+    {
+      "id": "security_scalability",
+      "x": -100,
+      "y": 250,
+      "width": 350,
+      "height": 120,
+      "type": "text",
+      "text": "# 🔒 Security & Scalability\n\n## WebSocket Security\n```python\n# Authentication middleware\nasync def get_websocket_user(websocket: WebSocket, token: str = Query(...)):\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n        user_id = payload.get(\"sub\")\n        if user_id is None:\n            await websocket.close(code=1008)  # Policy violation\n            return None\n        \n        # Validate user exists and is active\n        user = await get_user_by_id(int(user_id))\n        if not user or not user.is_active:\n            await websocket.close(code=1008)\n            return None\n        \n        return user\n    except JWTError:\n        await websocket.close(code=1008)\n        return None\n\n# Rate limiting\nwebsocket_rate_limiter = {}\n\nasync def check_websocket_rate_limit(user_id: int) -> bool:\n    now = time.time()\n    user_limits = websocket_rate_limiter.get(user_id, {\"count\": 0, \"reset_time\": now})\n    \n    if now > user_limits[\"reset_time\"]:\n        user_limits = {\"count\": 0, \"reset_time\": now + 60}  # 1 minute window\n    \n    if user_limits[\"count\"] >= 100:  # 100 messages per minute\n        return False\n    \n    user_limits[\"count\"] += 1\n    websocket_rate_limiter[user_id] = user_limits\n    return True\n\n# Message validation\nasync def validate_websocket_message(message: str) -> bool:\n    try:\n        data = json.loads(message)\n        # Validate message structure and content\n        required_fields = [\"type\", \"data\"]\n        if not all(field in data for field in required_fields):\n            return False\n        \n        # Validate message type\n        allowed_types = [\"ack\", \"ping\", \"subscribe\", \"unsubscribe\"]\n        if data[\"type\"] not in allowed_types:\n            return False\n        \n        return True\n    except (json.JSONDecodeError, KeyError):\n        return False\n```\n\n## Scalability Features\n- **Connection Pooling**: Efficient resource management\n- **Message Queuing**: Redis-backed message queues\n- **Load Balancing**: Multiple WebSocket servers\n- **Horizontal Scaling**: Stateless architecture\n- **Monitoring**: Connection metrics and performance tracking\n\n## Production Considerations\n- **SSL/TLS**: WSS encryption required\n- **Compression**: Message compression for efficiency\n- **Heartbeat**: Connection health monitoring\n- **Logging**: Comprehensive connection logging\n- **Metrics**: Prometheus integration for monitoring"
+    }
+  ],
+  "edges": [
+    {
+      "id": "websocket_to_architecture",
+      "fromNode": "websocket_overview",
+      "fromSide": "right",
+      "toNode": "websocket_architecture",
+      "toSide": "left",
+      "label": "implements"
+    },
+    {
+      "id": "architecture_to_features",
+      "fromNode": "websocket_architecture",
+      "fromSide": "bottom",
+      "toNode": "real_time_features",
+      "toSide": "top",
+      "label": "enables"
+    },
+    {
+      "id": "features_to_frontend",
+      "fromNode": "real_time_features",
+      "fromSide": "right",
+      "toNode": "frontend_integration",
+      "toSide": "left",
+      "label": "connects to"
+    },
+    {
+      "id": "frontend_to_security",
+      "fromNode": "frontend_integration",
+      "fromSide": "bottom",
+      "toNode": "security_scalability",
+      "toSide": "top",
+      "label": "secured by"
+    }
+  ]
+}

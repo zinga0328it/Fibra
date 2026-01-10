@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PC Alex - Gestionale FTTH via Yggdrasil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 2rem;
+        }
+        .header {
+            background: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: #667eea;
+            font-weight: bold;
+            margin: 0;
+        }
+        .header .subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .container { max-width: 1200px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .btn-ygg { background: #667eea; border: none; color: white; }
+        .btn-ygg:hover { background: #5a67d8; color: white; }
+        .status-ok { color: #48bb78; }
+        .status-error { color: #f56565; }
+        .status-loading { color: #ed8936; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🛰️ PC Alex - Gestionale FTTH via Yggdrasil</h1>
+            <div class="subtitle">Sistema distribuito per gestione lavori e equipaggiamenti</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Status API -->
+        <div class="card">
+            <div class="card-header">
+                <h5>🔗 Stato Connessione Yggdrasil</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Endpoint API:</strong> <code>http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030</code>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Stato:</strong> <span id="api-status" class="status-loading">🔄 Verifica in corso...</span>
+                    </div>
+                </div>
+                <button class="btn btn-ygg btn-sm mt-2" onclick="testConnection()">🔍 Test Connessione</button>
+            </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="works-tab" data-bs-toggle="tab" data-bs-target="#works" type="button" role="tab">📋 Lavori</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="onts-tab" data-bs-toggle="tab" data-bs-target="#onts" type="button" role="tab">📡 ONT</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="modems-tab" data-bs-toggle="tab" data-bs-target="#modems" type="button" role="tab">📶 Modem</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">📊 Statistiche</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabsContent">
+
+            <!-- LAVORI TAB -->
+            <div class="tab-pane fade show active" id="works" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>📋 Gestione Lavori</h5>
+                        <button class="btn btn-ygg btn-sm" onclick="loadWorks()">🔄 Aggiorna</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="works-list" class="row">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Caricamento...</span>
+                                </div>
+                                <p>Caricamento lavori...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONT TAB -->
+            <div class="tab-pane fade" id="onts" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>📡 Gestione ONT</h5>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="showCreateOntModal()">➕ Nuovo ONT</button>
+                            <button class="btn btn-ygg btn-sm" onclick="loadOnts()">🔄 Aggiorna</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="onts-list" class="row">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Caricamento...</span>
+                                </div>
+                                <p>Caricamento ONT...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODEM TAB -->
+            <div class="tab-pane fade" id="modems" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>📶 Gestione Modem</h5>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="showCreateModemModal()">➕ Nuovo Modem</button>
+                            <button class="btn btn-ygg btn-sm" onclick="loadModems()">🔄 Aggiorna</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="modems-list" class="row">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Caricamento...</span>
+                                </div>
+                                <p>Caricamento Modem...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATISTICHE TAB -->
+            <div class="tab-pane fade" id="stats" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>📊 Statistiche Sistema</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="stats-content">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Caricamento...</span>
+                                </div>
+                                <p>Caricamento statistiche...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Nuovo ONT -->
+    <div class="modal fade" id="createOntModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">➕ Nuovo ONT</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createOntForm">
+                        <div class="mb-3">
+                            <label class="form-label">Serial Number *</label>
+                            <input type="text" class="form-control" id="ontSerial" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Modello *</label>
+                            <input type="text" class="form-control" id="ontModel" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="ontManufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">PON Port</label>
+                            <input type="text" class="form-control" id="ontPonPort">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">VLAN ID</label>
+                            <input type="number" class="form-control" id="ontVlanId">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control" id="ontIpAddress">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="ontLocation" placeholder="Magazzino Centrale">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-ygg" onclick="createOnt()">Salva ONT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuovo Modem -->
+    <div class="modal fade" id="createModemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">➕ Nuovo Modem</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createModemForm">
+                        <div class="mb-3">
+                            <label class="form-label">Serial Number *</label>
+                            <input type="text" class="form-control" id="modemSerial" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Modello *</label>
+                            <input type="text" class="form-control" id="modemModel" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="modemManufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">WiFi SSID</label>
+                            <input type="text" class="form-control" id="modemWifiSsid">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">WiFi Password</label>
+                            <input type="password" class="form-control" id="modemWifiPassword">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="modemLocation" placeholder="Magazzino Centrale">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-ygg" onclick="createModem()">Salva Modem</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ============ CONFIGURAZIONE API YGGDRASIL ============
+        const YGGDRASIL_IP = "200:421e:6385:4a8b:dca7:cfb:197f:e9c3";
+        const API_PORT = 6030;
+        const API_BASE = `http://[${YGGDRASIL_IP}]:${API_PORT}`;
+        const API_KEY = "JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=";
+
+        // ============ FUNZIONI API ============
+        function apiFetch(path, options = {}) {
+            const url = API_BASE + path;
+            options.headers = options.headers || {};
+            if (API_KEY) {
+                options.headers['X-API-Key'] = API_KEY;
+            }
+            return fetch(url, options);
+        }
+
+        function showMessage(message, type = 'info') {
+            // Crea un toast semplice
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // ============ TEST CONNESSIONE ============
+        async function testConnection() {
+            const statusEl = document.getElementById('api-status');
+            statusEl.className = 'status-loading';
+            statusEl.textContent = '🔄 Test in corso...';
+
+            try {
+                const response = await apiFetch('/health/');
+                if (response.ok) {
+                    const data = await response.json();
+                    statusEl.className = 'status-ok';
+                    statusEl.textContent = '✅ Connesso - API OK';
+                    showMessage('Connessione Yggdrasil riuscita!', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusEl.className = 'status-error';
+                statusEl.textContent = '❌ Errore connessione';
+                showMessage(`Errore connessione: ${error.message}`, 'danger');
+            }
+        }
+
+        // ============ GESTIONE LAVORI ============
+        async function loadWorks() {
+            const container = document.getElementById('works-list');
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p>Caricamento lavori...</p>
+                </div>
+            `;
+
+            try {
+                const response = await apiFetch('/works/');
+                const works = await response.json();
+
+                let html = '';
+                if (works.length === 0) {
+                    html = '<div class="col-12"><div class="alert alert-info">Nessun lavoro trovato</div></div>';
+                } else {
+                    works.slice(0, 10).forEach(work => {
+                        const statusClass = work.stato === 'aperto' ? 'primary' : work.stato === 'chiuso' ? 'success' : 'warning';
+                        html += `
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${work.numero_wr || 'N/A'}</h6>
+                                        <p class="card-text small">${work.indirizzo || 'N/A'}</p>
+                                        <p class="card-text small">${work.nome_cliente || 'N/A'}</p>
+                                        <span class="badge bg-${statusClass}">${work.stato || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Errore caricamento lavori: ${error.message}</div></div>`;
+            }
+        }
+
+        // ============ GESTIONE ONT ============
+        async function loadOnts() {
+            const container = document.getElementById('onts-list');
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p>Caricamento ONT...</p>
+                </div>
+            `;
+
+            try {
+                const response = await apiFetch('/onts/');
+                const onts = await response.json();
+
+                let html = '';
+                if (onts.length === 0) {
+                    html = '<div class="col-12"><div class="alert alert-info">Nessun ONT trovato</div></div>';
+                } else {
+                    onts.forEach(ont => {
+                        const statusClass = ont.status === 'disponibile' ? 'success' : ont.status === 'installato' ? 'primary' : 'secondary';
+                        html += `
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${ont.serial_number}</h6>
+                                        <p class="card-text small">${ont.model}</p>
+                                        <p class="card-text small">${ont.manufacturer || 'N/A'}</p>
+                                        <span class="badge bg-${statusClass}">${ont.status}</span>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="assignOnt(${ont.id})">Assegna</button>
+                                            <button class="btn btn-sm btn-outline-success me-1" onclick="installOnt(${ont.id})">Installa</button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="returnOnt(${ont.id})">Restituisci</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Errore caricamento ONT: ${error.message}</div></div>`;
+            }
+        }
+
+        function showCreateOntModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createOntModal'));
+            modal.show();
+        }
+
+        async function createOnt() {
+            const data = {
+                serial_number: document.getElementById('ontSerial').value,
+                model: document.getElementById('ontModel').value,
+                manufacturer: document.getElementById('ontManufacturer').value || null,
+                pon_port: document.getElementById('ontPonPort').value || null,
+                vlan_id: parseInt(document.getElementById('ontVlanId').value) || null,
+                ip_address: document.getElementById('ontIpAddress').value || null,
+                location: document.getElementById('ontLocation').value || 'Magazzino Centrale'
+            };
+
+            if (!data.serial_number || !data.model) {
+                showMessage('Serial Number e Modello sono obbligatori', 'warning');
+                return;
+            }
+
+            try {
+                const response = await apiFetch('/onts/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showMessage('ONT creato con successo!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('createOntModal')).hide();
+                    document.getElementById('createOntForm').reset();
+                    loadOnts();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore creazione ONT: ${error.message}`, 'danger');
+            }
+        }
+
+        async function assignOnt(ontId) {
+            const workId = prompt('Inserisci ID Lavoro:');
+            if (!workId) return;
+
+            try {
+                const response = await apiFetch(`/onts/${ontId}/assign/${workId}`, { method: 'PUT' });
+                if (response.ok) {
+                    showMessage('ONT assegnato con successo!', 'success');
+                    loadOnts();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore assegnazione ONT: ${error.message}`, 'danger');
+            }
+        }
+
+        async function installOnt(ontId) {
+            const ponPort = prompt('PON Port (es: 0/1/0):', '0/1/0');
+            const vlanId = prompt('VLAN ID:', '100');
+            const ipAddress = prompt('IP Address:', '192.168.1.100');
+
+            if (!ponPort || !vlanId || !ipAddress) return;
+
+            try {
+                const response = await apiFetch(`/onts/${ontId}/install`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pon_port: ponPort,
+                        vlan_id: parseInt(vlanId),
+                        ip_address: ipAddress,
+                        installation_notes: 'Installazione da PC Alex via Yggdrasil'
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('ONT installato con successo!', 'success');
+                    loadOnts();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore installazione ONT: ${error.message}`, 'danger');
+            }
+        }
+
+        async function returnOnt(ontId) {
+            if (!confirm('Confermare restituzione ONT?')) return;
+
+            try {
+                const response = await apiFetch(`/onts/${ontId}/return`, { method: 'PUT' });
+                if (response.ok) {
+                    showMessage('ONT restituito con successo!', 'success');
+                    loadOnts();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore restituzione ONT: ${error.message}`, 'danger');
+            }
+        }
+
+        // ============ GESTIONE MODEM ============
+        async function loadModems() {
+            const container = document.getElementById('modems-list');
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p>Caricamento Modem...</p>
+                </div>
+            `;
+
+            try {
+                const response = await apiFetch('/modems/');
+                const modems = await response.json();
+
+                let html = '';
+                if (modems.length === 0) {
+                    html = '<div class="col-12"><div class="alert alert-info">Nessun Modem trovato</div></div>';
+                } else {
+                    modems.forEach(modem => {
+                        const statusClass = modem.status === 'disponibile' ? 'success' : modem.status === 'installato' ? 'primary' : 'secondary';
+                        html += `
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${modem.serial_number}</h6>
+                                        <p class="card-text small">${modem.model}</p>
+                                        <p class="card-text small">${modem.manufacturer || 'N/A'}</p>
+                                        <span class="badge bg-${statusClass}">${modem.status}</span>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="assignModem(${modem.id})">Assegna</button>
+                                            <button class="btn btn-sm btn-outline-success me-1" onclick="installModem(${modem.id})">Installa</button>
+                                            <button class="btn btn-sm btn-outline-info me-1" onclick="configureModem(${modem.id})">Configura</button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="returnModem(${modem.id})">Restituisci</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Errore caricamento Modem: ${error.message}</div></div>`;
+            }
+        }
+
+        function showCreateModemModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createModemModal'));
+            modal.show();
+        }
+
+        async function createModem() {
+            const data = {
+                serial_number: document.getElementById('modemSerial').value,
+                model: document.getElementById('modemModel').value,
+                manufacturer: document.getElementById('modemManufacturer').value || null,
+                wifi_ssid: document.getElementById('modemWifiSsid').value || null,
+                wifi_password: document.getElementById('modemWifiPassword').value || null,
+                location: document.getElementById('modemLocation').value || 'Magazzino Centrale'
+            };
+
+            if (!data.serial_number || !data.model) {
+                showMessage('Serial Number e Modello sono obbligatori', 'warning');
+                return;
+            }
+
+            try {
+                const response = await apiFetch('/modems/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showMessage('Modem creato con successo!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('createModemModal')).hide();
+                    document.getElementById('createModemForm').reset();
+                    loadModems();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore creazione Modem: ${error.message}`, 'danger');
+            }
+        }
+
+        async function assignModem(modemId) {
+            const workId = prompt('Inserisci ID Lavoro:');
+            if (!workId) return;
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}/assign/${workId}`, { method: 'PUT' });
+                if (response.ok) {
+                    showMessage('Modem assegnato con successo!', 'success');
+                    loadModems();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore assegnazione Modem: ${error.message}`, 'danger');
+            }
+        }
+
+        async function installModem(modemId) {
+            const notes = prompt('Note installazione:', 'Installazione da PC Alex via Yggdrasil');
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}/install`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        installation_notes: notes
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('Modem installato con successo!', 'success');
+                    loadModems();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore installazione Modem: ${error.message}`, 'danger');
+            }
+        }
+
+        async function configureModem(modemId) {
+            const ssid = prompt('Nuovo WiFi SSID:');
+            const password = prompt('Nuova WiFi Password:');
+            const notes = prompt('Note configurazione:', 'Configurazione da PC Alex via Yggdrasil');
+
+            if (!ssid || !password) return;
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}/configure`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wifi_ssid: ssid,
+                        wifi_password: password,
+                        technician_notes: notes
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('Modem configurato con successo!', 'success');
+                    loadModems();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore configurazione Modem: ${error.message}`, 'danger');
+            }
+        }
+
+        async function returnModem(modemId) {
+            if (!confirm('Confermare restituzione Modem?')) return;
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}/return`, { method: 'PUT' });
+                if (response.ok) {
+                    showMessage('Modem restituito con successo!', 'success');
+                    loadModems();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showMessage(`Errore restituzione Modem: ${error.message}`, 'danger');
+            }
+        }
+
+        // ============ STATISTICHE ============
+        async function loadStats() {
+            const container = document.getElementById('stats-content');
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p>Caricamento statistiche...</p>
+                </div>
+            `;
+
+            try {
+                // Carica statistiche settimanali
+                const weeklyResponse = await apiFetch('/stats/weekly');
+                const weeklyStats = await weeklyResponse.json();
+
+                // Carica statistiche equipaggiamenti
+                const equipResponse = await apiFetch('/stats/equipment');
+                const equipStats = await equipResponse.json();
+
+                const html = `
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6>📊 Statistiche Settimanali</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Lavori questa settimana:</strong> ${weeklyStats.total_works || 0}</p>
+                                <p><strong>Lavori chiusi:</strong> ${weeklyStats.closed_works || 0}</p>
+                                <p><strong>Lavori aperti:</strong> ${weeklyStats.open_works || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6>📦 Statistiche Equipaggiamenti</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>ONT Totali:</strong> ${equipStats.total_onts || 0}</p>
+                                <p><strong>ONT Disponibili:</strong> ${equipStats.available_onts || 0}</p>
+                                <p><strong>Modem Totali:</strong> ${equipStats.total_modems || 0}</p>
+                                <p><strong>Modem Disponibili:</strong> ${equipStats.available_modems || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Errore caricamento statistiche: ${error.message}</div></div>`;
+            }
+        }
+
+        // ============ INIZIALIZZAZIONE ============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test connessione iniziale
+            testConnection();
+
+            // Carica dati iniziali
+            loadWorks();
+            loadOnts();
+            loadModems();
+            loadStats();
+
+            // Aggiorna ogni 30 secondi
+            setInterval(() => {
+                loadWorks();
+                loadOnts();
+                loadModems();
+                loadStats();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

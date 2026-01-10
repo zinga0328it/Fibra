@@ -7,52 +7,61 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🔐 Security & Firewall Module\n\n**Zero-Trust Architecture**\n\n- **Firewall**: nftables\n- **VPN**: Yggdrasil-only access\n- **Backend**: Completely isolated\n- **Frontend**: Public but secure\n- **Monitoring**: Fail2Ban integration\n\n**Status**: ✅ Maximum Security"
+      "text": "# 🔒 Enterprise Security Architecture\n\n**Zero-Trust Security Model**\n\n- **Network**: Yggdrasil IPv6 mesh VPN\n- **Firewall**: nftables with strict rules\n- **Authentication**: JWT + API keys\n- **Encryption**: End-to-end data protection\n- **Access Control**: Role-based permissions\n- **Audit**: Complete activity logging\n\n**Status**: ✅ Production-Ready Security"
     },
     {
-      "id": "nftables_config",
+      "id": "nftables_firewall",
       "x": 50,
       "y": -200,
-      "width": 300,
-      "height": 180,
+      "width": 400,
+      "height": 200,
       "type": "text",
-      "text": "# 🔥 nftables Configuration\n\n**File**: `/etc/nftables/fibra.conf`\n\n```nft\ntable inet fibra {\n    chain input {\n        type filter hook input priority 0; policy drop;\n        \n        # Allow loopback\n        iifname lo accept\n        \n        # Allow established connections\n        ct state established,related accept\n        \n        # Yggdrasil-only backend access\n        iifname \"ygg0\" ip6 saddr 201:27c:546:5df7:176:95f3:c909:6834 \\\n            tcp dport 6030 accept\n        \n        # Allow HTTP/HTTPS public\n        tcp dport {80, 443} accept\n        \n        # Allow SSH (restricted)\n        tcp dport 22 accept\n    }\n}\n```\n\n**Only PC alex can access backend!**"
+      "text": "# 🔥 nftables Firewall (Configurazione Attuale)\n\n## Struttura Configurazione\n```bash\n/etc/nftables.conf\n├── core.conf          # Configurazione principale\n├── ssh.conf           # SSH (porta 2224)\n├── ygg0.conf          # Yggdrasil (55555, 9001)\n├── tor.conf           # Tor (9001, 9050)\n├── apache.conf        # Apache (80, 7676, 444, 445, 6031)\n├── app_service.conf   # Code-server (7778), ZeroTier (9993)\n├── api.conf           # API varie (7123, 5009)\n├── db.conf            # PostgreSQL (5434)\n├── fibra.conf         # FTTH API (solo Yggdrasil IPv6)\n├── ygg_shop.conf      # Shop APIs (solo Yggdrasil)\n├── test2.conf         # Test services (8256, 8083)\n└── banned.conf        # IP bannati\n```\n\n## Porte Aperte Pubbliche (Aggiornato)\n- **SSH**: 2224 (non-standard per sicurezza)\n- **Yggdrasil**: 55555 (TLS), 9001 (multicast)\n- **Tor**: 9001 (relay), 9050 (SOCKS)\n- **Apache**: 80, 7676, 444, 445, 6031\n- **Code-server**: 7778\n- **ZeroTier**: 9993\n- **APIs Pubbliche**: 7123, 5009\n- **PostgreSQL**: 5434\n- **Test Services**: 8256 (proxy), 8083 (Apache)\n\n## Nuove Porte Aggiunte\n- **8083**: Virtual Host test2 (Apache)\n- **8256**: API backend per test2\n- **7676**: Porta Apache aggiuntiva\n- **444/445**: Porte SSL custom\n\n## Access Control Matrix\n✅ **Pubblico**: SSH, Web, APIs esterne\n🔒 **Yggdrasil-Only**: FTTH (6030), Shop APIs\n🧅 **Tor-Only**: Onion services (8081)\n🏠 **Locale**: Internal APIs (9069, 9989, 9090, etc.)"
     },
     {
-      "id": "zero_trust_principles",
+      "id": "yggdrasil_network",
       "x": -300,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🛡️ Zero-Trust Principles\n\n## Never Trust, Always Verify\n- **No public API exposure**\n- **Yggdrasil authentication**\n- **IP-based access control**\n- **Encrypted communication**\n\n## Defense in Depth\n1. **Network isolation**\n2. **Firewall rules**\n3. **Application security**\n4. **Monitoring & logging**\n\n## Security Zones\n- **🔴 Public**: Apache only\n- **🟢 Trusted**: Yggdrasil network\n- **🔵 Admin**: Local system"
+      "text": "# 🌐 Yggdrasil IPv6 Mesh Network\n\n## Configurazione Reale\n```json\n{\n  \"Peers\": [],\n  \"Listen\": [\"tls://0.0.0.0:55555\"],\n  \"MulticastInterfaces\": [{\n    \"Regex\": \".*\",\n    \"Port\": 9001\n  }],\n  \"AllowedPublicKeys\": [\n    \"def0ce3d5aba11ac...\", // BossNode-Torciabook\n    \"0c6c2a2bfdc55dbe...\", // Altri nodi autorizzati\n    // + 12 chiavi pubbliche\n  ],\n  \"PublicKey\": \"def0ce3d5aba11ac798273400b1e45002a90b660b3bfda2104c74609fbcb8203\",\n  \"IfName\": \"ygg0\",\n  \"NodeInfo\": {\"name\": \"BossNode-Torciabook\"}\n}\n```\n\n## Sicurezza Yggdrasil\n- **13 nodi autorizzati** nella whitelist\n- **Crittografia end-to-end** built-in\n- **IPv6 addresses** generated cryptographically\n- **No IP conflicts** grazie alla generazione crittografica\n- **NAT traversal** automatico\n\n## Accesso Selettivo\n- **FTTH API**: Solo indirizzo IPv6 specifico\n- **Shop APIs**: Solo da rete Yggdrasil\n- **Isolamento completo** dal public internet"
     },
     {
-      "id": "fail2ban_integration",
+      "id": "tor_hidden_services",
       "x": 50,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🚫 Fail2Ban Integration\n\n## Apache Monitoring\n```ini\n[apache-noscript]\nenabled = true\nport = http,https\nfilter = apache-noscript\nlogpath = /var/log/apache2/access.log\nmaxretry = 6\n```\n\n## Uvicorn API Protection\n```ini\n[ftth-api]\nenabled = true\nport = 6030\nfilter = uvicorn-filter\nlogpath = /opt/ftth/logs/ftth.log\nmaxretry = 5\nbantime = 3600\n```\n\n## Automatic Banning\n- Failed auth attempts\n- Brute force attacks\n- Suspicious patterns"
+      "text": "# 🧅 Tor Hidden Services\n\n## Configurazione Tor\n```bash\n# /etc/tor/torrc\nHiddenServiceDir /var/lib/tor/torciabook_hidden_service/\nHiddenServicePort 80 127.0.0.1:8081\nHiddenServicePort 9888 127.0.0.1:9888\n\nDataDirectory /var/lib/tor\nSocksPort 9050\nDNSPort 9053\nLog debug file /var/log/tor/notices.log\n```\n\n## Onion Address\n```\n2oxnsnid6niqbtioiqfrpuyrj7pj73sovo3bw3jz3kphpazbajils3yd.onion\n```\n\n## Servizi Onion\n- **Porta 80**: Sito web principale (8081 locale)\n- **Porta 9888**: API Magazzino (9888 locale)\n- **Anonimato completo** per gli utenti\n- **Accesso senza VPN** ma con Tor\n\n## Apache Config per Onion\n```apache\n<VirtualHost *:8081>\n    ServerName 2oxnsnid6niqbtioiqfrpuyrj7pj73sovo3bw3jz3kphpazbajils3yd.onion\n    Header always set \"X-Served-By\" \"Tor Hidden Service\"\n    # ... proxy configs ...\n</VirtualHost>\n```"
     },
     {
-      "id": "access_control",
+      "id": "fail2ban_protection",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 🎫 Access Control Matrix\n\n## Backend API (Port 6030)\n- **Who**: Only PC alex\n- **How**: Yggdrasil IPv6\n- **IP**: 201:27c:546:5df7:176:95f3:c909:6834\n- **Authentication**: API Key + JWT\n\n## Frontend Web (Ports 80/443)\n- **Who**: Everyone (public)\n- **How**: HTTPS only\n- **Content**: Static files only\n- **Backend**: NO ACCESS\n\n## SSH (Port 22)\n- **Who**: Admin only\n- **How**: Key-based auth\n- **Restrictions**: IP whitelist"
+      "text": "# 🚫 Fail2Ban Protection\n\n## Jail Attive\n```ini\n[sshd]              # SSH protection (porta 2224)\n[apache-auth]       # Apache auth failures\n[apache-badbots]    # Bad bot blocking\n[apache-noscript]   # Script injection protection\n[apache-overflows]  # Buffer overflow protection\n[flask-api]         # API protection (porta 7123)\n[test2-api]         # Test API protection (porta 8083)\n[flask-api-5009]    # API protection (porta 5009)\n[postgresql]        # Database protection (porta 5434)\n[porta-6030]        # FTTH API protection\n[apache-auth-6031]  # Apache auth on 6031\n[apache-badbots-6031] # Bad bots on 6031\n```\n\n## Azioni di Ban\n- **nftables integration**: Ban diretti nel firewall\n- **Bantime**: Da 1 ora a 24 ore basato sulla gravità\n- **Maxretry**: Da 1 a 5 tentativi prima del ban\n- **Log monitoring**: Auth.log, Apache logs, Syslog\n\n## Protezione Multi-Livello\n- **SSH**: Protezione brute force\n- **Web**: Protezione injection e bots\n- **APIs**: Rate limiting e auth failures\n- **Database**: Connection abuse protection\n- **Custom jails**: Per servizi specifici"
     },
     {
-      "id": "troubleshooting_security",
+      "id": "apache_security",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Firewall Issues\n- **Traffic blocked**\n- **Rules not applied**\n- **Yggdrasil not working**\n\n## Access Problems\n- **Can't reach backend**\n- **Frontend down**\n- **Authentication failed**\n\n## Quick Commands\n```bash\n# Check rules\nsudo nft list ruleset\n\n# Test connectivity\nping6 backend-ip\n\n# View bans\nsudo fail2ban-client status\n\n# Reload firewall\nsudo systemctl restart nftables\n```"
+      "text": "# 🌐 Apache Security Configuration\n\n## Virtual Hosts Sicuri\n- **supermercato.conf**: Reverse proxy complesso con API keys\n- **yggdrasil.conf**: Proxy semplice per API DB\n- **tor-onion.conf**: Hidden service con onion address\n- **test2.conf**: Servizi di test\n- **torciabook.conf**: Applicazione principale\n\n## Sicurezza Implementata\n```apache\n# API Key protection\nPassEnv API_SECRET_KEY\nRequestHeader set X-API-KEY \"%{API_SECRET_KEY}e\" early\n\n# Directory restrictions\n<Directory /var/www/torciabook/privato>\n    Require all denied\n</Directory>\n\n# Header security\nHeader always set \"X-Served-By\" \"Tor Hidden Service\"\n```\n\n## Porte Apache\n- **80**: HTTP standard\n- **7676**: Porta custom\n- **444/445**: Porte SSL custom\n- **6031**: Porta enterprise\n- **8081**: Porta per hidden services"
+    },
+    {
+      "id": "access_control_matrix",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🎯 Matrice Controllo Accessi\n\n## Pubblico (Internet)\n✅ SSH (2224)\n✅ Yggdrasil (55555, 9001)\n✅ Tor (9001, 9050)\n✅ Apache (80, 7676, 444, 445, 6031)\n✅ Code-server (7778)\n✅ ZeroTier (9993)\n✅ APIs (7123, 5009)\n✅ Database (5434)\n✅ Test (8256, 8083)\n\n## Solo Yggdrasil\n🔒 FTTH API (6030) - IPv6 specifico\n🔒 Shop APIs (9888, 9889, 8081)\n\n## Solo Tor Onion\n🧅 Sito web (8081 via onion)\n🧅 API Magazzino (9888 via onion)\n\n## Locale Only\n🏠 Internal APIs (9069, 9989, 9090, etc.)\n\n## Zero Access\n🚫 Directory private\n🚫 Config files\n🚫 System files"
     }
   ],
   "edges": [
@@ -60,49 +69,57 @@
       "id": "security_to_nftables",
       "fromNode": "security_overview",
       "fromSide": "right",
-      "toNode": "nftables_config",
+      "toNode": "nftables_firewall",
       "toSide": "left",
       "label": "implemented with"
     },
     {
-      "id": "security_to_zero_trust",
-      "fromNode": "security_overview",
+      "id": "nftables_to_yggdrasil",
+      "fromNode": "nftables_firewall",
       "fromSide": "bottom",
-      "toNode": "zero_trust_principles",
+      "toNode": "yggdrasil_network",
       "toSide": "top",
-      "label": "follows"
+      "label": "isolates with"
     },
     {
-      "id": "nftables_to_fail2ban",
-      "fromNode": "nftables_config",
+      "id": "nftables_to_tor",
+      "fromNode": "nftables_firewall",
       "fromSide": "bottom",
-      "toNode": "fail2ban_integration",
-      "toSide": "top",
-      "label": "enhanced by"
-    },
-    {
-      "id": "zero_trust_to_access",
-      "fromNode": "zero_trust_principles",
-      "fromSide": "bottom",
-      "toNode": "access_control",
+      "toNode": "tor_hidden_services",
       "toSide": "left",
-      "label": "defines"
+      "label": "complements with"
     },
     {
-      "id": "fail2ban_to_access",
-      "fromNode": "fail2ban_integration",
+      "id": "yggdrasil_to_fail2ban",
+      "fromNode": "yggdrasil_network",
       "fromSide": "bottom",
-      "toNode": "access_control",
+      "toNode": "fail2ban_protection",
+      "toSide": "left",
+      "label": "protected by"
+    },
+    {
+      "id": "tor_to_fail2ban",
+      "fromNode": "tor_hidden_services",
+      "fromSide": "bottom",
+      "toNode": "fail2ban_protection",
       "toSide": "right",
-      "label": "protects"
+      "label": "protected by"
     },
     {
-      "id": "access_to_troubleshooting",
-      "fromNode": "access_control",
+      "id": "fail2ban_to_apache",
+      "fromNode": "fail2ban_protection",
       "fromSide": "right",
-      "toNode": "troubleshooting_security",
+      "toNode": "apache_security",
       "toSide": "left",
-      "label": "debug with"
+      "label": "secures"
+    },
+    {
+      "id": "apache_to_access",
+      "fromNode": "apache_security",
+      "fromSide": "bottom",
+      "toNode": "access_control_matrix",
+      "toSide": "top",
+      "label": "controls"
     }
   ]
 }

@@ -1,0 +1,16 @@
+ELENCO CLIENTI DA CARICARE
+
+Primo cliente:
+- Nome completo: Anna Maria Bianchi
+- Residenza: Corso Italia 78, Torino (TO)
+- Contatto telefonico: 011-1234567
+
+Secondo cliente:
+- Nome completo: Paolo Galli
+- Residenza: Viale dei Giardini 15, Bologna (BO)
+- Contatto telefonico: 051-9876543
+
+Terzo cliente:
+- Nome completo: Sofia Martini
+- Residenza: Largo della Vittoria 22, Napoli (NA)
+- Contatto telefonico: 081-5554443

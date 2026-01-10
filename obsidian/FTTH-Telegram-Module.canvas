@@ -7,102 +7,119 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 📱 Telegram Bot Module\n\n**Mobile Communication Hub**\n\n- **Bot**: @FTTH_Bot\n- **Features**: Real-time notifications\n- **Integration**: Work requests updates\n- **Security**: Token-based auth\n- **Mode**: Polling (production)\n\n**Status**: ✅ Active"
+      "text": "# 📱 Telegram Bot Integration\n\n**Real-Time Communication Hub**\n\n- **Bot Framework**: python-telegram-bot\n- **Real-Time Updates**: Instant notifications\n- **Interactive Commands**: User-friendly interface\n- **Media Support**: Photo/document handling\n- **Group Management**: Team coordination\n- **Security**: Encrypted communications\n\n**Status**: ✅ Production Bot Ready"
     },
     {
-      "id": "bot_configuration",
+      "id": "bot_architecture",
       "x": 50,
       "y": -200,
-      "width": 300,
+      "width": 350,
       "height": 180,
       "type": "text",
-      "text": "# ⚙️ Bot Configuration\n\n## Environment Variables\n```env\nTELEGRAM_BOT_TOKEN=987654321:ABCdefGHIjklMNOpqrsTUVwxyz\nTELEGRAM_WEBHOOK_URL=https://api.ftth-management.com/telegram/webhook\nTELEGRAM_POLLING=false\n```\n\n## Bot Commands\n- `/start` - Inizializzazione\n- `/status` - Stato corrente\n- `/works` - Lista WR attivi\n- `/update <id> <status>` - Aggiorna WR\n\n## Webhook vs Polling\n- **Production**: Webhook (efficiente)\n- **Development**: Polling (semplice)"
+      "text": "# 🤖 Bot Architecture & Setup\n\n## Docker Configuration\n```yaml\ntelegram-bot:\n  build:\n    context: ./telegram_bot\n    dockerfile: Dockerfile\n  environment:\n    - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}\n    - DATABASE_URL=${DATABASE_URL}\n    - REDIS_URL=${REDIS_URL}\n  volumes:\n    - ./logs:/app/logs\n  depends_on:\n    - postgres\n    - redis\n  networks:\n    - ftth_network\n  restart: unless-stopped\n```\n\n## Core Components\n```python\n# telegram_bot/main.py\nfrom telegram import Update\nfrom telegram.ext import Application, CommandHandler, MessageHandler, filters\n\nimport asyncio\n\nclass TelegramBot:\n    def __init__(self):\n        self.application = Application.builder().token(settings.telegram_bot_token).build()\n        self._setup_handlers()\n        \n    def _setup_handlers(self):\n        # Command handlers\n        self.application.add_handler(CommandHandler(\"start\", self.start_command))\n        self.application.add_handler(CommandHandler(\"help\", self.help_command))\n        self.application.add_handler(CommandHandler(\"status\", self.status_command))\n        \n        # Message handlers\n        self.application.add_handler(MessageHandler(filters.TEXT, self.handle_text))\n        self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo))\n        self.application.add_handler(MessageHandler(filters.Document.ALL, self.handle_document))\n        \n        # Callback handlers\n        self.application.add_handler(CallbackQueryHandler(self.handle_callback))\n    \n    async def start_polling(self):\n        await self.application.initialize()\n        await self.application.start()\n        await self.application.updater.start_polling()\n```\n\n## Bot Features\n- **Authentication**: User verification and authorization\n- **Command Processing**: Slash commands and text commands\n- **Media Handling**: Photo uploads for work documentation\n- **Interactive Menus**: Inline keyboards and callbacks\n- **Background Tasks**: Scheduled notifications and reminders\n- **Error Handling**: Graceful failure management"
     },
     {
-      "id": "notification_system",
+      "id": "command_system",
       "x": -300,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🔔 Notification System\n\n## Event Triggers\n- **New WR**: Notifica creazione\n- **Status Change**: Aggiornamenti stato\n- **Assignment**: Assegnazione tecnico\n- **Completion**: WR completato\n\n## Message Format\n```\n🆕 Nuovo WR #123\nCliente: Mario Rossi\nIndirizzo: Via Roma 15\nPriorità: Alta\n```\n\n## Real-time Updates\n- Instant notifications\n- Status tracking\n- Performance metrics"
+      "text": "# 💬 Command System\n\n## Core Commands\n```python\n# Command implementations\nasync def start_command(self, update: Update, context):\n    \"\"\"Welcome message and user registration\"\"\"\n    user = update.effective_user\n    \n    # Check if user exists in database\n    db_user = await get_user_by_telegram_id(user.id)\n    if not db_user:\n        # Register new user\n        await register_telegram_user(user)\n        welcome_msg = f\"Benvenuto {user.first_name}! Sei stato registrato nel sistema FTTH.\"\n    else:\n        welcome_msg = f\"Bentornato {user.first_name}!\"\n    \n    keyboard = [\n        [InlineKeyboardButton(\"📋 Mie WR\", callback_data=\"my_work_orders\")],\n        [InlineKeyboardButton(\"📊 Statistiche\", callback_data=\"statistics\")],\n        [InlineKeyboardButton(\"⚙️ Impostazioni\", callback_data=\"settings\")]\n    ]\n    \n    await update.message.reply_text(\n        welcome_msg,\n        reply_markup=InlineKeyboardMarkup(keyboard)\n    )\n\nasync def status_command(self, update: Update, context):\n    \"\"\"Show system status and user information\"\"\"\n    user = await get_current_user(update.effective_user.id)\n    \n    status_msg = f\"\"\"\n    👤 Utente: {user.name}\n    👥 Ruolo: {user.role}\n    📍 Team: {user.team.name if user.team else 'Nessuno'}\n    \n    📊 WR Attive: {await count_active_work_orders(user)}\n    ✅ WR Completate (oggi): {await count_completed_today(user)}\n    ⏰ WR In Scadenza: {await count_due_soon(user)}\n    \"\"\"\n    \n    await update.message.reply_text(status_msg)\n```\n\n## Advanced Commands\n- **`/work_orders`**: List and manage work orders\n- **`/report`**: Generate daily/weekly reports\n- **`/notify_team`**: Send team notifications\n- **`/upload_photo`**: Upload work documentation\n- **`/schedule`**: View team schedule\n- **`/emergency`**: Emergency contact system"
     },
     {
-      "id": "systemd_service",
+      "id": "notification_system",
       "x": 50,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# ⚙️ Systemd Service\n\n**File**: `/etc/systemd/system/telegram-bot.service`\n\n```ini\n[Unit]\nDescription=FTTH Telegram Bot\nAfter=network.target\n\n[Service]\nExecStart=/opt/ftth/venv/bin/python telegram_bot.py\nWorkingDirectory=/opt/ftth\nUser=ftth\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n```\n\n**Management**: `systemctl [start|stop|restart] telegram-bot`"
+      "text": "# 🔔 Notification System\n\n## Real-Time Notifications\n```python\n# Notification service\nclass NotificationService:\n    def __init__(self, bot_application):\n        self.bot = bot_application\n        self.redis = redis.Redis.from_url(settings.redis_url)\n    \n    async def send_work_order_assigned(self, work_order: WorkOrder, technician: User):\n        \"\"\"Notify technician of new work order assignment\"\"\"\n        message = f\"\"\"\n        📋 Nuovo WR Assegnato\n        \n        🔢 Numero: {work_order.number}\n        📍 Indirizzo: {work_order.address}\n        📅 Scadenza: {work_order.due_date.strftime('%d/%m/%Y')}\n        📝 Descrizione: {work_order.description[:100]}...\n        \n        ⚡ Priorità: {work_order.priority}\n        \"\"\"\n        \n        keyboard = [\n            [InlineKeyboardButton(\"✅ Accetta\", callback_data=f\"accept_wo_{work_order.id}\")],\n            [InlineKeyboardButton(\"📍 Mostra Mappa\", callback_data=f\"map_wo_{work_order.id}\")],\n            [InlineKeyboardButton(\"📞 Contatta Cliente\", callback_data=f\"contact_wo_{work_order.id}\")]\n        ]\n        \n        await self.bot.send_message(\n            chat_id=technician.telegram_id,\n            text=message,\n            reply_markup=InlineKeyboardMarkup(keyboard)\n        )\n    \n    async def send_work_order_completed(self, work_order: WorkOrder):\n        \"\"\"Notify relevant parties of completion\"\"\"\n        # Notify technician\n        await self._notify_completion_technician(work_order)\n        \n        # Notify team lead\n        await self._notify_completion_team_lead(work_order)\n        \n        # Notify client (if configured)\n        if work_order.notify_client:\n            await self._notify_completion_client(work_order)\n    \n    async def send_system_alert(self, alert_type: str, message: str, priority: str = \"normal\"):\n        \"\"\"Send system-wide alerts\"\"\"\n        # Get all admin users\n        admins = await get_admin_users()\n        \n        alert_message = f\"🚨 Sistema: {alert_type.upper()}\\n\\n{message}\"\n        \n        for admin in admins:\n            try:\n                await self.bot.send_message(\n                    chat_id=admin.telegram_id,\n                    text=alert_message,\n                    parse_mode='HTML'\n                )\n            except Exception as e:\n                logger.error(f\"Failed to send alert to {admin.name}: {e}\")\n\n# Background notification processor\nasync def notification_worker():\n    \"\"\"Process queued notifications\"\"\"\n    while True:\n        try:\n            # Get notification from Redis queue\n            notification_data = await redis.blpop('notifications_queue', timeout=1)\n            if notification_data:\n                await process_notification(json.loads(notification_data))\n        except Exception as e:\n            logger.error(f\"Notification worker error: {e}\")\n        await asyncio.sleep(0.1)\n```\n\n## Notification Types\n- **Work Order Events**: Assignment, completion, updates\n- **System Alerts**: Errors, maintenance, security events\n- **Team Coordination**: Schedule changes, team messages\n- **Client Communications**: Status updates, completion notifications\n- **Emergency Alerts**: Critical system issues\n- **Scheduled Reminders**: Due dates, follow-ups"
     },
     {
-      "id": "mobile_integration",
+      "id": "media_integration",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 📲 Mobile Integration\n\n## Technician Workflow\n1. **Receive Notification**\n2. **View WR Details**\n3. **Update Status via Bot**\n4. **Upload Photos/Evidence**\n5. **Mark Complete**\n\n## Features\n- ✅ Location tracking\n- ✅ Photo upload\n- ✅ Status updates\n- ✅ Real-time sync\n- ✅ Offline capability\n\n## Security\n- Encrypted communication\n- Token authentication\n- Rate limiting"
+      "text": "# 📷 Media & Document Integration\n\n## Photo Upload & Processing\n```python\n# Photo handling for work documentation\nasync def handle_photo(self, update: Update, context):\n    \"\"\"Process photo uploads from technicians\"\"\"\n    user = await get_current_user(update.effective_user.id)\n    photo = update.message.photo[-1]  # Highest resolution\n    \n    # Download photo\n    file = await context.bot.get_file(photo.file_id)\n    photo_bytes = await file.download_as_bytearray()\n    \n    # Save to temporary file\n    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:\n        temp_file.write(photo_bytes)\n        temp_path = temp_file.name\n    \n    try:\n        # Process with OCR if needed\n        ocr_text = await process_image_ocr(temp_path)\n        \n        # AI analysis for context\n        analysis = await analyze_image_with_ai(temp_path, ocr_text)\n        \n        # Create document record\n        document = await create_work_document(\n            work_order_id=context.user_data.get('current_wo'),\n            file_path=temp_path,\n            document_type='photo',\n            ocr_text=ocr_text,\n            ai_analysis=analysis,\n            uploaded_by=user.id\n        )\n        \n        # Send confirmation\n        await update.message.reply_text(\n            f\"📷 Foto caricata con successo!\\n\\n\"\n            f\"📄 Documento ID: {document.id}\\n\"\n            f\"🔍 Rilevato: {analysis.get('description', 'Documento generico')}\\n\"\n            f\"📊 Confidenza: {analysis.get('confidence', 0):.1%}\"\n        )\n        \n    finally:\n        # Cleanup temp file\n        os.unlink(temp_path)\n\n# Document upload handling\nasync def handle_document(self, update: Update, context):\n    \"\"\"Process document uploads\"\"\"\n    document = update.message.document\n    \n    # Validate file type and size\n    if document.file_size > 10 * 1024 * 1024:  # 10MB limit\n        await update.message.reply_text(\"❌ File troppo grande (max 10MB)\")\n        return\n    \n    allowed_types = ['application/pdf', 'image/jpeg', 'image/png']\n    if document.mime_type not in allowed_types:\n        await update.message.reply_text(\"❌ Tipo file non supportato\")\n        return\n    \n    # Download and process\n    file = await context.bot.get_file(document.file_id)\n    file_bytes = await file.download_as_bytearray()\n    \n    # Process through document pipeline\n    processed_doc = await self.document_processor.process_upload(\n        file_bytes, document.file_name, document.mime_type\n    )\n    \n    await update.message.reply_text(\n        f\"📄 Documento '{document.file_name}' elaborato con successo!\\n\"\n        f\"ID: {processed_doc.id}\"\n    )\n```\n\n## Media Processing Pipeline\n- **Validation**: File type, size, and security checks\n- **OCR Processing**: Text extraction from images/documents\n- **AI Analysis**: Content understanding and categorization\n- **Metadata Extraction**: EXIF data, document properties\n- **Storage**: Secure file storage with encryption\n- **Indexing**: Searchable content indexing"
     },
     {
-      "id": "troubleshooting_telegram",
+      "id": "security_compliance",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **Bot not responding**\n- **Token invalid**\n- **Webhook failed**\n- **Rate limited**\n\n## Quick Commands\n```bash\n# Test bot\ntelnet api.telegram.org 443\n\n# Check token\ncurl https://api.telegram.org/bot$TOKEN/getMe\n\n# View logs\nsudo journalctl -u telegram-bot -f\n\n# Restart service\nsudo systemctl restart telegram-bot\n```"
+      "text": "# 🔒 Security & Compliance\n\n## Authentication & Authorization\n```python\n# User verification middleware\nasync def authenticate_telegram_user(self, update: Update) -> User:\n    \"\"\"Verify user identity and permissions\"\"\"\n    telegram_user = update.effective_user\n    \n    # Get user from database\n    user = await get_user_by_telegram_id(telegram_user.id)\n    if not user:\n        raise UnauthorizedError(\"User not registered in system\")\n    \n    # Check if user is active\n    if not user.is_active:\n        raise UnauthorizedError(\"User account is disabled\")\n    \n    # Rate limiting check\n    if await self._check_rate_limit(user.id):\n        raise RateLimitError(\"Too many requests\")\n    \n    return user\n\n# Command authorization\nasync def authorize_command(self, user: User, command: str) -> bool:\n    \"\"\"Check if user has permission for command\"\"\"\n    command_permissions = {\n        'admin_commands': ['/system_status', '/user_management'],\n        'manager_commands': ['/team_report', '/assign_work'],\n        'technician_commands': ['/my_work_orders', '/upload_photo'],\n        'viewer_commands': ['/status', '/help']\n    }\n    \n    user_role = user.role.lower()\n    allowed_commands = []\n    \n    # Accumulate permissions based on role hierarchy\n    role_hierarchy = ['viewer', 'technician', 'manager', 'admin']\n    user_role_index = role_hierarchy.index(user_role)\n    \n    for i in range(user_role_index + 1):\n        role = role_hierarchy[i]\n        allowed_commands.extend(command_permissions.get(f'{role}_commands', []))\n    \n    return command in allowed_commands\n```\n\n## Security Features\n- **End-to-End Encryption**: Telegram's built-in encryption\n- **User Authentication**: Database-backed user verification\n- **Rate Limiting**: Prevent abuse and DoS attacks\n- **Input Validation**: Sanitize all user inputs\n- **Audit Logging**: Log all bot interactions\n- **Session Management**: Secure session handling\n\n## Compliance\n- **Data Protection**: GDPR compliant data handling\n- **Access Control**: Role-based command restrictions\n- **Privacy**: Minimal data collection and storage\n- **Incident Response**: Security event monitoring\n- **Regular Audits**: Security and compliance reviews"
+    },
+    {
+      "id": "bot_troubleshooting",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Bot Troubleshooting\n\n## Common Issues\n- **Bot Not Responding**: Check token, network, logs\n- **Commands Not Working**: Verify permissions, syntax\n- **Notifications Failing**: Check user registration, chat IDs\n- **Media Upload Errors**: File size, type validation\n- **Database Connection**: Connection pool, timeouts\n\n## Debugging Commands\n```bash\n# Check bot status\ndocker-compose logs telegram-bot\n\n# Test bot connectivity\ncurl -X POST \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe\"\n\n# Check webhook status\ncurl -X POST \"https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo\"\n\n# View recent logs\ntail -f logs/telegram_bot.log\n\n# Test database connection\ndocker-compose exec telegram-bot python -c \"import asyncio; from app.database import test_connection; asyncio.run(test_connection())\"\n```\n\n## Performance Monitoring\n```python\n# Bot performance metrics\nclass BotMetrics:\n    def __init__(self):\n        self.commands_processed = 0\n        self.errors_count = 0\n        self.avg_response_time = 0\n        self.active_users = set()\n    \n    async def record_command(self, command: str, response_time: float):\n        self.commands_processed += 1\n        self.avg_response_time = (\n            (self.avg_response_time * (self.commands_processed - 1)) + response_time\n        ) / self.commands_processed\n    \n    async def record_error(self, error: Exception):\n        self.errors_count += 1\n        logger.error(f\"Bot error: {error}\")\n    \n    async def get_stats(self):\n        return {\n            'commands_processed': self.commands_processed,\n            'errors_count': self.errors_count,\n            'avg_response_time': f\"{self.avg_response_time:.2f}s\",\n            'active_users': len(self.active_users)\n        }\n\n# Health check endpoint\n@app.get(\"/health\")\nasync def health_check():\n    \"\"\"Bot health check for monitoring\"\"\"\n    try:\n        # Test database connection\n        await test_db_connection()\n        \n        # Test Telegram API\n        await test_telegram_api()\n        \n        # Get bot stats\n        stats = await bot_metrics.get_stats()\n        \n        return {\n            \"status\": \"healthy\",\n            \"timestamp\": datetime.utcnow(),\n            \"stats\": stats\n        }\n    except Exception as e:\n        logger.error(f\"Health check failed: {e}\")\n        return {\n            \"status\": \"unhealthy\",\n            \"error\": str(e),\n            \"timestamp\": datetime.utcnow()\n        }\n```\n\n## Maintenance Tasks\n- **Log Rotation**: Automatic log file rotation\n- **Database Cleanup**: Remove old message records\n- **Performance Tuning**: Optimize query performance\n- **Security Updates**: Regular dependency updates\n- **Backup Procedures**: Bot configuration and data backup"
     }
   ],
   "edges": [
     {
-      "id": "telegram_to_config",
+      "id": "telegram_to_bot",
       "fromNode": "telegram_overview",
       "fromSide": "right",
-      "toNode": "bot_configuration",
+      "toNode": "bot_architecture",
       "toSide": "left",
-      "label": "configured by"
+      "label": "implements with"
     },
     {
-      "id": "telegram_to_notifications",
+      "id": "telegram_to_commands",
       "fromNode": "telegram_overview",
+      "fromSide": "bottom",
+      "toNode": "command_system",
+      "toSide": "top",
+      "label": "provides"
+    },
+    {
+      "id": "bot_to_notifications",
+      "fromNode": "bot_architecture",
       "fromSide": "bottom",
       "toNode": "notification_system",
       "toSide": "top",
       "label": "sends"
     },
     {
-      "id": "config_to_service",
-      "fromNode": "bot_configuration",
+      "id": "commands_to_notifications",
+      "fromNode": "command_system",
       "fromSide": "bottom",
-      "toNode": "systemd_service",
-      "toSide": "top",
-      "label": "runs as"
+      "toNode": "notification_system",
+      "toSide": "left",
+      "label": "triggers"
     },
     {
-      "id": "notifications_to_mobile",
+      "id": "notifications_to_media",
       "fromNode": "notification_system",
       "fromSide": "bottom",
-      "toNode": "mobile_integration",
+      "toNode": "media_integration",
       "toSide": "left",
-      "label": "enables"
+      "label": "includes"
     },
     {
-      "id": "service_to_mobile",
-      "fromNode": "systemd_service",
-      "fromSide": "bottom",
-      "toNode": "mobile_integration",
-      "toSide": "right",
-      "label": "powers"
-    },
-    {
-      "id": "mobile_to_troubleshooting",
-      "fromNode": "mobile_integration",
+      "id": "media_to_security",
+      "fromNode": "media_integration",
       "fromSide": "right",
-      "toNode": "troubleshooting_telegram",
+      "toNode": "security_compliance",
       "toSide": "left",
-      "label": "debug with"
+      "label": "secured by"
+    },
+    {
+      "id": "security_to_troubleshooting",
+      "fromNode": "security_compliance",
+      "fromSide": "bottom",
+      "toNode": "bot_troubleshooting",
+      "toSide": "top",
+      "label": "monitored in"
     }
   ]
 }

@@ -1,0 +1,17 @@
+Cliente 1:
+Nome: Mario
+Cognome: Rossi
+Indirizzo: Via Roma 123, Roma (RM)
+Telefono: 3803645084
+
+Cliente 2:
+Nome: Luca
+Cognome: Verdi
+Indirizzo: Via Milano 456, Milano (MI)
+Telefono: 3401234567
+
+Cliente 3:
+Nome: Giovanni
+Cognome: Bianchi
+Indirizzo: Piazza Duomo 1, Firenze (FI)
+Telefono: 3339876543

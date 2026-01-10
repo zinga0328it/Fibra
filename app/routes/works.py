@@ -21,6 +21,8 @@ import json
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 import app.utils.telegram as telegram_utils
+from pydantic import BaseModel
+from typing import Optional, List
 
 router = APIRouter(prefix="/works", tags=["works"])
 
@@ -351,6 +353,17 @@ def update_work(work_id: int, payload: WorkUpdate, db: Session = Depends(get_db)
         work.stato = update_data['stato']
         if update_data['stato'] == 'chiuso':
             work.data_chiusura = datetime.now()
+    
+    # Update equipment fields
+    if 'requires_modem' in update_data:
+        work.requires_modem = update_data['requires_modem']
+    if 'requires_ont' in update_data:
+        work.requires_ont = update_data['requires_ont']
+    if 'modem_delivered' in update_data:
+        work.modem_delivered = update_data['modem_delivered']
+    if 'ont_delivered' in update_data:
+        work.ont_delivered = update_data['ont_delivered']
+    
     db.commit()
     # Create events for meaningful changes
     if 'stato' in update_data and update_data['stato'] != old_status:
@@ -493,3 +506,329 @@ def merge_duplicate_works(db: Session = Depends(get_db)):
                 db.delete(extra)
         db.commit()
     return {'merged': merged}
+
+# ONT/Modem management endpoints for works
+
+@router.put("/{work_id}/ont/{ont_id}")
+def assign_ont_to_work(work_id: int, ont_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Assign ONT to work and update work flags"""
+    from app.models.models import ONT
+    
+    work = db.query(Work).filter(Work.id == work_id).first()
+    if not work:
+        raise HTTPException(status_code=404, detail="Work not found")
+
+    ont = db.query(ONT).filter(ONT.id == ont_id).first()
+    if not ont:
+        raise HTTPException(status_code=404, detail="ONT not found")
+
+    if ont.status != "available":
+        raise HTTPException(status_code=400, detail="ONT is not available")
+
+    # Assign ONT to work
+    work.ont = ont
+    work.requires_ont = True
+    ont.status = "assigned"
+    ont.assigned_date = datetime.utcnow()
+
+    db.commit()
+    return {"message": "ONT assigned to work successfully"}
+
+@router.put("/{work_id}/modem/{modem_id}")
+def assign_modem_to_work(work_id: int, modem_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Assign modem to work and update work flags"""
+    from app.models.models import Modem
+    
+    work = db.query(Work).filter(Work.id == work_id).first()
+    if not work:
+        raise HTTPException(status_code=404, detail="Work not found")
+
+    modem = db.query(Modem).filter(Modem.id == modem_id).first()
+    if not modem:
+        raise HTTPException(status_code=404, detail="Modem not found")
+
+    if modem.status != "available":
+        raise HTTPException(status_code=400, detail="Modem is not available")
+
+    # Assign modem to work
+    work.modem = modem
+    work.requires_modem = True
+    modem.status = "assigned"
+
+    db.commit()
+    return {"message": "Modem assigned to work successfully"}
+
+@router.get("/{work_id}/equipment")
+def get_work_equipment(work_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Get equipment (ONT/Modem) assigned to work"""
+    work = db.query(Work).filter(Work.id == work_id).first()
+    if not work:
+        raise HTTPException(status_code=404, detail="Work not found")
+
+    equipment = {
+        "work_id": work.id,
+        "requires_ont": work.requires_ont,
+        "requires_modem": work.requires_modem,
+        "ont_delivered": work.ont_delivered,
+        "modem_delivered": work.modem_delivered,
+        "ont_cost": work.ont_cost,
+        "modem_cost": work.modem_cost,
+        "ont": None,
+        "modem": None
+    }
+
+    if work.ont:
+        equipment["ont"] = {
+            "id": work.ont.id,
+            "serial_number": work.ont.serial_number,
+            "model": work.ont.model,
+            "manufacturer": work.ont.manufacturer,
+            "status": work.ont.status,
+            "pon_port": work.ont.pon_port,
+            "vlan_id": work.ont.vlan_id,
+            "ip_address": work.ont.ip_address
+        }
+
+    if work.modem:
+        equipment["modem"] = {
+            "id": work.modem.id,
+            "serial_number": work.modem.serial_number,
+            "model": work.modem.model,
+            "manufacturer": work.modem.manufacturer,
+            "status": work.modem.status,
+            "wifi_ssid": work.modem.wifi_ssid,
+            "sync_method": work.modem.sync_method
+        }
+
+    return equipment
+
+@router.put("/{work_id}/equipment/delivered")
+def mark_equipment_delivered(work_id: int, ont_delivered: bool = False, modem_delivered: bool = False, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Mark equipment as delivered"""
+    work = db.query(Work).filter(Work.id == work_id).first()
+    if not work:
+        raise HTTPException(status_code=404, detail="Work not found")
+
+    if ont_delivered:
+        work.ont_delivered = True
+    if modem_delivered:
+        work.modem_delivered = True
+
+    db.commit()
+    return {"message": "Equipment delivery status updated"}
+
+class WorkIngest(BaseModel):
+    numero_wr: str
+    stato: str
+    descrizione: Optional[str] = None
+    tecnico: Optional[str] = None
+    data_creazione: Optional[str] = None
+    data_chiusura: Optional[str] = None
+    note: Optional[str] = None
+    ont_sn: Optional[str] = None
+    modem_sn: Optional[str] = None
+    indirizzo: Optional[str] = None
+    cliente: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+
+class BulkIngestRequest(BaseModel):
+    works: List[WorkIngest]
+
+@router.post("/ingest/work")
+def ingest_work(work_data: WorkIngest, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Ingest a single work from external system"""
+    try:
+        # Normalize numero_wr
+        numero_wr = normalize_numero_wr(work_data.numero_wr)
+
+        # Check if work already exists
+        existing_work = db.query(Work).filter(Work.numero_wr == numero_wr).first()
+        if existing_work:
+            # Update existing work
+            existing_work.stato = work_data.stato
+            if work_data.descrizione:
+                existing_work.note = work_data.descrizione
+            if work_data.tecnico:
+                # Find technician by name
+                technician = db.query(Technician).filter(
+                    (Technician.nome + ' ' + Technician.cognome) == work_data.tecnico
+                ).first()
+                if technician:
+                    existing_work.tecnico_assegnato_id = technician.id
+            if work_data.data_creazione:
+                existing_work.data_apertura = datetime.fromisoformat(work_data.data_creazione.replace('Z', '+00:00'))
+            if work_data.data_chiusura:
+                existing_work.data_chiusura = datetime.fromisoformat(work_data.data_chiusura.replace('Z', '+00:00'))
+            if work_data.note:
+                existing_work.note = work_data.note
+            if work_data.indirizzo:
+                existing_work.indirizzo = work_data.indirizzo
+            if work_data.cliente:
+                existing_work.nome_cliente = work_data.cliente
+
+            # Store additional fields in extra_fields
+            extra_data = {}
+            if work_data.ont_sn:
+                extra_data['ont_sn'] = work_data.ont_sn
+            if work_data.modem_sn:
+                extra_data['modem_sn'] = work_data.modem_sn
+            if work_data.telefono:
+                extra_data['telefono'] = work_data.telefono
+            if work_data.email:
+                extra_data['email'] = work_data.email
+            if extra_data:
+                existing_work.extra_fields = extra_data
+
+            db.commit()
+            return {"message": f"Work {numero_wr} updated successfully", "work_id": existing_work.id}
+        else:
+            # Create new work
+            new_work = Work(
+                numero_wr=numero_wr,
+                stato=work_data.stato,
+                operatore="Imported",  # Default operator for imported works
+                indirizzo=work_data.indirizzo,
+                nome_cliente=work_data.cliente,
+                note=work_data.descrizione or work_data.note,
+                data_apertura=datetime.fromisoformat(work_data.data_creazione.replace('Z', '+00:00')) if work_data.data_creazione else datetime.utcnow(),
+                data_chiusura=datetime.fromisoformat(work_data.data_chiusura.replace('Z', '+00:00')) if work_data.data_chiusura else None
+            )
+
+            # Set technician if provided
+            if work_data.tecnico:
+                technician = db.query(Technician).filter(
+                    (Technician.nome + ' ' + Technician.cognome) == work_data.tecnico
+                ).first()
+                if technician:
+                    new_work.tecnico_assegnato_id = technician.id
+
+            # Store additional fields in extra_fields
+            extra_data = {}
+            if work_data.ont_sn:
+                extra_data['ont_sn'] = work_data.ont_sn
+            if work_data.modem_sn:
+                extra_data['modem_sn'] = work_data.modem_sn
+            if work_data.telefono:
+                extra_data['telefono'] = work_data.telefono
+            if work_data.email:
+                extra_data['email'] = work_data.email
+            if extra_data:
+                new_work.extra_fields = extra_data
+
+            db.add(new_work)
+            db.commit()
+            db.refresh(new_work)
+
+            # Log the creation event
+            event = WorkEvent(
+                work_id=new_work.id,
+                event_type="created",
+                description=f"Work {numero_wr} created via API ingest",
+                timestamp=datetime.utcnow()
+            )
+            db.add(event)
+            db.commit()
+
+            return {"message": f"Work {numero_wr} created successfully", "work_id": new_work.id}
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Duplicate work number or constraint violation")
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error ingesting work: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error ingesting work: {str(e)}")
+
+@router.post("/ingest/bulk")
+def ingest_bulk_works(request: BulkIngestRequest, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """Ingest multiple works from external system"""
+    results = []
+    errors = []
+
+    for i, work_data in enumerate(request.works):
+        try:
+            # Normalize numero_wr
+            numero_wr = normalize_numero_wr(work_data.numero_wr)
+
+            # Check if work already exists
+            existing_work = db.query(Work).filter(Work.numero_wr == numero_wr).first()
+            if existing_work:
+                # Update existing work
+                existing_work.stato = work_data.stato
+                if work_data.descrizione:
+                    existing_work.note = work_data.descrizione
+                if work_data.tecnico:
+                    # Find technician by name
+                    technician = db.query(Technician).filter(
+                        (Technician.nome + ' ' + Technician.cognome) == work_data.tecnico
+                    ).first()
+                    if technician:
+                        existing_work.tecnico_assegnato_id = technician.id
+                if work_data.data_creazione:
+                    existing_work.data_apertura = datetime.fromisoformat(work_data.data_creazione.replace('Z', '+00:00'))
+                if work_data.data_chiusura:
+                    existing_work.data_chiusura = datetime.fromisoformat(work_data.data_chiusura.replace('Z', '+00:00'))
+                if work_data.note:
+                    existing_work.note = work_data.note
+                if work_data.indirizzo:
+                    existing_work.indirizzo = work_data.indirizzo
+                if work_data.cliente:
+                    existing_work.nome_cliente = work_data.cliente
+
+                # Store additional fields in extra_fields
+                extra_data = {}
+                if work_data.ont_sn:
+                    extra_data['ont_sn'] = work_data.ont_sn
+                if work_data.modem_sn:
+                    extra_data['modem_sn'] = work_data.modem_sn
+                if work_data.telefono:
+                    extra_data['telefono'] = work_data.telefono
+                if work_data.email:
+                    extra_data['email'] = work_data.email
+                if extra_data:
+                    existing_work.extra_fields = extra_data
+
+                db.commit()
+                results.append({"index": i, "numero_wr": numero_wr, "status": "updated", "work_id": existing_work.id})
+            else:
+                # Create new work
+                new_work = Work(
+                    numero_wr=numero_wr,
+                    stato=work_data.stato,
+                    operatore="Imported",  # Default operator for imported works
+                    indirizzo=work_data.indirizzo,
+                    nome_cliente=work_data.cliente,
+                    note=work_data.descrizione or work_data.note,
+                    data_apertura=datetime.fromisoformat(work_data.data_creazione.replace('Z', '+00:00')) if work_data.data_creazione else datetime.utcnow(),
+                    data_chiusura=datetime.fromisoformat(work_data.data_chiusura.replace('Z', '+00:00')) if work_data.data_chiusura else None
+                )
+                db.add(new_work)
+                db.commit()
+                db.refresh(new_work)
+
+                # Log the creation event
+                event = WorkEvent(
+                    work_id=new_work.id,
+                    event_type="created",
+                    description=f"Work {numero_wr} created via bulk API ingest",
+                    timestamp=datetime.utcnow()
+                )
+                db.add(event)
+                db.commit()
+
+                results.append({"index": i, "numero_wr": numero_wr, "status": "created", "work_id": new_work.id})
+
+        except Exception as e:
+            db.rollback()
+            error_msg = f"Error processing work at index {i} ({work_data.numero_wr}): {str(e)}"
+            errors.append(error_msg)
+            logging.error(error_msg)
+
+    return {
+        "message": f"Processed {len(request.works)} works",
+        "results": results,
+        "errors": errors,
+        "success_count": len(results),
+        "error_count": len(errors)
+    }

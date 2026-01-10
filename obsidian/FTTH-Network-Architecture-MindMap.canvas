@@ -1,0 +1,337 @@
+{
+  "nodes": [
+    {
+      "id": "network_architecture",
+      "x": -400,
+      "y": -300,
+      "width": 300,
+      "height": 200,
+      "type": "text",
+      "text": "# 🌐 Network Architecture Mind Map\n\n## 🏗️ Architettura di Rete Enterprise\n\n### Strati di Sicurezza\n1. **Perimetro Esterno**\n   - nftables firewall\n   - fail2ban IDS/IPS\n   - Porte non-standard\n\n2. **Rete Isolamento**\n   - Yggdrasil IPv6 mesh\n   - Zero-trust networking\n   - Cryptographic addresses\n\n3. **Servizi Anonimi**\n   - Tor hidden services\n   - Onion routing\n   - .onion domains\n\n4. **Applicazioni**\n   - Apache reverse proxy\n   - Docker containers\n   - Microservices\n\n### Flusso di Traffico\n**Internet** → **nftables** → **Yggdrasil/Tor** → **Apache** → **Services**\n\n### Principi di Sicurezza\n- **Defense in Depth**: Multi-layer protection\n- **Least Privilege**: Accesso minimo necessario\n- **Zero Trust**: Mai fidarsi, sempre verificare\n- **Fail-Safe Defaults**: Default deny everywhere"
+    },
+    {
+      "id": "internet_layer",
+      "x": 0,
+      "y": -300,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌍 Internet Layer (Pubblico) - Aggiornato\n\n## Porte Aperte Pubbliche (Configurazione Attuale)\n### Servizi Diretti\n- **SSH**: 2224 (non-standard per sicurezza)\n- **Yggdrasil**: 55555 (TLS), 9001 (multicast)\n- **Tor**: 9001 (relay), 9050 (SOCKS)\n- **Apache**: 80, 7676, 444, 445, 6031\n- **Code-server**: 7778\n- **ZeroTier**: 9993\n\n### APIs Pubbliche\n- **Flask APIs**: 7123, 5009\n- **PostgreSQL**: 5434\n- **Test Services**: 8256 (backend), 8083 (frontend)\n\n### Nuovi Servizi\n- **Porta 8083**: Virtual Host test2 (Apache reverse proxy)\n- **Porta 8256**: API backend per test2\n- **Porta 7676**: Servizio Apache aggiuntivo\n\n## Sicurezza Perimetro\n- **nftables**: Stateful firewall con 15+ regole\n- **fail2ban**: Automatic banning per 11 servizi\n- **Rate Limiting**: DDoS protection integrata\n- **Port Knocking**: Servizi non-standard per sicurezza\n\n## Traffico Consentito\n✅ **Solo porte autorizzate**\n✅ **Rate limited e monitored**\n✅ **Logged per auditing**\n❌ **Tutto il resto bloccato**"
+    },
+    {
+      "id": "yggdrasil_layer",
+      "x": -400,
+      "y": -50,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🌐 Yggdrasil Layer (Isolato)\n\n## Caratteristiche Rete\n- **IPv6 Cryptographic**: Indirizzi sicuri\n- **Mesh Peer-to-Peer**: Decentralizzato\n- **End-to-End Encryption**: Built-in\n- **NAT Traversal**: Automatico\n- **Zero Configuration**: Plug-and-play\n\n## Nodi Autorizzati (13)\n```\nBossNode-Torciabook (Locale)\n├── def0ce3d5aba11ac... (Questo nodo)\n├── 0c6c2a2bfdc55dbe... (Nodo 1)\n├── fc8055123280533b... (Nodo 2)\n├── 9ec0dc1107ed5318... (Nodo 3)\n└── ... (Altri 9 nodi)\n```\n\n## Yggdrasil API Service (Porta 6040)\n### 3 Routers Specializzati\n- **`/ingest`**: Bulk data ingestion da fonti esterne\n- **`/jobs`**: Background job management e sync\n- **`/manual`**: Manual data entry e technician management\n\n## Sicurezza\n🔒 **Whitelist-only access**\n🔒 **X-KEY authentication**\n🔒 **Cryptographic network isolation**\n🔒 **No public internet exposure**\n\n## Vantaggi\n✅ **Zero-trust networking**\n✅ **Complete isolation from internet**\n✅ **Peer-to-peer mesh security**\n✅ **Automatic NAT traversal**"
+    },
+    {
+      "id": "tor_layer",
+      "x": 0,
+      "y": -50,
+      "width": 250,
+      "height": 180,
+      "type": "text",
+      "text": "# 🧅 Tor Layer (Anonimo)\n\n## Hidden Service Configuration\n```\nOnion Address:\n2oxnsnid6niqbtioiqfrpuyrj7pj73sovo3bw3jz3kphpazbajils3yd.onion\n\nPort Mapping:\n├── 80 → 127.0.0.1:8081 (Web)\n└── 9888 → 127.0.0.1:9888 (API)\n```\n\n## Servizi Onion\n### Pubblici Anonimi\n- **Torciabook Site**: Sito web completo\n- **API Magazzino**: Accesso anonimo\n- **Ordina.py**: Sistema ordini\n\n### Sicurezza Onion\n- **Anonimato Utenti**: No IP logging\n- **End-to-End**: Tor encryption\n- **Hidden Location**: No server discovery\n- **Censorship Resistance**: Decentralized\n\n## Configurazione Apache\n```apache\n<VirtualHost *:8081>\n    ServerName [onion-address].onion\n    Header set \"X-Served-By\" \"Tor Hidden Service\"\n    # Reverse proxy configs...\n</VirtualHost>\n```\n\n## Vantaggi\n✅ **Anonimato completo**\n✅ **Accesso senza VPN**\n✅ **Censorship resistant**\n✅ **Zero metadata leakage**"
+    },
+    {
+      "id": "internal_services",
+      "x": -200,
+      "y": 200,
+      "width": 300,
+      "height": 150,
+      "type": "text",
+      "text": "# 🏠 Internal Services Layer\n\n## Docker Services (7 Container)\n### Core Application\n- **ftth-backend**: FastAPI (porta 6030)\n- **postgres**: Database (porta 5432)\n- **redis**: Cache (porta 6379)\n\n### Infrastructure\n- **nginx**: Reverse proxy (porta 80)\n- **telegram-bot**: Bot service\n- **prometheus**: Monitoring (porta 9090)\n- **grafana**: Dashboard (porta 3000)\n\n## Apache Virtual Hosts\n### Pubblici\n- **supermercato.conf**: Multi-API proxy\n- **yggdrasil.conf**: DB API proxy\n- **tor-onion.conf**: Hidden service\n- **test2.conf**: Test services\n\n### Isolati\n- **Solo Yggdrasil**: FTTH, Shop APIs\n- **Solo Tor**: Onion services\n- **Locale**: Internal APIs\n\n## API Endpoints Interni\n- **9069**: Incontri API\n- **9989**: Bacheca API\n- **9090**: Ricerca API\n- **9888**: Magazzino API\n- **9889**: Ordina.py\n- **7001**: Storie Metropolitane\n- **9595**: Mi Piace API"
+    },
+    {
+      "id": "security_layers",
+      "x": 200,
+      "y": 200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔒 Security Layers Matrix\n\n## 1. Network Level\n- **nftables**: Packet filtering\n- **fail2ban**: Brute force protection\n- **Port security**: Non-standard ports\n\n## 2. Transport Level\n- **Yggdrasil**: End-to-end encryption\n- **Tor**: Onion routing encryption\n- **TLS/SSL**: HTTPS everywhere\n\n## 3. Application Level\n- **JWT**: API authentication\n- **API Keys**: Service authorization\n- **Rate Limiting**: Abuse prevention\n\n## 4. Data Level\n- **PostgreSQL**: Encrypted sensitive data\n- **File Encryption**: Document protection\n- **Secure Headers**: XSS/CSRF protection\n\n## 5. Monitoring Level\n- **Audit Logs**: Complete activity tracking\n- **Intrusion Detection**: Anomaly detection\n- **Real-time Alerts**: Immediate response\n\n## Defense in Depth\n✅ **Multiple barriers**\n✅ **Fail-safe defaults**\n✅ **Zero-trust model**\n✅ **Continuous monitoring**"
+    },
+    {
+      "id": "access_patterns",
+      "x": -400,
+      "y": 400,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🎯 Access Patterns & Use Cases\n\n## Scenario 1: Tecnico FTTH\n**Path**: Internet → Yggdrasil → FTTH API\n- Connette a VPN Yggdrasil\n- Accesso esclusivo alla porta 6030\n- IPv6 address whitelisted\n- Gestione work orders sicura\n\n## Scenario 2: Cliente Anonimo\n**Path**: Tor → Onion Service → Shop APIs\n- Usa Tor Browser\n- Accesso .onion address\n- Acquisto anonimo\n- Nessun tracking possibile\n\n## Scenario 3: Admin Sistema\n**Path**: SSH → Internal Network → All Services\n- Connessione SSH sicura (porta 2224)\n- Accesso completo ai container\n- Gestione sistema e monitoring\n- Audit logging completo\n\n## Scenario 4: API Integration\n**Path**: Internet → API Ports → Services\n- Accesso diretto alle APIs pubbliche\n- Rate limiting e authentication\n- fail2ban protection\n- Logging e monitoring"
+    },
+    {
+      "id": "threat_model",
+      "x": 0,
+      "y": 400,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🚨 Threat Model & Mitigations\n\n## External Threats\n### DDoS Attacks\n- **nftables**: Rate limiting\n- **fail2ban**: Automatic blocking\n- **Cloudflare**: CDN protection (future)\n\n### Brute Force\n- **Non-standard ports**: SSH on 2224\n- **fail2ban jails**: Multi-service protection\n- **Strong passwords**: Enforced policy\n\n### Unauthorized Access\n- **Zero-trust**: Never trust, always verify\n- **Yggdrasil whitelist**: Only authorized nodes\n- **API keys + JWT**: Multi-factor auth\n\n## Internal Threats\n### Data Exfiltration\n- **Encryption**: Data at rest encryption\n- **Network segmentation**: Isolated networks\n- **Audit logging**: Complete activity tracking\n\n### Privilege Escalation\n- **Least privilege**: Minimal permissions\n- **Container isolation**: Docker security\n- **Regular audits**: Permission reviews\n\n## Advanced Threats\n### Supply Chain Attacks\n- **Image scanning**: Container security\n- **Dependency checks**: Vulnerability scanning\n- **SBOM**: Software bill of materials\n\n### Zero-Day Exploits\n- **Defense in depth**: Multiple layers\n- **Rapid patching**: Automated updates\n- **Intrusion detection**: Anomaly monitoring"
+    },
+    {
+      "id": "architecture_decisions",
+      "x": 300,
+      "y": 400,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🏛️ Architecture Decisions\n\n## Perché Yggdrasil?\n✅ **Zero-config mesh networking**\n✅ **Cryptographic security built-in**\n✅ **IPv6 native with crypto addresses**\n✅ **NAT traversal without STUN/TURN**\n✅ **Peer-to-peer without central servers**\n\n## Perché Tor Hidden Services?\n✅ **Complete anonymity for users**\n✅ **Censorship resistance**\n✅ **No IP address exposure**\n✅ **Onion routing security**\n✅ **Decentralized .onion domains**\n\n## Perché nftables + fail2ban?\n✅ **Stateful firewall with modern syntax**\n✅ **Automatic threat response**\n✅ **Integration with systemd**\n✅ **High performance packet filtering**\n✅ **Rich rule language**\n\n## Perché Apache Reverse Proxy?\n✅ **Flexible virtual hosting**\n✅ **Advanced URL rewriting**\n✅ **Load balancing capabilities**\n✅ **Extensive module ecosystem**\n✅ **Production proven reliability**\n\n## Perché Docker Ecosystem?\n✅ **Container isolation**\n✅ **Reproducible deployments**\n✅ **Resource limits and monitoring**\n✅ **Easy scaling and updates**\n✅ **Security through minimal images**"
+    },
+    {
+      "id": "ubuntu_server_core",
+      "x": -400,
+      "y": -400,
+      "width": 300,
+      "height": 200,
+      "type": "text",
+      "text": "# 🐧 Ubuntu Server Core System\n\n## Sistema Operativo\n- **Ubuntu Server LTS**\n- **Kernel**: Linux con systemd\n- **Package Manager**: apt\n- **Init System**: systemd services\n\n## Servizi di Sistema Attivi\n### Web Server\n- **Apache2**: Reverse proxy principale\n- **Porte**: 80, 7676, 444, 445, 6031, 8083\n- **Virtual Hosts**: 6 configurazioni attive\n\n### Database\n- **PostgreSQL 17**: Due cluster\n  - `annunci` (porta 5432)\n  - `torciabook` (porta 5432)\n- **Redis**: Cache system (porta 6379)\n\n### Container Runtime\n- **Docker Engine**: Container orchestration\n- **5 Container Attivi**: backend, db, cache, bot, monitoring\n\n## Sicurezza di Sistema\n- **nftables**: Firewall stateful\n- **fail2ban**: IDS/IPS automatico\n- **UFW**: Frontend semplificato\n- **AppArmor**: Mandatory access control"
+    },
+    {
+      "id": "ftth_application_core",
+      "x": 0,
+      "y": -400,
+      "width": 350,
+      "height": 200,
+      "type": "text",
+      "text": "# 🏗️ FTTH Application Core (FastAPI)\n\n## Backend Principale\n- **Framework**: FastAPI (Python async)\n- **Porta**: 6030 (containerizzato)\n- **Database**: PostgreSQL + Redis cache\n- **Logging**: JSON structured logs\n\n## Moduli Core dell'Applicazione\n### Gestione Lavori\n- **works.py**: CRUD operations per lavori FTTH\n- **technicians.py**: Gestione tecnici e assegnazioni\n- **teams.py**: Organizzazione squadre di lavoro\n- **stats.py**: Statistiche e reporting\n\n### Sicurezza & Auth\n- **auth.py**: JWT authentication\n- **API Keys**: Service authorization\n- **CORS**: Cross-origin resource sharing\n\n### Integrazione Esterna\n- **telegram.py**: Bot Telegram integration\n- **documents.py**: Gestione documenti\n- **manual.py**: Sistema inserimento manuale\n\n### Monitoraggio\n- **health.py**: Health checks API\n- **debug.py**: Debug tools e logging\n\n## Startup Events\n- **Bot Commands Setup**: Configurazione automatica comandi Telegram\n- **Webhook Configuration**: Setup webhook se configurato"
+    },
+    {
+      "id": "yggdrasil_api_service",
+      "x": -400,
+      "y": -150,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 🌐 Yggdrasil API Service (Separato)\n\n## Servizio Isolato\n- **Framework**: FastAPI dedicato\n- **Porta**: 6040 su rete Yggdrasil\n- **Database**: SQLite condiviso (ftth.db)\n- **Accesso**: Solo rete Yggdrasil IPv6\n\n## Funzionalità Yggdrasil-Only\n### API Endpoints\n- **Internal FTTH APIs**: Accesso sicuro interno\n- **Database Operations**: CRUD su SQLite\n- **Secure Communication**: End-to-end encrypted\n\n### Configurazione\n```python\nYGGDRASIL_HOST = \"200:421e:6385:4a8b:dca7:cfb:197f:e9c3\"\nYGGDRASIL_PORT = 6040\nAPI_KEY = \"secure-yggdrasil-key\"\nDATABASE_URL = \"sqlite:///../ftth.db\"\n```\n\n## Sicurezza\n🔒 **Whitelist IPv6 addresses**\n🔒 **API Key authentication**\n🔒 **No public internet exposure**\n🔒 **Cryptographic network isolation**\n\n## Vantaggi\n✅ **Zero-trust networking**\n✅ **Complete isolation from internet**\n✅ **Peer-to-peer mesh security**\n✅ **Automatic NAT traversal**"
+    },
+    {
+      "id": "web_interface_layer",
+      "x": 0,
+      "y": -150,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 🌐 Web Interface Layer (HTML/CSS/JS)\n\n## Interfaccia Utente\n- **Framework**: Bootstrap 5 + Vanilla JS\n- **Hosting**: Apache2 static files\n- **Path**: `/static/` (servito da FastAPI)\n\n## Pagine Disponibili\n### Dashboard Principale\n- **index.html**: Pannello di controllo principale\n- **Dashboard interattivo** con navigazione\n- **Gradient background** moderno\n- **Responsive design**\n\n### Strumenti di Gestione\n- **gestionale.html**: Interfaccia gestionale\n- **db_viewer.html**: Visualizzatore database\n- **manual_entry.html**: Inserimento manuale dati\n\n### Funzionalità JavaScript\n```javascript\n// API Integration\nconst API_BASE = '/api/v1';\n\n// Dashboard Functions\nfunction loadDashboard() {\n    fetch(`${API_BASE}/stats`)\n        .then(r => r.json())\n        .then(updateUI);\n}\n\n// Real-time Updates\nsetInterval(refreshData, 30000);\n```\n\n## Sicurezza Frontend\n- **No secrets in client code**\n- **API calls with authentication**\n- **CORS properly configured**\n- **Input validation**"
+    },
+    {
+      "id": "telegram_integration",
+      "x": -400,
+      "y": 100,
+      "width": 300,
+      "height": 150,
+      "type": "text",
+      "text": "# 📱 Telegram Integration System\n\n## Bot Telegram\n- **Framework**: python-telegram-bot\n- **Polling**: Continuous message polling\n- **Commands**: 5 comandi principali\n\n## Comandi Disponibili\n```\n/start - Benvenuto e introduzione\n/help - Mostra tutti i comandi\n/miei_lavori - Lista lavori assegnati\n/accetta - Accetta lavoro assegnato\n/rifiuta - Rifiuta lavoro assegnato\n/chiudi - Chiudi lavoro completato\n```\n\n## Integrazione Backend\n- **API Communication**: REST calls to FastAPI\n- **Authentication**: API key based\n- **Error Handling**: Graceful failure recovery\n- **Logging**: Complete activity logging\n\n## Workflow Automatizzato\n1. **Assegnazione Lavoro** → Notifica Telegram\n2. **Tecnico Risponde** → Aggiornamento stato\n3. **Chiusura Lavoro** → Conferma automatica\n4. **Report Generation** → Statistiche aggiornate\n\n## Sicurezza\n🔒 **Bot token encryption**\n🔒 **User verification**\n🔒 **Rate limiting**\n🔒 **Audit logging**"
+    },
+    {
+      "id": "apache_virtual_hosts",
+      "x": 0,
+      "y": 100,
+      "width": 350,
+      "height": 150,
+      "type": "text",
+      "text": "# 🌐 Apache Virtual Hosts Configuration\n\n## 6 Virtual Hosts Attivi\n### Pubblici (Internet)\n- **Porta 80**: Default virtual host\n- **Porta 7676**: Servizio aggiuntivo\n- **Porta 444**: API endpoint\n- **Porta 445**: Altro servizio\n- **Porta 6031**: Backend proxy\n- **Porta 8083**: Test services (reverse proxy to 8256)\n\n### Configurazione test2.conf (Porta 8083)\n```apache\n<VirtualHost *:8083>\n    ServerName test2.local\n    ProxyPass / http://localhost:8256/\n    ProxyPassReverse / http://localhost:8256/\n    Header set X-Served-By \"Apache-Test2\"\n</VirtualHost>\n```\n\n## Reverse Proxy Rules\n- **Load Balancing**: Per alte prestazioni\n- **SSL Termination**: HTTPS handling\n- **Header Injection**: Debug e tracing\n- **Path Rewriting**: URL manipulation\n\n## Sicurezza Apache\n- **Mod Security**: WAF integration\n- **Rate Limiting**: Abuse prevention\n- **Access Controls**: IP restrictions\n- **Logging**: Comprehensive access logs"
+    },
+    {
+      "id": "docker_ecosystem",
+      "x": -200,
+      "y": 300,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 🐳 Docker Ecosystem (5 Container)\n\n## Container Attivi\n### Core Services\n- **ftth-backend**: FastAPI application\n  - Image: Custom Python\n  - Ports: 6030 internal\n  - Volumes: logs, web static files\n\n- **postgres**: Database\n  - Image: postgres:15-alpine\n  - Ports: 5432 internal\n  - Volumes: Persistent data\n\n- **redis**: Cache system\n  - Image: redis:7-alpine\n  - Ports: 6379 internal\n  - Persistence: AOF enabled\n\n### Additional Services\n- **telegram-bot**: Bot service\n  - Image: Custom Python\n  - Environment: Bot token, API keys\n  - Dependencies: ftth-backend\n\n- **prometheus**: Monitoring\n  - Image: prom/prometheus:latest\n  - Ports: 9090 internal\n  - Config: prometheus.yml\n\n- **grafana**: Dashboard\n  - Image: grafana/grafana:latest\n  - Ports: 3000 internal\n  - Volumes: Dashboards, provisioning\n\n## Docker Compose Features\n- **Health Checks**: Automatic container monitoring\n- **Restart Policies**: unless-stopped\n- **Network Isolation**: ftth-network bridge\n- **Volume Persistence**: Data durability"
+    },
+    {
+      "id": "monitoring_security",
+      "x": 200,
+      "y": 300,
+      "width": 300,
+      "height": 180,
+      "type": "text",
+      "text": "# 📊 Monitoring & Security Stack\n\n## Monitoring (Prometheus + Grafana)\n### Prometheus\n- **Metrics Collection**: Application metrics\n- **Service Discovery**: Docker integration\n- **Alert Rules**: Configurable thresholds\n- **Data Retention**: 200 ore\n\n### Grafana\n- **Dashboards**: Visual monitoring\n- **Data Sources**: Prometheus integration\n- **Provisioning**: Automated setup\n- **User Management**: Admin access\n\n## Sicurezza Integrata\n### nftables Firewall\n- **15+ Rules**: Stateful filtering\n- **Port Security**: Non-standard ports\n- **Rate Limiting**: DDoS protection\n- **Logging**: Traffic analysis\n\n### fail2ban\n- **11 Services**: Multi-service protection\n- **Automatic Banning**: Brute force prevention\n- **Jail Configuration**: Custom rules\n- **Integration**: systemd logging\n\n### Yggdrasil Network\n- **13 Authorized Nodes**: Whitelist access\n- **IPv6 Cryptographic**: Secure addresses\n- **End-to-End Encryption**: Built-in security\n- **Zero Configuration**: Plug-and-play\n\n### Tor Hidden Services\n- **Onion Address**: Anonymous access\n- **Port Mapping**: 80→8081, 9888→9888\n- **Censorship Resistance**: Decentralized\n- **No IP Exposure**: Complete anonymity"
+    },
+    {
+      "id": "system_scripts_utilities",
+      "x": -400,
+      "y": 500,
+      "width": 300,
+      "height": 150,
+      "type": "text",
+      "text": "# 🔧 System Scripts & Utilities\n\n## Script di Automazione\n### Database Management\n- **clean_db.py**: Pulizia database\n- **test_db_write.py**: Test scrittura DB\n- **parse_local_pdf.py**: Elaborazione PDF\n\n### Telegram Integration\n- **add_technician_telegram.py**: Aggiunta tecnici\n- **update_technician_telegram.py**: Aggiornamento\n- **get_bot_updates.py**: Recupero aggiornamenti\n- **set_bot_commands.py**: Configurazione comandi\n\n### System Utilities\n- **update_static.sh**: Aggiornamento file statici\n- **generate_canvas.py**: Generazione canvas\n- **check_telegram.sh**: Verifica bot Telegram\n\n## Utility Python\n### Bot Management\n- **test_bot.py**: Test funzionalità bot\n- **test_notifica.py**: Test notifiche\n- **get_bot_info.py**: Info bot Telegram\n- **test_workflow_completo.py**: Test workflow\n\n### API Testing\n- **test_yggdrasil_api.py**: Test API Yggdrasil\n- **telegram_endpoints.py**: Endpoint Telegram\n\n## Deployment\n- **configure_firewall.sh**: Configurazione firewall\n- **deploy/**: Script di deployment\n- **requirements.txt**: Dipendenze Python\n- **Dockerfile**: Container build"
+    },
+    {
+      "id": "data_models_schemas",
+      "x": 0,
+      "y": 500,
+      "width": 350,
+      "height": 150,
+      "type": "text",
+      "text": "# 📋 Data Models & API Schemas\n\n## Database Models (SQLAlchemy)\n### Core Entities\n- **Work**: Lavori/installazioni FTTH\n- **Technician**: Tecnici e competenze\n- **Team**: Squadre di lavoro\n- **User**: Utenti sistema\n\n### Additional Models\n- **Document**: File e documenti\n- **ManualEntry**: Inserimenti manuali\n- **TelegramUser**: Utenti Telegram\n- **AuditLog**: Log attività\n\n## API Schemas (Pydantic)\n### Request/Response Models\n```python\nclass WorkCreate(BaseModel):\n    address: str\n    technician_id: int\n    priority: str\n    description: Optional[str]\n\nclass WorkResponse(WorkCreate):\n    id: int\n    status: str\n    created_at: datetime\n    updated_at: datetime\n\nclass TechnicianResponse(BaseModel):\n    id: int\n    name: str\n    skills: List[str]\n    team_id: Optional[int]\n```\n\n## Authentication Schemas\n- **LoginRequest**: username/password\n- **TokenResponse**: JWT token\n- **UserPermissions**: Role-based access\n\n## Validation Rules\n- **Input Sanitization**: XSS prevention\n- **Type Validation**: Pydantic automatic\n- **Business Rules**: Custom validators\n- **Error Messages**: User-friendly"
+    }
+  ],
+  "edges": [
+    {
+      "id": "architecture_to_internet",
+      "fromNode": "network_architecture",
+      "fromSide": "right",
+      "toNode": "internet_layer",
+      "toSide": "left",
+      "label": "public access"
+    },
+    {
+      "id": "internet_to_yggdrasil",
+      "fromNode": "internet_layer",
+      "fromSide": "bottom",
+      "toNode": "yggdrasil_layer",
+      "toSide": "top",
+      "label": "routes to"
+    },
+    {
+      "id": "internet_to_tor",
+      "fromNode": "internet_layer",
+      "fromSide": "bottom",
+      "toNode": "tor_layer",
+      "toSide": "left",
+      "label": "routes to"
+    },
+    {
+      "id": "yggdrasil_to_internal",
+      "fromNode": "yggdrasil_layer",
+      "fromSide": "bottom",
+      "toNode": "internal_services",
+      "toSide": "left",
+      "label": "secures"
+    },
+    {
+      "id": "tor_to_internal",
+      "fromNode": "tor_layer",
+      "fromSide": "bottom",
+      "toNode": "internal_services",
+      "toSide": "right",
+      "label": "secures"
+    },
+    {
+      "id": "internal_to_security",
+      "fromNode": "internal_services",
+      "fromSide": "bottom",
+      "toNode": "security_layers",
+      "toSide": "top",
+      "label": "protected by"
+    },
+    {
+      "id": "security_to_access",
+      "fromNode": "security_layers",
+      "fromSide": "bottom",
+      "toNode": "access_patterns",
+      "toSide": "top",
+      "label": "enables"
+    },
+    {
+      "id": "access_to_threats",
+      "fromNode": "access_patterns",
+      "fromSide": "right",
+      "toNode": "threat_model",
+      "toSide": "left",
+      "label": "mitigates"
+    },
+    {
+      "id": "threats_to_decisions",
+      "fromNode": "threat_model",
+      "fromSide": "right",
+      "toNode": "architecture_decisions",
+      "toSide": "left",
+      "label": "informs"
+    },
+    {
+      "id": "decisions_to_architecture",
+      "fromNode": "architecture_decisions",
+      "fromSide": "top",
+      "toNode": "network_architecture",
+      "toSide": "bottom",
+      "label": "guides"
+    },
+    {
+      "id": "ubuntu_to_ftth",
+      "fromNode": "ubuntu_server_core",
+      "fromSide": "right",
+      "toNode": "ftth_application_core",
+      "toSide": "left",
+      "label": "hosts"
+    },
+    {
+      "id": "ftth_to_yggdrasil",
+      "fromNode": "ftth_application_core",
+      "fromSide": "bottom",
+      "toNode": "yggdrasil_api_service",
+      "toSide": "top",
+      "label": "connects to"
+    },
+    {
+      "id": "ftth_to_web",
+      "fromNode": "ftth_application_core",
+      "fromSide": "right",
+      "toNode": "web_interface_layer",
+      "toSide": "left",
+      "label": "serves"
+    },
+    {
+      "id": "yggdrasil_to_telegram",
+      "fromNode": "yggdrasil_api_service",
+      "fromSide": "bottom",
+      "toNode": "telegram_integration",
+      "toSide": "top",
+      "label": "integrates"
+    },
+    {
+      "id": "web_to_apache",
+      "fromNode": "web_interface_layer",
+      "fromSide": "bottom",
+      "toNode": "apache_virtual_hosts",
+      "toSide": "top",
+      "label": "proxied by"
+    },
+    {
+      "id": "apache_to_docker",
+      "fromNode": "apache_virtual_hosts",
+      "fromSide": "right",
+      "toNode": "docker_ecosystem",
+      "toSide": "left",
+      "label": "routes to"
+    },
+    {
+      "id": "docker_to_monitoring",
+      "fromNode": "docker_ecosystem",
+      "fromSide": "bottom",
+      "toNode": "monitoring_security",
+      "toSide": "top",
+      "label": "monitored by"
+    },
+    {
+      "id": "ubuntu_to_scripts",
+      "fromNode": "ubuntu_server_core",
+      "fromSide": "bottom",
+      "toNode": "system_scripts_utilities",
+      "toSide": "top",
+      "label": "runs"
+    },
+    {
+      "id": "ftth_to_models",
+      "fromNode": "ftth_application_core",
+      "fromSide": "bottom",
+      "toNode": "data_models_schemas",
+      "toSide": "top",
+      "label": "uses"
+    },
+    {
+      "id": "scripts_to_models",
+      "fromNode": "system_scripts_utilities",
+      "fromSide": "right",
+      "toNode": "data_models_schemas",
+      "toSide": "left",
+      "label": "manipulates"
+    }
+  ]
+}

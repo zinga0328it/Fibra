@@ -7,25 +7,34 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🕸️ Yggdrasil Network Module\n\n**Zero-Trust Security Core**\n\n- **Type**: IPv6 Mesh VPN\n- **Encryption**: End-to-end\n- **Backend IP**: 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\n- **Client IP**: 201:27c:546:5df7:176:95f3:c909:6834\n- **Interface**: ygg0\n\n**Status**: ✅ Active & Secure"
+      "text": "# 🕸️ Yggdrasil Network Module\n\n**Zero-Trust Security Core + Dedicated API**\n\n- **IPv6 Mesh**: End-to-end encrypted\n- **Backend IP**: 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\n- **Client IP**: 201:27c:546:5df7:176:95f3:c909:6834\n- **Dedicated API**: Porta 6040 separata\n- **Interface**: ygg0\n\n**Status**: ✅ Enterprise Security"
     },
     {
       "id": "yggdrasil_config",
       "x": 50,
       "y": -200,
-      "width": 300,
+      "width": 350,
       "height": 180,
       "type": "text",
-      "text": "# ⚙️ Configuration\n\n**File**: `/etc/yggdrasil.conf`\n\n```yaml\nPeers: []\nListen: []\n\nInterfacePeers: {}\n\nNodeInfo: {}\nNodeInfoPrivacy: false\n\n# Generated automatically\n# DO NOT EDIT MANUALLY\n```\n\n**Generation**: `yggdrasil -genconf`\n**Reload**: `systemctl restart yggdrasil`"
+      "text": "# ⚙️ Yggdrasil Configuration\n\n## System Service\n```bash\n# Installazione\nsudo add-apt-repository ppa:neilalexander/yggdrasil\nsudo apt install yggdrasil\n\n# Configurazione\sudo yggdrasil -genconf > /etc/yggdrasil.conf\nsudo systemctl enable yggdrasil\nsudo systemctl start yggdrasil\n```\n\n## Configuration File\n```yaml\n# /etc/yggdrasil.conf\nPeers: []  # No public peers for security\nListen: []\nNodeInfo: {}\nNodeInfoPrivacy: false\n# Auto-generated keys and addresses\n```\n\n## Network Interface\n```bash\n# Check interface\nip addr show ygg0\n\n# IPv6 address assigned automatically\ninet6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3/7\n```"
     },
     {
-      "id": "network_topology",
+      "id": "dedicated_ygg_api",
       "x": -300,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🌐 Network Topology\n\n## Architecture\n```\nInternet Public\n    ↓\nApache Frontend (HTTPS)\n    ↓\nYggdrasil Mesh VPN\n    ↓\nFastAPI Backend (Isolated)\n```\n\n## Security Zones\n- **🔴 Public**: Apache only\n- **🟢 Private**: Yggdrasil only\n- **🔵 Local**: System services"
+      "text": "# 🚀 Dedicated Yggdrasil API (3 Routers)\n\n## Service Architecture\n**File**: `yggdrasil_api/main.py`\n**Port**: 6040 (Yggdrasil only)\n**Database**: SQLite shared (`ftth.db`)\n**Authentication**: X-KEY header required\n\n## Core Endpoints\n- **`GET /health`**: Health check (no auth)\n- **`GET /`**: API information\n- **`GET /docs`**: OpenAPI documentation\n\n## Router Modules (3)\n### 1. Ingest Router (`/ingest`)\n- **Bulk data ingestion** from external sources\n- **Work order import** via API\n- **Batch processing** with error handling\n\n### 2. Jobs Router (`/jobs`)\n- **Background job management**\n- **Sync operations** scheduling\n- **Task status monitoring**\n\n### 3. Manual Router (`/manual`)\n- **Manual work entry** creation\n- **Technician management**\n- **Data correction** operations"
+    },
+    {
+      "id": "ygg_api_routers_detail",
+      "x": 50,
+      "y": 50,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 📋 Yggdrasil API Routers Detail\n\n## 🔄 Ingest Router (`/ingest`)\n```python\n# Bulk work ingestion\nPOST /ingest/bulk\n{\n  \"works\": [\n    {\n      \"numero_wr\": \"WR001\",\n      \"nome_cliente\": \"Mario Rossi\",\n      \"indirizzo\": \"Via Roma 123\",\n      \"operatore\": \"TIM\",\n      \"tipo_lavoro\": \"Installazione FTTH\"\n    }\n  ],\n  \"source\": \"external_system\"\n}\n\n# Single work ingestion\nPOST /ingest/work\n```\n\n## ⚙️ Jobs Router (`/jobs`)\n```python\n# Create background job\nPOST /jobs/create\n{\n  \"job_type\": \"sync\",\n  \"params\": {\"source\": \"external\"}\n}\n\n# Get job status\nGET /jobs/{job_id}\n\n# List all jobs\nGET /jobs/\n```\n\n## ✏️ Manual Router (`/manual`)\n```python\n# Create manual work\nPOST /manual/works\n{\n  \"numero_wr\": \"WR_MANUAL_001\",\n  \"nome_cliente\": \"Cliente Manuale\",\n  \"tecnico_id\": 1,\n  \"stato\": \"aperto\"\n}\n\n# Update work\nPUT /manual/works/{work_id}\n\n# Create technician\nPOST /manual/technicians\n{\n  \"nome\": \"Mario\",\n  \"cognome\": \"Rossi\",\n  \"telegram_id\": \"123456789\"\n}\n```\n\n## Authentication\n```bash\n# All endpoints require X-KEY header\ncurl -H \"X-KEY: $YGG_API_KEY\" \\\n  \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6040/manual/works\"\n```"
     },
     {
       "id": "firewall_rules",
@@ -34,25 +43,34 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🔥 Firewall Integration\n\n**File**: `/etc/nftables/fibra.conf`\n\n```nft\n# Yggdrasil-only access\ntable inet fibra {\n  chain input {\n    iifname \"ygg0\" ip6 saddr 201:27c:546:5df7:176:95f3:c909:6834 \\\n      tcp dport 6030 accept\n  }\n}\n```\n\n**Only PC alex can access backend!**"
+      "text": "# 🔥 Firewall Integration\n\n**NFTables Configuration**\n```nft\n# /etc/nftables/fibra.conf\ntable inet fibra {\n  chain input {\n    # Allow Yggdrasil interface\n    iifname \"ygg0\" accept\n    \n    # Specific client access only\n    iifname \"ygg0\" ip6 saddr \\\n      201:27c:546:5df7:176:95f3:c909:6834 \\\n      tcp dport 6030 accept\n      \n    # Dedicated API access\n    iifname \"ygg0\" ip6 saddr \\\n      201:27c:546:5df7:176:95f3:c909:6834 \\\n      tcp dport 6040 accept\n  }\n}\n```\n\n**Security**: Only PC alex can access both APIs!"
     },
     {
       "id": "connectivity_test",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 🧪 Connectivity Testing\n\n## From PC alex:\n```bash\n# Test Yggdrasil ping\nping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\n\n# Test API access\ncurl \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works\"\n```\n\n## Local checks:\n```bash\n# Interface status\nip addr show ygg0\n\n# Service status\nsystemctl status yggdrasil\n```"
+      "text": "# 🧪 Connectivity Testing\n\n## Main API (Port 6030)\n```bash\n# From PC alex\nping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3\ncurl \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works\"\n```\n\n## Dedicated Yggdrasil API (Port 6040)\n```bash\n# Internal operations\ncurl \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6040/health\"\n\n# With API key\ncurl -H \"X-API-Key: $YGG_API_KEY\" \\\n  \"http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6040/admin/status\"\n```\n\n## Network Diagnostics\n```bash\n# Interface status\nip link show ygg0\n\n# Routing table\nip -6 route show | grep ygg\n\n# Peer connections\nyggdrasilctl getPeers\n```"
     },
     {
-      "id": "troubleshooting_ygg",
+      "id": "architecture_security",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Issues\n- **No connectivity**\n- **IP address changed**\n- **Firewall blocks**\n- **Service not running**\n\n## Solutions\n```bash\n# Check interface\nip link show ygg0\n\n# Restart service\nsudo systemctl restart yggdrasil\n\n# Regenerate config\nyggdrasil -genconf > /etc/yggdrasil.conf\n```"
+      "text": "# 🛡️ Security Architecture\n\n## Multi-Layer Security\n1. **Network**: Yggdrasil encryption\n2. **Firewall**: NFTables rules\n3. **API Keys**: Authentication\n4. **IP Filtering**: Client whitelist\n\n## Zero-Trust Model\n- **No Public Exposure**: Backend invisible\n- **Encrypted Communication**: End-to-end\n- **Access Control**: Granular permissions\n- **Audit Logging**: All access tracked\n\n## Threat Protection\n- **DDoS**: Network-level filtering\n- **Man-in-Middle**: Encrypted mesh\n- **Unauthorized Access**: IP restrictions\n- **Data Breach**: Isolated architecture"
+    },
+    {
+      "id": "troubleshooting_ygg",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Connectivity Issues\n- **No ping response**: Check Yggdrasil service\n- **IP address changed**: Regenerate config\n- **Firewall blocks**: Verify NFTables rules\n\n## API Access Problems\n- **403 Forbidden**: Check client IP whitelist\n- **Connection refused**: Verify port binding\n- **Auth failed**: Check API keys\n\n## Service Issues\n- **Yggdrasil down**: `systemctl restart yggdrasil`\n- **Interface missing**: Check kernel modules\n- **Peers disconnected**: Review configuration\n\n## Quick Commands\n```bash\n# Service status\nsudo systemctl status yggdrasil\n\n# Interface check\nip addr show ygg0\n\n# Firewall rules\nsudo nft list ruleset | grep ygg\n\n# Regenerate config\nsudo yggdrasil -genconf > /etc/yggdrasil.conf\n```"
     }
   ],
   "edges": [
@@ -65,12 +83,12 @@
       "label": "configured by"
     },
     {
-      "id": "ygg_to_topology",
+      "id": "ygg_to_dedicated_api",
       "fromNode": "yggdrasil_overview",
       "fromSide": "bottom",
-      "toNode": "network_topology",
+      "toNode": "dedicated_ygg_api",
       "toSide": "top",
-      "label": "enables"
+      "label": "powers"
     },
     {
       "id": "config_to_firewall",
@@ -81,12 +99,12 @@
       "label": "secures"
     },
     {
-      "id": "topology_to_connectivity",
-      "fromNode": "network_topology",
+      "id": "dedicated_api_to_connectivity",
+      "fromNode": "dedicated_ygg_api",
       "fromSide": "bottom",
       "toNode": "connectivity_test",
       "toSide": "left",
-      "label": "tested by"
+      "label": "tested via"
     },
     {
       "id": "firewall_to_connectivity",
@@ -97,11 +115,19 @@
       "label": "controls"
     },
     {
-      "id": "connectivity_to_troubleshooting",
+      "id": "connectivity_to_security",
       "fromNode": "connectivity_test",
       "fromSide": "right",
-      "toNode": "troubleshooting_ygg",
+      "toNode": "architecture_security",
       "toSide": "left",
+      "label": "validates"
+    },
+    {
+      "id": "security_to_troubleshooting",
+      "fromNode": "architecture_security",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting_ygg",
+      "toSide": "top",
       "label": "debug with"
     }
   ]

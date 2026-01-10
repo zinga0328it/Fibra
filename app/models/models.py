@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, LargeBinary, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey, LargeBinary, Boolean, UniqueConstraint, Float, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 class Work(Base):
     __tablename__ = "works"
@@ -23,6 +24,22 @@ class Work(Base):
     tecnico_chiusura = relationship("Technician", foreign_keys=[tecnico_chiusura_id])
     # relation to documents that created/updated this work
     documents = relationship("Document", secondary="document_applied_works", back_populates="applied_works")
+    
+    # ONT/Modem relationships and flags
+    ont = relationship("ONT", back_populates="work", uselist=False)
+    modem = relationship("Modem", back_populates="work", uselist=False)
+    
+    # Equipment requirements flags
+    requires_ont = Column(Boolean, default=False)
+    requires_modem = Column(Boolean, default=False)
+    
+    # Delivery tracking
+    ont_delivered = Column(Boolean, default=False)
+    modem_delivered = Column(Boolean, default=False)
+    
+    # Additional costs
+    ont_cost = Column(Float, default=0.0)
+    modem_cost = Column(Float, default=0.0)
 
 class Technician(Base):
     __tablename__ = "technicians"
@@ -89,4 +106,94 @@ class DocumentAppliedWork(Base):
     document_id = Column(Integer, ForeignKey('documents.id'))
     work_id = Column(Integer, ForeignKey('works.id'))
     applied_at = Column(DateTime)
+
+
+class ONT(Base):
+    __tablename__ = "onts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    serial_number = Column(String, unique=True, index=True, nullable=False)
+    model = Column(String, nullable=False)
+    manufacturer = Column(String)
+    status = Column(String, default="available")  # available, assigned, installed, faulty
+    work_id = Column(Integer, ForeignKey("works.id"), nullable=True)
+    assigned_date = Column(DateTime, nullable=True)
+    installed_at = Column(DateTime, nullable=True)
+    returned_date = Column(DateTime, nullable=True)
+    
+    # Network configuration
+    pon_port = Column(String)
+    vlan_id = Column(Integer)
+    ip_address = Column(String)
+    
+    # Technical notes
+    installation_notes = Column(Text)
+    technician_notes = Column(Text)
+    
+    location = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    work = relationship("Work", back_populates="ont")
+
+
+class Modem(Base):
+    __tablename__ = "modems"
+
+    id = Column(Integer, primary_key=True, index=True)
+    serial_number = Column(String, unique=True, index=True, nullable=False)
+    model = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # adsl, vdsl, fiber, etc.
+    manufacturer = Column(String)
+    status = Column(String, default="available")  # available, assigned, installed, faulty
+    work_id = Column(Integer, ForeignKey("works.id"), nullable=True)
+    
+    # Configuration details
+    wifi_ssid = Column(String)
+    wifi_password = Column(String)
+    admin_username = Column(String, default="admin")
+    admin_password = Column(String)
+    
+    # ONT synchronization
+    sync_method = Column(String)  # bridge, pppoe, dhcp
+    sync_config = Column(JSON)  # Detailed configuration
+    
+    # Status tracking
+    configured_date = Column(DateTime, nullable=True)
+    installed_at = Column(DateTime, nullable=True)
+    
+    # Notes
+    configuration_notes = Column(Text)
+    installation_notes = Column(Text)
+    
+    location = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    work = relationship("Work", back_populates="modem")
+
+
+class ONTModemSync(Base):
+    __tablename__ = "ont_modem_sync"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ont_id = Column(Integer, ForeignKey("onts.id"), nullable=False)
+    modem_id = Column(Integer, ForeignKey("modems.id"), nullable=False)
+    work_id = Column(Integer, ForeignKey("works.id"), nullable=False)
+    sync_method = Column(String, nullable=False)  # pppoe, dhcp, static, bridge
+    sync_config = Column(JSON, nullable=True)  # detailed configuration
+    wifi_ssid = Column(String, nullable=True)
+    wifi_password = Column(String, nullable=True)
+    installation_notes = Column(Text)
+    technician_notes = Column(Text)
+    sync_status = Column(String, default="pending")  # pending, completed, failed
+    synced_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    ont = relationship("ONT")
+    modem = relationship("Modem")
+    work = relationship("Work")
 

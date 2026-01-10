@@ -14,6 +14,7 @@ Questa guida è integrata con il sistema Obsidian Canvas. Ogni problema rimanda 
 Verifica: sudo systemctl status ftth
 Soluzione: sudo systemctl restart ftth
 Log: sudo journalctl -u ftth -f
+Test: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/health/"
 ```
 
 ### Sintomo: "Porta 6030 già in uso"
@@ -23,6 +24,7 @@ Comandi:
 sudo ss -lntp | grep :6030
 sudo kill -9 $(sudo lsof -t -i:6030)
 sudo systemctl restart ftth
+Test: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/health/"
 ```
 
 ### Sintomo: "Errore database connection"
@@ -31,6 +33,22 @@ sudo systemctl restart ftth
 Verifica: cat .env | grep DATABASE_URL
 Test: psql "$DATABASE_URL" -c "SELECT 1;"
 Soluzione: sudo systemctl restart postgresql
+```
+
+### Sintomo: "Errore colonna mancante nel database"
+**Problema**: Modello aggiornato ma database non sincronizzato
+```
+Sintomi: 500 Internal Server Error, colonne requires_ont/modems_delivered mancanti
+Soluzione:
+sqlite3 ftth.db "
+ALTER TABLE works ADD COLUMN requires_ont BOOLEAN DEFAULT 0;
+ALTER TABLE works ADD COLUMN requires_modem BOOLEAN DEFAULT 0;
+ALTER TABLE works ADD COLUMN ont_delivered BOOLEAN DEFAULT 0;
+ALTER TABLE works ADD COLUMN modem_delivered BOOLEAN DEFAULT 0;
+ALTER TABLE works ADD COLUMN ont_cost FLOAT DEFAULT 0.0;
+ALTER TABLE works ADD COLUMN modem_cost FLOAT DEFAULT 0.0;
+"
+Test: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/"
 ```
 
 ---
@@ -43,210 +61,172 @@ Soluzione: sudo systemctl restart postgresql
 Test: ping6 200:421e:6385:4a8b:dca7:cfb:197f:e9c3
 Verifica: ip addr show ygg0
 Restart: sudo systemctl restart yggdrasil
+API Test: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/health/"
 ```
 
 ### Sintomo: "Yggdrasil non si connette"
 **Canvas**: [[FTTH-Yggdrasil-Module.canvas#yggdrasil_config|Yggdrasil Config]]
 ```
 Status: sudo systemctl status yggdrasil
+Logs: sudo journalctl -u yggdrasil -f
 Config: sudo cat /etc/yggdrasil.conf
-Regenerate: yggdrasil -genconf > /etc/yggdrasil.conf
+Restart: sudo systemctl restart yggdrasil
 ```
 
-### Sintomo: "Firewall blocca Yggdrasil"
-**Canvas**: [[FTTH-Security-Module.canvas#nftables_config|Firewall Rules]]
+### Sintomo: "Connessione Yggdrasil instabile"
+**Canvas**: [[FTTH-Yggdrasil-Module.canvas#network_troubleshooting|Network Troubleshooting]]
 ```
-Verifica: sudo nft list ruleset | grep ygg
-Aggiungi: sudo nft add rule inet filter input iifname "ygg0" accept
-Reload: sudo systemctl restart nftables
-```
-
----
-
-## 🌐 Problemi Apache Frontend
-
-### Sintomo: "Sito web non carica"
-**Canvas**: [[FTTH-Apache-Module.canvas#apache_config|Apache Config]]
-```
-Test: curl -I https://servicess.net/fibra/
-Status: sudo systemctl status apache2
-Log: sudo tail -f /var/log/apache2/error.log
-```
-
-### Sintomo: "Certificato SSL scaduto"
-**Canvas**: [[FTTH-Apache-Module.canvas#ssl_certificates|SSL Certificates]]
-```
-Verifica: openssl s_client -connect servicess.net:443
-Rinnova: sudo certbot renew
-Reload: sudo systemctl reload apache2
-```
-
-### Sintomo: "502 Bad Gateway" (Non dovrebbe succedere!)
-**Canvas**: [[FTTH-Apache-Module.canvas#security_measures|Security Measures]]
-```
-Questo errore indica tentativo di proxy al backend!
-Verifica config: sudo cat /etc/apache2/sites-available/fibra.conf
-Rimuovi proxy pass se presente!
+Diagnosi:
+ping6 -c 10 200:421e:6385:4a8b:dca7:cfb:197f:e9c3
+sudo yggdrasilctl getPeers
+sudo yggdrasilctl getSessions
+Soluzione: Verificare configurazione peers e firewall
 ```
 
 ---
 
-## 🗄️ Problemi Database
+## 📡 Problemi API Endpoints
 
-### Sintomo: "PostgreSQL non si avvia"
-**Canvas**: [[FTTH-Database-Module.canvas#postgresql_config|PostgreSQL Setup]]
+### Sintomo: "403 Forbidden - Invalid API Key"
+**Problema**: Endpoint richiede autenticazione API key
 ```
-Status: sudo systemctl status postgresql
-Log: sudo tail -f /var/log/postgresql/postgresql-*.log
-Start: sudo systemctl start postgresql
-```
-
-### Sintomo: "Connessione rifiutata"
-**Canvas**: [[FTTH-Database-Module.canvas#troubleshooting_db|Troubleshooting DB]]
-```
-Test: psql "postgresql://user:pass@localhost/ftth" -c "SELECT 1;"
-Verifica: cat .env | grep DATABASE_URL
-Permessi: sudo -u postgres psql -c "GRANT ALL ON DATABASE ftth TO ftth_user;"
+Endpoint protetti: /modems/*, /onts/*, /works/ingest/*
+Soluzione: Aggiungere header X-API-Key
+curl -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/modems/"
 ```
 
-### Sintomo: "Database SQLite corrotto"
-**Canvas**: [[FTTH-Database-Module.canvas#sqlite_config|SQLite Config]]
+### Sintomo: "422 Validation Error"
+**Problema**: Dati mancanti nella richiesta
 ```
-Backup: cp ftth.db ftth_backup.db
-Ricrea: rm ftth.db && python -c "from app.database import engine; from app.models import models; models.Base.metadata.create_all(bind=engine)"
-Restore: cp ftth_backup.db ftth.db
-```
-
----
-
-## 📱 Problemi Telegram Bot
-
-### Sintomo: "Bot non risponde"
-**Canvas**: [[FTTH-Telegram-Module.canvas#bot_configuration|Bot Configuration]]
-```
-Test token: curl "https://api.telegram.org/bot$TOKEN/getMe"
-Status: sudo systemctl status telegram-bot
-Log: sudo journalctl -u telegram-bot -f
+Comune per: POST /works/ (mancano operatore, indirizzo, nome_cliente)
+Soluzione: Verificare campi obbligatori nel body JSON
+Esempio corretto:
+{
+  "numero_wr": "TEST-001",
+  "operatore": "Fastweb",
+  "indirizzo": "Via Roma 123",
+  "nome_cliente": "Mario Rossi",
+  "tipo_lavoro": "attivazione"
+}
 ```
 
-### Sintomo: "Notifiche non arrivano"
-**Canvas**: [[FTTH-Telegram-Module.canvas#notification_system|Notification System]]
+### Sintomo: "500 Internal Server Error su /works/"
+**Problema**: Database desincronizzato con modello
 ```
-Verifica polling: cat .env | grep TELEGRAM_POLLING
-Test manuale: python telegram_bot.py (temporaneo)
-Webhook: curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"
-```
-
-### Sintomo: "Comandi non funzionano"
-**Canvas**: [[FTTH-Telegram-Module.canvas#systemd_service|Systemd Service]]
-```
-Set commands: python scripts/set_bot_commands.py
-Restart: sudo systemctl restart telegram-bot
-Test: Invia /start al bot
+Causa: Colonne mancanti nella tabella works
+Soluzione: Vedi sezione "Errore colonna mancante nel database"
+Test: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/"
 ```
 
 ---
 
-## 🔐 Problemi Sicurezza
+## 🔧 Problemi Equipment Tracking
 
-### Sintomo: "Accesso negato al backend"
-**Canvas**: [[FTTH-Security-Module.canvas#access_control|Access Control]]
+### Sintomo: "Modem stuck in 'assigned' status"
+**Problema**: Modem assegnato ma non consegnato/installato
 ```
-Verifica IP: Solo 201:27c:546:5df7:176:95f3:c909:6834 può accedere
-Test da PC alex: curl "http://[backend-ip]:6030/works"
-Firewall: sudo nft list ruleset | grep 6030
-```
-
-### Sintomo: "Fail2Ban blocca indirizzi legittimi"
-**Canvas**: [[FTTH-Security-Module.canvas#fail2ban_integration|Fail2Ban Integration]]
-```
-Status: sudo fail2ban-client status
-Unban: sudo fail2ban-client set apache-noscript unbanip IP
-Log: sudo tail -f /var/log/fail2ban.log
+Verifica stato: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/modems/ID" -H "X-API-Key: ..."
+Soluzioni:
+1. Segna consegna: PUT /works/WORK_ID/equipment/delivered?modem_delivered=true
+2. Installa modem: PUT /modems/MODEM_ID/install
+3. Aggiungi note: PUT /modems/MODEM_ID con installation_notes
 ```
 
-### Sintomo: "Regole firewall non applicate"
-**Canvas**: [[FTTH-Security-Module.canvas#nftables_config|NFTables Config]]
+### Sintomo: "Cannot assign modem - already assigned"
+**Problema**: Modem già assegnato a un altro lavoro
 ```
-Verifica: sudo nft list ruleset
-Ricarica: sudo systemctl restart nftables
-Persistente: sudo nft list ruleset > /etc/nftables/fibra.conf
-```
-
----
-
-## 📊 Problemi Monitoraggio
-
-### Sintomo: "Log non vengono scritti"
-**Canvas**: [[FTTH-Monitoring-Module.canvas#logging_system|Logging System]]
-```
-Permessi: sudo chown ftth:www-data logs/
-Dimensione: ls -lh logs/ftth.log
-Rotazione: Verifica logrotate config
+Verifica: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/modems/" -H "X-API-Key: ..."
+Trova modem available o restituisci quello esistente
 ```
 
-### Sintomo: "Servizi cadono senza avviso"
-**Canvas**: [[FTTH-Monitoring-Module.canvas#alert_system|Alert System]]
+### Sintomo: "ONT/Modem serial number already exists"
+**Problema**: Tentativo di creare equipment con serial esistente
 ```
-Systemd: sudo systemctl status --failed
-Journal: sudo journalctl --failed
-Monitoring: Verifica script di health check
-```
-
-### Sintomo: "Performance lente"
-**Canvas**: [[FTTH-Monitoring-Module.canvas#performance_metrics|Performance Metrics]]
-```
-CPU: top -p $(pgrep ftth)
-Memory: free -h
-Disk: iotop
-Database: Verifica query lente
+Verifica: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/modems/?serial_number=SERIAL" -H "X-API-Key: ..."
+Soluzione: Usa serial number univoco o aggiorna equipment esistente
 ```
 
 ---
 
-## 🚨 Procedure di Emergenza
+## 🌐 Problemi Web Interface
 
-### Sistema Completamente Giù
-**Canvas**: [[FTTH-Index.canvas#troubleshooting|Troubleshooting Index]]
+### Sintomo: "404 Not Found su pagine HTML"
+**Problema**: Pagine non servite correttamente
 ```
-1. Verifica hardware: uptime, free -h, df -h
-2. Check servizi: sudo systemctl --failed
-3. Vedi log recenti: sudo journalctl --since "1 hour ago"
-4. Restart selettivo: sudo systemctl restart ftth
-5. Recovery completo se necessario
+URL errate: /gestionale.html (404)
+URL corrette: http://[IP]:6030/gestionale.html
+Verifica: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/gestionale.html" | head -5
 ```
 
-### Data Breach Sospetto
-**Canvas**: [[FTTH-Security-Module.canvas#zero_trust_principles|Zero Trust Principles]]
+### Sintomo: "JavaScript API calls falliscono"
+**Problema**: Frontend non riesce a chiamare API
 ```
-1. Isola sistema: Disconnetti internet
-2. Analizza log: grep "suspicious" logs/*.log
-3. Cambia credenziali: Tutti i token e password
-4. Aggiorna regole firewall
-5. Report incidente
-```
-
-### Perdita Dati
-**Canvas**: [[FTTH-Database-Module.canvas#backup_system|Backup System]]
-```
-1. Stop servizi: sudo systemctl stop ftth
-2. Identifica perdita: Confronta con backup
-3. Restore: psql ftth < backup.sql
-4. Verifica integrità: Test funzionalità
-5. Restart servizi
+Verifica console browser per errori CORS
+Test API diretto: curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/"
+Soluzione: Verificare che API sia attiva sulla porta 6030
 ```
 
 ---
 
-## 📞 Contatto Supporto
+## 📊 Problemi Ingest Endpoints
 
-Quando tutto fallisce:
+### Sintomo: "Ingest work fallisce con errore campi"
+**Problema**: Campi del modello non corrispondono alla richiesta
+```
+L'endpoint /works/ingest/work usa campi specifici:
+{
+  "numero_wr": "string",
+  "stato": "aperto/chiuso",
+  "descrizione": "string",  // diventa note
+  "tecnico": "Nome Cognome", // cerca tecnico per nome
+  "indirizzo": "string",
+  "cliente": "string",      // diventa nome_cliente
+  "ont_sn": "string",       // va in extra_fields
+  "modem_sn": "string"      // va in extra_fields
+}
+```
 
-1. **Raccogli info**: `uname -a`, versioni software, status servizi
-2. **Archivia log**: `tar -czf logs_$(date +%Y%m%d).tar.gz logs/`
-3. **Contatta**: pepeAlessandro@proton.me
-4. **Includi**: Sintomi, azioni tentate, log rilevanti
+### Sintomo: "Bulk ingest parziale - alcuni lavori falliscono"
+**Problema**: Errori in singoli elementi dell'array
+```
+Risposta include: success_count, error_count, errors[]
+Verifica errori specifici e correggi dati
+Esempio: Tecnico non trovato, serial number duplicato
+```
 
 ---
 
-*Questa guida è viva e cresce con il sistema. Ogni nuovo problema risolto aggiunge una sezione!*
+## 🔄 Comandi di Test Rapidi
+
+### Test Completo Sistema
+```bash
+# Health check
+curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/health/"
+
+# Lista risorse
+curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/" | jq length
+curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/modems/" -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" | jq length
+
+# Test ingest
+curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/ingest/work" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -d '{"numero_wr":"TEST-001","stato":"aperto","indirizzo":"Via Test","cliente":"Test"}'
+```
+
+### Verifica Stato Equipaggiamento
+```bash
+# Per un lavoro specifico
+WORK_ID=46
+curl -s "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/$WORK_ID/equipment" \
+  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" | jq '.'
+```
+
+---
+
+## 📞 Contatti di Supporto
+
+- **Emergenza Backend**: Controllare logs in `/logs/ftth.log`
+- **Emergenza Database**: Backup disponibile in `/opt/ftth/backups/`
+- **Emergenza Network**: Contattare amministratore Yggdrasil
+- **Documentazione**: Questa guida Obsidian è sempre aggiornata

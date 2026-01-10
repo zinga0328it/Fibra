@@ -7,16 +7,16 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🗄️ Database Module\n\n**Data Persistence Layer**\n\n- **Production**: PostgreSQL 13+\n- **Development**: SQLite\n- **ORM**: SQLAlchemy\n- **Migrations**: Alembic\n- **Backup**: Automatic daily\n\n**Status**: ✅ Operational"
+      "text": "# 🗄️ Database Module\n\n**Enterprise Data Layer**\n\n- **Primary**: PostgreSQL 15 (Docker)\n- **Cache**: Redis 7 (Docker)\n- **ORM**: SQLAlchemy async\n- **Models**: 7 core entities\n- **Backup**: Automated PostgreSQL dumps\n\n**Status**: ✅ Production Enterprise"
     },
     {
       "id": "database_models",
       "x": 50,
       "y": -200,
-      "width": 300,
-      "height": 180,
+      "width": 350,
+      "height": 200,
       "type": "text",
-      "text": "# 📋 Data Models\n\n## Core Tables\n- **work_requests**: WR principali\n  - id, title, description\n  - status, priority, technician_id\n  - created_at, updated_at\n\n- **technicians**: Tecnici campo\n  - id, name, phone, email\n  - active_works, performance_score\n\n- **analytics**: Statistiche KPI\n  - date, metric_type, value\n  - work_request_id (optional)\n\n## Relationships\n- WR → Technician (many-to-one)\n- Analytics → WR (one-to-many)"
+      "text": "# 📋 Data Models (7 Entities)\n\n## Core Business Entities\n- **Work**: WR con numero_wr, stato, relazioni\n  - tecnico_assegnato, tecnico_chiusura\n  - data_apertura, data_chiusura\n  - extra_fields (JSONB)\n\n- **Technician**: Tecnici di campo\n  - squadra_id, telegram_id\n  - nome, cognome, telefono\n\n- **Team**: Organizzazione squadre\n  - nome, id\n\n## Audit & Tracking\n- **WorkEvent**: Log eventi WR\n  - work_id, timestamp, event_type\n  - description, user_id\n\n## Document Management\n- **Document**: OCR processing\n  - filename, mime, content (BLOB)\n  - parsed_data (JSON), applied_work\n\n- **User**: Authentication\n  - username, hashed_password\n  - role, technician_id\n\n## Relations\n- **DocumentAppliedWork**: Many-to-many\n  - document_id, work_id, applied_at\n  - Unique constraints"
     },
     {
       "id": "postgresql_config",
@@ -25,34 +25,43 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🐘 PostgreSQL Setup\n\n## Installation\n```bash\nsudo apt install postgresql postgresql-contrib\nsudo systemctl enable postgresql\n```\n\n## Database Creation\n```bash\nsudo -u postgres psql\nCREATE DATABASE ftth;\nCREATE USER ftth_user WITH PASSWORD 'secure_pass';\nGRANT ALL ON DATABASE ftth TO ftth_user;\n```\n\n## Connection String\n`postgresql://ftth_user:pass@localhost:5432/ftth`"
+      "text": "# 🐘 PostgreSQL Docker Setup\n\n## Container Configuration\n```yaml\npostgres:\n  image: postgres:15-alpine\n  environment:\n    POSTGRES_DB: ftth\n    POSTGRES_USER: ftth_user\n    POSTGRES_PASSWORD: ftth_password\n  volumes:\n    - postgres_data:/var/lib/postgresql/data\n  ports: \"5432:5432\"\n  healthcheck:\n    test: pg_isready -U ftth_user -d ftth\n```\n\n## Connection String\n`postgresql://ftth_user:ftth_password@postgres:5432/ftth`\n\n## Features\n- **JSONB Support**: Flexible data\n- **Full-text Search**: Document indexing\n- **ACID Compliance**: Transaction safety\n- **Replication Ready**: High availability"
     },
     {
-      "id": "sqlite_config",
+      "id": "redis_config",
       "x": 50,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 📱 SQLite Setup\n\n## For Development\n```bash\n# No installation needed\n# File-based database\n```\n\n## Connection String\n`sqlite:///./ftth.db`\n\n## Advantages\n- ✅ Zero configuration\n- ✅ Single file\n- ✅ Easy backup\n- ✅ Fast for development\n\n## Limitations\n- ❌ No concurrent writes\n- ❌ No user authentication\n- ❌ Limited scalability"
+      "text": "# 🔴 Redis Cache Setup\n\n## Container Configuration\n```yaml\nredis:\n  image: redis:7-alpine\n  ports: \"6379:6379\"\n  volumes:\n    - redis_data:/data\n  command: redis-server --appendonly yes\n  healthcheck:\n    test: redis-cli ping\n```\n\n## Use Cases\n- **Session Storage**: JWT tokens\n- **API Caching**: Response caching\n- **Rate Limiting**: Request throttling\n- **Job Queue**: Background tasks\n\n## Persistence\n- **AOF**: Append-only file\n- **Snapshots**: Point-in-time recovery\n- **Memory Limits**: Configurable"
     },
     {
       "id": "backup_system",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 💾 Backup System\n\n## PostgreSQL Backup\n```bash\n# Daily backup script\npg_dump ftth > backup_$(date +%Y%m%d).sql\n\n# Restore\npsql ftth < backup_file.sql\n```\n\n## SQLite Backup\n```bash\n# Simple file copy\ncp ftth.db ftth_backup.db\n```\n\n## Automation\n- Cron job: `0 2 * * *`\n- Retention: 30 days\n- Location: `/opt/ftth/backups/`"
+      "text": "# 💾 Backup System\n\n## PostgreSQL Backup\n```bash\n# Docker exec backup\ndocker exec ftth-postgres pg_dump -U ftth_user ftth > backup_$(date +%Y%m%d).sql\n\n# Automated script\n0 2 * * * docker exec ftth-postgres pg_dump -U ftth_user ftth > /backups/daily.sql\n```\n\n## Redis Backup\n```bash\n# AOF file copy\ndocker cp ftth-redis:/data/appendonly.aof ./backups/redis.aof\n\n# RDB snapshot\ndocker exec ftth-redis redis-cli BGSAVE\n```\n\n## Recovery\n```bash\n# PostgreSQL restore\npsql -U ftth_user -d ftth < backup.sql\n\n# Redis restore\ndocker cp ./backups/redis.aof ftth-redis:/data/appendonly.aof\n```"
     },
     {
-      "id": "troubleshooting_db",
+      "id": "performance_optimization",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## PostgreSQL Issues\n- **Connection refused**\n- **Authentication failed**\n- **Database corrupted**\n\n## SQLite Issues\n- **Database locked**\n- **File permissions**\n- **Corruption**\n\n## Quick Commands\n```bash\n# Test connection\npsql \"$DATABASE_URL\" -c \"SELECT 1;\"\n\n# Check disk space\ndf -h\n\n# View logs\nsudo tail -f /var/log/postgresql/postgresql-*.log\n```"
+      "text": "# ⚡ Performance Optimization\n\n## PostgreSQL Tuning\n- **Indexes**: numero_wr, stato, tecnico_id\n- **Connection Pooling**: SQLAlchemy\n- **Query Optimization**: EXPLAIN ANALYZE\n- **Partitioning**: Large tables\n\n## Redis Optimization\n- **Memory Management**: maxmemory policy\n- **Persistence Strategy**: AOF vs RDB\n- **Key Expiration**: TTL settings\n- **Clustering**: Future scalability\n\n## Monitoring\n- **Slow Queries**: Log analysis\n- **Cache Hit Ratio**: Redis metrics\n- **Connection Count**: Pool monitoring"
+    },
+    {
+      "id": "troubleshooting_db",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## PostgreSQL Issues\n- **Connection refused**: Check container status\n- **Authentication failed**: Verify credentials\n- **Database corrupted**: Restore from backup\n- **Out of disk space**: Clean old logs\n\n## Redis Issues\n- **Connection timeout**: Check container\n- **Memory full**: Configure eviction\n- **Persistence failed**: Check disk space\n- **Cluster issues**: Single node for now\n\n## Migration Issues\n- **Alembic errors**: Check migration files\n- **Data integrity**: Validate constraints\n- **Foreign keys**: Check relationships"
     }
   ],
   "edges": [
@@ -81,12 +90,12 @@
       "label": "stored in"
     },
     {
-      "id": "models_to_sqlite",
+      "id": "models_to_redis",
       "fromNode": "database_models",
       "fromSide": "bottom",
-      "toNode": "sqlite_config",
+      "toNode": "redis_config",
       "toSide": "left",
-      "label": "or stored in"
+      "label": "cached in"
     },
     {
       "id": "postgres_to_backup",
@@ -97,19 +106,27 @@
       "label": "backed up via"
     },
     {
-      "id": "sqlite_to_backup",
-      "fromNode": "sqlite_config",
+      "id": "redis_to_backup",
+      "fromNode": "redis_config",
       "fromSide": "bottom",
       "toNode": "backup_system",
       "toSide": "right",
       "label": "backed up via"
     },
     {
-      "id": "backup_to_troubleshooting",
+      "id": "backup_to_performance",
       "fromNode": "backup_system",
       "fromSide": "right",
-      "toNode": "troubleshooting_db",
+      "toNode": "performance_optimization",
       "toSide": "left",
+      "label": "supports"
+    },
+    {
+      "id": "performance_to_troubleshooting",
+      "fromNode": "performance_optimization",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting_db",
+      "toSide": "top",
       "label": "debug with"
     }
   ]

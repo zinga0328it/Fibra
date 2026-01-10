@@ -1,0 +1,125 @@
+{
+  "nodes": [
+    {
+      "id": "ai_overview",
+      "x": -300,
+      "y": -200,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🤖 AI & OCR Integration\n\n**Intelligent Document Processing**\n\n- **OCR Engine**: pytesseract + pdfplumber\n- **AI Assistant**: GPT-4 integration\n- **Document Analysis**: Automated processing\n- **Smart Classification**: ML-based categorization\n- **Quality Assurance**: AI-powered validation\n- **Automation**: Workflow optimization\n\n**Status**: ✅ AI-Enhanced Operations"
+    },
+    {
+      "id": "ocr_engine",
+      "x": 50,
+      "y": -200,
+      "width": 350,
+      "height": 180,
+      "type": "text",
+      "text": "# 📄 OCR Processing Engine\n\n## Multi-Format Support\n```python\n# OCR processing pipeline\nimport pytesseract\nfrom pdfplumber import pdf\n\ndef process_document(file_path: str) -> str:\n    if file_path.endswith('.pdf'):\n        with pdf.open(file_path) as pdf_file:\n            text = \"\"\n            for page in pdf_file.pages:\n                text += page.extract_text() + \"\\n\"\n    else:\n        # Image processing\n        image = Image.open(file_path)\n        text = pytesseract.image_to_string(image, lang='ita+eng')\n    \n    return clean_text(text)\n\n# Advanced OCR with layout preservation\ndef extract_structured_data(file_path: str):\n    with pdf.open(file_path) as pdf_file:\n        structured_data = []\n        for page in pdf_file.pages:\n            # Extract tables, forms, and text blocks\n            tables = page.extract_tables()\n            text_blocks = page.extract_text_lines()\n            structured_data.append({\n                'tables': tables,\n                'text_blocks': text_blocks\n            })\n    return structured_data\n```\n\n## OCR Configuration\n```python\n# pytesseract configuration\ncustom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzàèéìòùÀÈÉÌÒÙ'\n\n# Language support\nLANGUAGES = ['ita', 'eng', 'spa', 'fra']\n\n# Quality enhancement\nimage = cv2.imread(file_path)\nimage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)\nimage = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]\n```\n\n## Document Types\n- **Work Orders**: WR extraction and validation\n- **Technical Reports**: Equipment specifications\n- **Contracts**: Terms and conditions\n- **Invoices**: Financial data extraction\n- **Certificates**: Compliance documents\n- **Maps**: Geographic information"
+    },
+    {
+      "id": "gpt_integration",
+      "x": -300,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# 🧠 GPT-4 AI Assistant\n\n## AI Processing Pipeline\n```python\n# GPT-4 integration for document analysis\nfrom openai import OpenAI\n\nclient = OpenAI(api_key=settings.openai_api_key)\n\nasync def analyze_document_with_ai(text: str, document_type: str):\n    prompt = f\"\"\"\n    Analyze this {document_type} document and extract:\n    - Key information and entities\n    - Validation requirements\n    - Potential issues or anomalies\n    - Recommended actions\n    \n    Document text:\n    {text[:4000]}  # Limit for API\n    \"\"\"\n    \n    response = await client.chat.completions.create(\n        model=\"gpt-4\",\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        temperature=0.1,\n        max_tokens=1000\n    )\n    \n    return parse_ai_response(response.choices[0].message.content)\n\n# Smart document classification\ndef classify_document_ai(text: str) -> str:\n    categories = [\"work_order\", \"contract\", \"invoice\", \"certificate\", \"report\"]\n    # AI-powered classification logic\n    return predicted_category\n```\n\n## AI Capabilities\n- **Entity Extraction**: Names, dates, amounts\n- **Sentiment Analysis**: Document tone assessment\n- **Summarization**: Key points extraction\n- **Translation**: Multi-language support\n- **Quality Validation**: Error detection\n- **Action Recommendations**: Next steps suggestions"
+    },
+    {
+      "id": "document_automation",
+      "x": 50,
+      "y": 50,
+      "width": 250,
+      "height": 150,
+      "type": "text",
+      "text": "# ⚙️ Document Automation\n\n## Automated Workflows\n```python\n# Document processing pipeline\nclass DocumentProcessor:\n    def __init__(self):\n        self.ocr_engine = OCREngine()\n        self.ai_analyzer = AIAnalyzer()\n        self.validator = DocumentValidator()\n    \n    async def process_upload(self, file: UploadFile) -> ProcessedDocument:\n        # 1. OCR extraction\n        raw_text = await self.ocr_engine.extract_text(file)\n        \n        # 2. AI analysis\n        analysis = await self.ai_analyzer.analyze(raw_text)\n        \n        # 3. Data validation\n        validated_data = await self.validator.validate(analysis)\n        \n        # 4. Database storage\n        document = await create_document(validated_data)\n        \n        # 5. Workflow trigger\n        await trigger_workflow(document)\n        \n        return document\n\n# Workflow automation\nasync def trigger_workflow(document: Document):\n    if document.type == \"work_order\":\n        await assign_to_technician(document)\n    elif document.type == \"invoice\":\n        await process_payment(document)\n    # Additional workflow logic\n```\n\n## Smart Features\n- **Auto-categorization**: ML-based document type detection\n- **Data Extraction**: Structured information parsing\n- **Validation Rules**: Business logic enforcement\n- **Workflow Triggers**: Automated process initiation\n- **Quality Scoring**: Document completeness assessment\n- **Duplicate Detection**: Similarity analysis"
+    },
+    {
+      "id": "quality_assurance",
+      "x": -100,
+      "y": 250,
+      "width": 350,
+      "height": 120,
+      "type": "text",
+      "text": "# ✅ Quality Assurance & Validation\n\n## Multi-Layer Validation\n```python\n# Document validation pipeline\nclass DocumentValidator:\n    def __init__(self):\n        self.rules = {\n            'work_order': self._validate_work_order,\n            'contract': self._validate_contract,\n            'invoice': self._validate_invoice\n        }\n    \n    async def validate(self, document_data: dict) -> ValidationResult:\n        validator = self.rules.get(document_data.get('type'))\n        if not validator:\n            return ValidationResult(valid=False, errors=['Unknown document type'])\n        \n        return await validator(document_data)\n    \n    async def _validate_work_order(self, data: dict) -> ValidationResult:\n        errors = []\n        \n        # Required fields\n        if not data.get('work_order_number'):\n            errors.append('Missing work order number')\n        \n        # Date validation\n        if data.get('due_date'):\n            if datetime.fromisoformat(data['due_date']) < datetime.now():\n                errors.append('Due date is in the past')\n        \n        # AI-powered validation\n        ai_validation = await self._ai_quality_check(data)\n        errors.extend(ai_validation.get('issues', []))\n        \n        return ValidationResult(\n            valid=len(errors) == 0,\n            errors=errors,\n            confidence=ai_validation.get('confidence', 0.0)\n        )\n\n# AI quality assessment\nasync def _ai_quality_check(self, data: dict) -> dict:\n    # Use GPT-4 to assess document quality\n    prompt = f\"Assess the quality and completeness of this document: {data}\"\n    # Return quality score and issues\n```\n\n## Validation Rules\n- **Completeness**: Required field verification\n- **Consistency**: Cross-field validation\n- **Format**: Data type and format checking\n- **Business Logic**: Domain-specific rules\n- **AI Enhancement**: Intelligent issue detection\n- **Confidence Scoring**: Validation certainty levels"
+    },
+    {
+      "id": "performance_optimization",
+      "x": 400,
+      "y": -50,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# ⚡ Performance & Optimization\n\n## Processing Optimization\n```python\n# Async processing pipeline\nimport asyncio\nfrom concurrent.futures import ThreadPoolExecutor\n\nclass OptimizedProcessor:\n    def __init__(self):\n        self.executor = ThreadPoolExecutor(max_workers=4)\n        self.semaphore = asyncio.Semaphore(10)  # Limit concurrent processing\n    \n    async def process_batch(self, files: List[UploadFile]) -> List[ProcessedDocument]:\n        tasks = []\n        for file in files:\n            tasks.append(self._process_single_file(file))\n        \n        # Process in batches to avoid resource exhaustion\n        results = []\n        for batch in self._create_batches(tasks, batch_size=5):\n            batch_results = await asyncio.gather(*batch, return_exceptions=True)\n            results.extend(batch_results)\n        \n        return results\n    \n    async def _process_single_file(self, file: UploadFile) -> ProcessedDocument:\n        async with self.semaphore:\n            # OCR processing (CPU intensive)\n            text = await asyncio.get_event_loop().run_in_executor(\n                self.executor, self._sync_ocr_process, file\n            )\n            \n            # AI analysis (I/O intensive)\n            analysis = await self._async_ai_analyze(text)\n            \n            return await self._create_document(analysis)\n\n# Caching for repeated operations\n@cached(ttl=3600)  # Cache for 1 hour\nasync def get_document_template(doc_type: str) -> dict:\n    # Return validation templates\n    pass\n```\n\n## Performance Metrics\n- **Processing Time**: < 30 seconds per document\n- **Throughput**: 100+ documents/hour\n- **Accuracy**: > 95% OCR confidence\n- **Error Rate**: < 2% processing failures\n- **Resource Usage**: Optimized CPU/memory\n\n## Scalability Features\n- **Batch Processing**: Multiple documents simultaneously\n- **Queue Management**: Redis-based job queues\n- **Load Balancing**: Distributed processing\n- **Caching**: Redis for frequent operations\n- **Async Processing**: Non-blocking operations"
+    },
+    {
+      "id": "ai_troubleshooting",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 AI/OCR Troubleshooting\n\n## Common Issues\n- **OCR Quality**: Poor image quality, skewed text\n- **AI API Limits**: Rate limiting, token limits\n- **Memory Issues**: Large document processing\n- **Timeout Errors**: Long-running operations\n- **Accuracy Problems**: Language detection issues\n\n## Debugging Tools\n```python\n# OCR debugging\ndef debug_ocr_quality(image_path: str):\n    image = cv2.imread(image_path)\n    \n    # Check image properties\n    print(f\"Image size: {image.shape}\")\n    print(f\"Image type: {image.dtype}\")\n    \n    # Test OCR confidence\n    data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)\n    confidences = [int(conf) for conf in data['conf'] if conf != '-1']\n    avg_confidence = sum(confidences) / len(confidences) if confidences else 0\n    print(f\"Average OCR confidence: {avg_confidence}%\")\n\n# AI response debugging\ndef debug_ai_response(response: dict):\n    print(f\"AI model used: {response.get('model')}\")\n    print(f\"Tokens used: {response.get('usage', {}).get('total_tokens')}\")\n    print(f\"Response quality: {assess_response_quality(response)}\")\n\n# Performance monitoring\ndef monitor_processing_time(func):\n    @wraps(func)\n    async def wrapper(*args, **kwargs):\n        start_time = time.time()\n        result = await func(*args, **kwargs)\n        processing_time = time.time() - start_time\n        print(f\"{func.__name__} took {processing_time:.2f} seconds\")\n        return result\n    return wrapper\n```\n\n## Optimization Tips\n- **Image Preprocessing**: Enhance image quality before OCR\n- **Text Cleaning**: Remove noise and normalize text\n- **Batch Processing**: Process multiple documents together\n- **Caching**: Cache AI responses for similar documents\n- **Error Handling**: Graceful degradation on failures\n- **Monitoring**: Track performance and accuracy metrics"
+    }
+  ],
+  "edges": [
+    {
+      "id": "ai_to_ocr",
+      "fromNode": "ai_overview",
+      "fromSide": "right",
+      "toNode": "ocr_engine",
+      "toSide": "left",
+      "label": "processes with"
+    },
+    {
+      "id": "ai_to_gpt",
+      "fromNode": "ai_overview",
+      "fromSide": "bottom",
+      "toNode": "gpt_integration",
+      "toSide": "top",
+      "label": "enhances with"
+    },
+    {
+      "id": "ocr_to_automation",
+      "fromNode": "ocr_engine",
+      "fromSide": "bottom",
+      "toNode": "document_automation",
+      "toSide": "top",
+      "label": "feeds"
+    },
+    {
+      "id": "gpt_to_automation",
+      "fromNode": "gpt_integration",
+      "fromSide": "bottom",
+      "toNode": "document_automation",
+      "toSide": "left",
+      "label": "powers"
+    },
+    {
+      "id": "automation_to_quality",
+      "fromNode": "document_automation",
+      "fromSide": "bottom",
+      "toNode": "quality_assurance",
+      "toSide": "left",
+      "label": "validates with"
+    },
+    {
+      "id": "quality_to_performance",
+      "fromNode": "quality_assurance",
+      "fromSide": "right",
+      "toNode": "performance_optimization",
+      "toSide": "left",
+      "label": "optimizes"
+    },
+    {
+      "id": "performance_to_troubleshooting",
+      "fromNode": "performance_optimization",
+      "fromSide": "bottom",
+      "toNode": "ai_troubleshooting",
+      "toSide": "top",
+      "label": "monitors"
+    }
+  ]
+}

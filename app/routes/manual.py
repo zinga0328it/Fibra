@@ -60,6 +60,13 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
     work.nome_cliente = payload.get('cliente') or payload.get('NOME_CLIENTE') or payload.get('COGNOME_CLIENTE')
     work.tipo_lavoro = payload.get('tipo_lavoro') or payload.get('tipo') or payload.get('TIPOLOGIA_SERVIZIO')
     work.stato = payload.get('stato') or payload.get('STATO_WR') or 'aperto'
+    
+    # Equipment fields
+    work.requires_ont = payload.get('requires_ont', False)
+    work.requires_modem = payload.get('requires_modem', False)
+    work.ont_cost = payload.get('ont_cost', 0.0)
+    work.modem_cost = payload.get('modem_cost', 0.0)
+    
     # appointment start and end mapping
     data_inizio = payload.get('data_inizio') or payload.get('appuntamento') or payload.get('INIZIO_APPUNTAMENTO') or payload.get('Appuntamento')
     if data_inizio:
@@ -92,7 +99,7 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
             work.tecnico_assegnato_id = tech.id
 
     # Keep any extra fields in JSON
-    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO'}
+    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO', 'requires_ont', 'requires_modem', 'ont_cost', 'modem_cost'}
     extra = {k: v for k, v in payload.items() if k not in known}
     if extra:
         work.extra_fields = extra

@@ -7,65 +7,74 @@
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🌐 Apache Frontend Module\n\n**Public Web Interface**\n\n- **Domain**: servicess.net\n- **SSL**: Let's Encrypt\n- **Port**: 443 (HTTPS)\n- **Content**: Static frontend only\n- **Backend**: NO proxy (Security!)\n\n**Status**: ✅ Public & Secure"
+      "text": "# 🌐 Apache Reverse Proxy Module (Ubuntu)\n\n**Enterprise Reverse Proxy & SSL Termination**\n\n- **Server**: Apache2 (Ubuntu host)\n- **Ports**: 80, 7676, 444, 445, 6031, 8083\n- **SSL**: Let's Encrypt certificates\n- **Backend**: FastAPI proxy pass\n- **Virtual Hosts**: 6 active configurations\n\n**Status**: ✅ Production Ubuntu Server"
     },
     {
       "id": "apache_config",
       "x": 50,
       "y": -200,
-      "width": 300,
+      "width": 350,
       "height": 180,
       "type": "text",
-      "text": "# ⚙️ Configuration\n\n**File**: `/etc/apache2/sites-available/fibra.conf`\n\n```apache\n<VirtualHost *:443>\n    ServerName servicess.net\n    DocumentRoot /var/www/fibra\n    \n    SSLEngine on\n    SSLCertificateFile /etc/letsencrypt/live/servicess.net/fullchain.pem\n    SSLCertificateKeyFile /etc/letsencrypt/live/servicess.net/privkey.pem\n    \n    # NO PROXY TO BACKEND - SECURITY!\n    <Directory /var/www/fibra>\n        Require all granted\n    </Directory>\n</VirtualHost>\n```\n\n**Security**: Backend completely isolated!"
+      "text": "# ⚙️ Apache Ubuntu Configuration\n\n## System Setup\n```bash\n# Ubuntu Apache2 installation\nsudo apt update\nsudo apt install apache2\nsudo a2enmod proxy proxy_http proxy_wstunnel ssl headers\nsudo systemctl enable apache2\nsudo systemctl start apache2\n```\n\n## Configuration Structure\n```bash\n/etc/apache2/\n├── sites-available/     # Virtual host configs\n│   ├── 000-default.conf\n│   ├── test2.conf\n│   └── ...\n├── sites-enabled/       # Symlinks to enabled sites\n├── mods-enabled/        # Enabled modules\n└── ssl/                 # SSL certificates\n```\n\n## Security Features\n- **SSL/TLS 1.3**: Modern encryption\n- **HSTS**: HTTP Strict Transport Security\n- **Rate Limiting**: DDoS protection\n- **Security Headers**: XSS, CSRF protection\n- **Mod Security**: WAF integration"
     },
     {
-      "id": "ssl_certificates",
+      "id": "ssl_certificates_apache",
       "x": -300,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 🔒 SSL Certificates\n\n## Let's Encrypt Setup\n```bash\n# Install certbot\nsudo apt install certbot python3-certbot-apache\n\n# Get certificate\nsudo certbot --apache -d servicess.net\n\n# Auto-renewal\nsudo systemctl status certbot.timer\n```\n\n## Certificate Files\n- **Full Chain**: `/etc/letsencrypt/live/servicess.net/fullchain.pem`\n- **Private Key**: `/etc/letsencrypt/live/servicess.net/privkey.pem`\n- **Auto-renewal**: Every 60 days"
+      "text": "# 🔒 SSL Certificates (Apache)\n\n## Let's Encrypt Integration\n```bash\n# Certbot for Apache\nsudo apt install certbot python3-certbot-apache\nsudo certbot --apache -d yourdomain.com\n\n# Automatic renewal\nsudo crontab -e\n# Add: 0 12 * * * /usr/bin/certbot renew --quiet\n```\n\n## Certificate Files\n- **Full Chain**: `/etc/letsencrypt/live/domain/fullchain.pem`\n- **Private Key**: `/etc/letsencrypt/live/domain/privkey.pem`\n- **Auto-renewal**: systemd timer\n\n## SSL Configuration\n```apache\n<VirtualHost *:443>\n    SSLEngine on\n    SSLCertificateFile /etc/letsencrypt/live/domain/fullchain.pem\n    SSLCertificateKeyFile /etc/letsencrypt/live/domain/privkey.pem\n    SSLProtocol TLSv1.2 TLSv1.3\n    SSLCipherSuite ECDHE-RSA-AES128-GCM-SHA256:...\n</VirtualHost>\n```"
     },
     {
-      "id": "static_frontend",
+      "id": "proxy_backend_apache",
       "x": 50,
       "y": 50,
       "width": 250,
       "height": 150,
       "type": "text",
-      "text": "# 📄 Static Frontend\n\n## Content Structure\n```bash\n/var/www/fibra/\n├── index.html          # Dashboard principale\n├── css/\n│   └── bootstrap.min.css\n├── js/\n│   ├── jquery.min.js\n│   └── app.js\n└── api/\n    └── client.js       # AJAX to backend\n```\n\n## Features\n- ✅ Work Requests list\n- ✅ Upload forms\n- ✅ Real-time updates\n- ✅ Mobile responsive"
+      "text": "# 🔄 Backend Proxy Configuration\n\n## FastAPI Proxy Pass\n```apache\n<VirtualHost *:80>\n    ServerName api.yourdomain.com\n    \n    ProxyPass / http://localhost:6030/\n    ProxyPassReverse / http://localhost:6030/\n    \n    ProxyPreserveHost On\n    RequestHeader set X-Forwarded-Proto \"http\"\n    RequestHeader set X-Forwarded-Port \"80\"\n</VirtualHost>\n```\n\n## WebSocket Support\n```apache\n<VirtualHost *:8083>\n    ServerName ws.yourdomain.com\n    \n    RewriteEngine On\n    RewriteCond %{HTTP:Upgrade} websocket [NC]\n    RewriteRule /(.*) ws://localhost:6030/$1 [P,L]\n    \n    ProxyPass / http://localhost:6030/\n    ProxyPassReverse / http://localhost:6030/\n</VirtualHost>\n```\n\n## Load Balancing\n```apache\n<Proxy balancer://backend-cluster>\n    BalancerMember http://localhost:6030\n    BalancerMember http://localhost:6031\n    ProxySet lbmethod=byrequests\n</Proxy>\n\nProxyPass /api balancer://backend-cluster\n```"
     },
     {
-      "id": "security_measures",
+      "id": "virtual_hosts_apache",
       "x": -100,
       "y": 250,
-      "width": 300,
+      "width": 350,
       "height": 120,
       "type": "text",
-      "text": "# 🛡️ Security Measures\n\n## No Backend Exposure\n- ❌ **NO** proxy to FastAPI\n- ❌ **NO** API endpoints public\n- ✅ **ONLY** static content\n\n## DDoS Protection\n- Rate limiting configured\n- Fail2Ban monitoring\n- SSL/TLS encryption\n\n## Access Control\n- HTTPS only (redirect)\n- Secure headers\n- CORS properly configured"
+      "text": "# 🌐 Virtual Hosts Configuration\n\n## Active Virtual Hosts\n### Main API (Port 80)\n```apache\n<VirtualHost *:80>\n    ServerName ftth-api.local\n    DocumentRoot /var/www/html\n    \n    ProxyPass /api http://localhost:6030/api\n    ProxyPassReverse /api http://localhost:6030/api\n    \n    Alias /static /home/aaa/fibra/web/publica\n</VirtualHost>\n```\n\n### Test Services (Port 8083)\n```apache\n<VirtualHost *:8083>\n    ServerName test2.local\n    ProxyPass / http://localhost:8256/\n    ProxyPassReverse / http://localhost:8256/\n    Header set X-Served-By \"Apache-Test2\"\n</VirtualHost>\n```\n\n### Additional Ports\n- **7676**: Servizio aggiuntivo\n- **444**: API endpoint sicuro\n- **445**: Altro servizio\n- **6031**: Backend diretto\n\n## Management Commands\n```bash\n# Enable site\nsudo a2ensite test2.conf\nsudo systemctl reload apache2\n\n# Check configuration\nsudo apache2ctl configtest\n\n# View enabled sites\nls -la /etc/apache2/sites-enabled/\n```"
     },
     {
-      "id": "troubleshooting_apache",
+      "id": "docker_networking",
       "x": 400,
       "y": -50,
       "width": 200,
       "height": 150,
       "type": "text",
-      "text": "# 🆘 Troubleshooting\n\n## Common Issues\n- **SSL certificate expired**\n- **502 Bad Gateway** (shouldn't happen)\n- **403 Forbidden**\n- **Slow loading**\n\n## Quick Commands\n```bash\n# Check config\nsudo apache2ctl configtest\n\n# Reload service\nsudo systemctl reload apache2\n\n# Check logs\nsudo tail -f /var/log/apache2/error.log\n```"
+      "text": "# 🐳 Docker Networking\n\n## Network Configuration\n```yaml\nnetworks:\n  ftth-network:\n    driver: bridge\n    ipam:\n      config:\n        - subnet: 172.20.0.0/16\n```\n\n## Service Communication\n- **nginx** → **ftth-backend**: HTTP proxy\n- **ftth-backend** → **postgres**: Database\n- **ftth-backend** → **redis**: Cache\n- **telegram-bot** → **ftth-backend**: API calls\n\n## External Access\n- **Port 80/443**: Public web access\n- **Internal**: Container-to-container only\n- **Security**: No direct backend exposure"
+    },
+    {
+      "id": "troubleshooting_nginx",
+      "x": 400,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "type": "text",
+      "text": "# 🆘 Troubleshooting\n\n## Container Issues\n- **Port conflicts**: Check 80/443 availability\n- **SSL mount errors**: Verify certificate paths\n- **Backend unreachable**: Check ftth-backend status\n\n## Configuration Issues\n- **502 Bad Gateway**: Backend down\n- **404 Not Found**: Wrong proxy paths\n- **SSL errors**: Certificate expired\n\n## Performance Issues\n- **Slow loading**: Check static file caching\n- **High CPU**: Review access logs\n- **Memory usage**: Monitor container resources\n\n## Quick Commands\n```bash\n# Check config\ndocker exec ftth-nginx nginx -t\n\n# Reload config\ndocker exec ftth-nginx nginx -s reload\n\n# View logs\ndocker logs ftth-nginx\n```"
     }
   ],
   "edges": [
     {
-      "id": "apache_to_config",
+      "id": "nginx_to_config",
       "fromNode": "apache_overview",
       "fromSide": "right",
-      "toNode": "apache_config",
+      "toNode": "nginx_config",
       "toSide": "left",
       "label": "configured by"
     },
     {
-      "id": "apache_to_ssl",
+      "id": "nginx_to_ssl",
       "fromNode": "apache_overview",
       "fromSide": "bottom",
       "toNode": "ssl_certificates",
@@ -73,35 +82,43 @@
       "label": "secured with"
     },
     {
-      "id": "config_to_static",
-      "fromNode": "apache_config",
+      "id": "config_to_proxy",
+      "fromNode": "nginx_config",
       "fromSide": "bottom",
-      "toNode": "static_frontend",
+      "toNode": "proxy_backend",
       "toSide": "top",
-      "label": "serves"
+      "label": "proxies to"
     },
     {
-      "id": "ssl_to_security",
+      "id": "ssl_to_static",
       "fromNode": "ssl_certificates",
       "fromSide": "bottom",
-      "toNode": "security_measures",
+      "toNode": "static_frontend",
       "toSide": "left",
-      "label": "enables"
+      "label": "protects"
     },
     {
-      "id": "static_to_security",
-      "fromNode": "static_frontend",
+      "id": "proxy_to_static",
+      "fromNode": "proxy_backend",
       "fromSide": "bottom",
-      "toNode": "security_measures",
+      "toNode": "static_frontend",
       "toSide": "right",
-      "label": "protected by"
+      "label": "serves alongside"
     },
     {
-      "id": "security_to_troubleshooting",
-      "fromNode": "security_measures",
+      "id": "static_to_docker",
+      "fromNode": "static_frontend",
       "fromSide": "right",
-      "toNode": "troubleshooting_apache",
+      "toNode": "docker_networking",
       "toSide": "left",
+      "label": "networked via"
+    },
+    {
+      "id": "docker_to_troubleshooting",
+      "fromNode": "docker_networking",
+      "fromSide": "bottom",
+      "toNode": "troubleshooting_nginx",
+      "toSide": "top",
       "label": "debug with"
     }
   ]

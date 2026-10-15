@@ -2,24 +2,31 @@
 
 Stato: progetto approvato come prototipo mock. Questo documento non abilita
 nuovi tool, non configura una sandbox e non autorizza deploy in produzione.
-Il GPT attuale deve restare operativo. Lo YAML Actions non e' ancora disponibile.
+Il GPT attuale deve restare operativo. Lo YAML locale e' ora disponibile;
+vedere MIGRATION_REPORT.md per la matrice delle 32 Actions simulate.
+
+Avanzamento: 32 Actions simulate e traduzione HTTP testata su loopback;
+project_read e project_diff implementati nel profilo separato --dev-read.
+Le sezioni seguenti descrivono il contratto futuro multiutente e la sandbox,
+non permessi gia' attivi. Il prototipo di lettura usa una root fissa, path,
+expected_sha256 e proposed_content, con limite 128 KiB e nessuna scrittura.
 
 ## 1. Conservazione delle funzioni esistenti
 
-Il numero di operazioni sara' ricavato dallo YAML, non assunto uguale a 30.
+Il numero di operazioni ricavato dallo YAML e' 32, non 30.
 Ogni metodo HTTP di ogni path deve essere inventariato. operationId duplicati
 o assenti, riferimenti non risolti e schemi ambigui bloccano il confronto.
 I riferimenti locali saranno risolti senza scaricare automaticamente URL esterni.
 Eventuali segreti o esempi con dati personali saranno segnalati senza copiarli
 nel repository. Lo schema originale non sara' pubblicato automaticamente.
 
-La matrice da compilare alla ricezione dello YAML avra' queste colonne:
+La matrice e il dettaglio strutturale sono in MIGRATION_REPORT.md e
+contracts/actions.json. Per la futura equivalenza reale rimangono queste colonne:
 
 | operationId | Metodo e path | Parametri/body | Risultati/errori | Auth/permessi | Effetti | Tool MCP | Test | Stato/gap |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-Non sono inserite righe inventate. I sei tool mock attuali non dimostrano
-alcuna percentuale di copertura delle Actions ancora sconosciute.
+I sei helper aggiuntivi non aumentano la copertura delle 32 Actions originali.
 
 Per ciascuna operazione:
 
@@ -57,7 +64,8 @@ repository:
 - Lia sviluppatrice: copia di sviluppo del solo MCP, dati simulati, nessuna
   credenziale o raggiungibilita' dei servizi FTTH. Nessun adattatore reale.
 
-I tool di sviluppo non sono registrati nel server corrente. Una futura
+I due tool di sola lettura sono registrati solo nel profilo --dev-read.
+Non compaiono nei profili applicativi --mock e --mock-actions. Una futura
 connessione MCP separata avra' identita', autorizzazioni e log separati. Il solo
 nome del tool o una frase di approvazione nel prompt non costituisce un permesso.
 
@@ -142,12 +150,13 @@ non abilita i tool MCP di sviluppo e non installa un plugin.
 
 ## 6. Verifiche prima del collegamento
 
-- Suite attuale: 7 test unitari e 3 test MCP/avvio superati su fixture locali.
+- Suite estesa: 66 test Rust e 8 Python; dettaglio in MIGRATION_REPORT.md.
   Questo non costituisce un test di isolamento OS: il runner isolato non esiste.
 - Confronto completo dello YAML e test parametrizzati per ogni operationId,
   inclusi scritture simulate, risposte/errori e autenticazione equivalente.
-- Schemi MCP di input/output completi, limiti dichiarati e verificati;
-  il prototipo attuale non dichiara outputSchema formali.
+- Schemi MCP di input/output: presenti per 32 Actions e tool di sviluppo;
+  nei sei helper estesi lo schema data e' generico, e il profilo legacy --mock
+  non pubblica outputSchema formali. Restano limiti da chiudere prima del passaggio.
 - Test OS della sandbox: tentativi di lettura/scrittura fuori allowlist, path
   traversal, symlink/hardlink, race, accesso rete/metadata, processi eccessivi,
   timeout, consumo disco, escape e recupero dopo arresto.

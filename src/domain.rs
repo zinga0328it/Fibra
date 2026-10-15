@@ -110,20 +110,44 @@ impl ReadBackend for MockBackend {
     fn search(&self, query: &str, limit: usize) -> Result<Vec<Document>, ReadError> {
         self.health()?;
         let query = query.trim();
-        if query.is_empty() || query.len() > 128 || query.chars().any(char::is_control)
+        if query.is_empty()
+            || query.len() > 128
+            || query.chars().any(char::is_control)
             || !(1..=20).contains(&limit)
         {
             return Err(ReadError::InvalidInput);
         }
         let query = query.to_lowercase();
-        let works = self.works.iter().filter(|work| {
-            [&work.numero_wr, &work.indirizzo, &work.nome_cliente, &work.tipo_lavoro]
-                .iter().any(|field| field.to_lowercase().contains(&query))
-        }).cloned().map(Document::Work);
-        let materials = self.materials.iter().filter(|material| {
-            [&material.nome, &material.codice, &material.descrizione, &material.tipo]
-                .iter().any(|field| field.to_lowercase().contains(&query))
-        }).cloned().map(Document::Material);
+        let works = self
+            .works
+            .iter()
+            .filter(|work| {
+                [
+                    &work.numero_wr,
+                    &work.indirizzo,
+                    &work.nome_cliente,
+                    &work.tipo_lavoro,
+                ]
+                .iter()
+                .any(|field| field.to_lowercase().contains(&query))
+            })
+            .cloned()
+            .map(Document::Work);
+        let materials = self
+            .materials
+            .iter()
+            .filter(|material| {
+                [
+                    &material.nome,
+                    &material.codice,
+                    &material.descrizione,
+                    &material.tipo,
+                ]
+                .iter()
+                .any(|field| field.to_lowercase().contains(&query))
+            })
+            .cloned()
+            .map(Document::Material);
         Ok(works.chain(materials).take(limit).collect())
     }
 
@@ -135,17 +159,28 @@ impl ReadBackend for MockBackend {
         }
         let id = raw_id.parse::<u64>().map_err(|_| ReadError::InvalidInput)?;
         match kind {
-            "work" => self.works.iter().find(|work| work.id == id)
-                .cloned().map(Document::Work).ok_or(ReadError::NotFound),
-            "material" => self.materials.iter().find(|material| material.id == id)
-                .cloned().map(Document::Material).ok_or(ReadError::NotFound),
+            "work" => self
+                .works
+                .iter()
+                .find(|work| work.id == id)
+                .cloned()
+                .map(Document::Work)
+                .ok_or(ReadError::NotFound),
+            "material" => self
+                .materials
+                .iter()
+                .find(|material| material.id == id)
+                .cloned()
+                .map(Document::Material)
+                .ok_or(ReadError::NotFound),
             _ => Err(ReadError::InvalidInput),
         }
     }
 
     fn find_wr(&self, numero_wr: &str) -> Result<Work, ReadError> {
         self.health()?;
-        if numero_wr.is_empty() || numero_wr.len() > 32
+        if numero_wr.is_empty()
+            || numero_wr.len() > 32
             || !numero_wr.bytes().all(|byte| byte.is_ascii_digit())
         {
             return Err(ReadError::InvalidInput);
@@ -195,8 +230,18 @@ mod tests {
     fn fetch_validates_document_kind_and_identifier() {
         let backend = MockBackend::default();
         assert!(matches!(backend.fetch("work_7"), Ok(Document::Work(_))));
-        assert!(matches!(backend.fetch("material_3"), Ok(Document::Material(_))));
-        for input in ["7", "work_-7", "work_", "work_7/assign", "secret_1", "https://example.com"] {
+        assert!(matches!(
+            backend.fetch("material_3"),
+            Ok(Document::Material(_))
+        ));
+        for input in [
+            "7",
+            "work_-7",
+            "work_",
+            "work_7/assign",
+            "secret_1",
+            "https://example.com",
+        ] {
             assert_eq!(backend.fetch(input), Err(ReadError::InvalidInput));
         }
     }
@@ -207,7 +252,10 @@ mod tests {
         for input in ["", "   ", "bad\nquery"] {
             assert_eq!(backend.search(input, 10), Err(ReadError::InvalidInput));
         }
-        assert_eq!(backend.search(&"a".repeat(129), 10), Err(ReadError::InvalidInput));
+        assert_eq!(
+            backend.search(&"a".repeat(129), 10),
+            Err(ReadError::InvalidInput)
+        );
         assert_eq!(backend.search("test", 0), Err(ReadError::InvalidInput));
         assert_eq!(backend.search("test", 21), Err(ReadError::InvalidInput));
         for input in ["", "103579742/close", " 103579742", "WR-103579742"] {
@@ -242,7 +290,10 @@ mod tests {
     fn repeated_reads_do_not_change_records() {
         let backend = MockBackend::default();
         let before = backend.fetch("work_7");
-        assert_eq!(backend.counts().unwrap(), vec![("aperto".into(), 1), ("chiuso".into(), 1)]);
+        assert_eq!(
+            backend.counts().unwrap(),
+            vec![("aperto".into(), 1), ("chiuso".into(), 1)]
+        );
         for _iteration in 0..3 {
             backend.find_wr("103579742").unwrap();
             backend.search("simulato", 20).unwrap();

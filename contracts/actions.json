@@ -1,0 +1,2834 @@
+{
+  "source_sha256": "fc5e3d116feb2cf32056dfe0ebd04d55cd71afa9d26c891f8a5ee91d2ec5b1b1",
+  "security_schemes": {
+    "ApiKeyAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-API-Key"
+    }
+  },
+  "operations": [
+    {
+      "name": "getHealth",
+      "method": "GET",
+      "path": "/health/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getWorks",
+      "method": "GET",
+      "path": "/works/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "numero_wr": {
+                "type": "string"
+              },
+              "operatore": {
+                "type": "string"
+              },
+              "indirizzo": {
+                "type": "string"
+              },
+              "nome_cliente": {
+                "type": "string"
+              },
+              "tipo_lavoro": {
+                "type": "string"
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stato": {
+                "type": "string",
+                "enum": [
+                  "aperto",
+                  "in_corso",
+                  "sospeso",
+                  "chiuso"
+                ]
+              },
+              "data_apertura": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "data_chiusura": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "tecnico_assegnato": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nome": {
+                        "type": "string"
+                      },
+                      "cognome": {
+                        "type": "string"
+                      },
+                      "telefono": {
+                        "type": "string"
+                      },
+                      "telegram_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "squadra": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "extra_fields": {
+                "type": "object"
+              },
+              "data_appuntamento": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "note_appuntamento": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "motivo_rinvio": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "pioggia",
+                      "cavo_finito",
+                      "scala_insufficiente",
+                      "cliente_assente",
+                      "problema_logistico",
+                      "altro"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getWorkById",
+      "method": "GET",
+      "path": "/works/{work_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "numero_wr": {
+              "type": "string"
+            },
+            "operatore": {
+              "type": "string"
+            },
+            "indirizzo": {
+              "type": "string"
+            },
+            "nome_cliente": {
+              "type": "string"
+            },
+            "tipo_lavoro": {
+              "type": "string"
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "stato": {
+              "type": "string",
+              "enum": [
+                "aperto",
+                "in_corso",
+                "sospeso",
+                "chiuso"
+              ]
+            },
+            "data_apertura": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "data_chiusura": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tecnico_assegnato": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "cognome": {
+                      "type": "string"
+                    },
+                    "telefono": {
+                      "type": "string"
+                    },
+                    "telegram_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "squadra": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer"
+                            },
+                            "nome": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "extra_fields": {
+              "type": "object"
+            },
+            "data_appuntamento": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note_appuntamento": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "motivo_rinvio": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "pioggia",
+                    "cavo_finito",
+                    "scala_insufficiente",
+                    "cliente_assente",
+                    "problema_logistico",
+                    "altro"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "updateWork",
+      "method": "PUT",
+      "path": "/works/{work_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "stato": {
+                "type": "string",
+                "enum": [
+                  "aperto",
+                  "in_corso",
+                  "sospeso",
+                  "chiuso"
+                ]
+              },
+              "tecnico_assegnato": {
+                "type": "integer"
+              },
+              "note": {
+                "type": "string"
+              },
+              "nome_cliente": {
+                "type": "string"
+              },
+              "indirizzo": {
+                "type": "string"
+              },
+              "operatore": {
+                "type": "string"
+              },
+              "tipo_lavoro": {
+                "type": "string"
+              },
+              "telefono_cliente": {
+                "type": "string"
+              },
+              "extra_fields": {
+                "type": "object"
+              },
+              "data_appuntamento": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note_appuntamento": {
+                "type": "string"
+              },
+              "motivo_rinvio": {
+                "type": "string",
+                "enum": [
+                  "pioggia",
+                  "cavo_finito",
+                  "scala_insufficiente",
+                  "cliente_assente",
+                  "problema_logistico",
+                  "altro"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "work_id",
+          "body"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "numero_wr": {
+              "type": "string"
+            },
+            "operatore": {
+              "type": "string"
+            },
+            "indirizzo": {
+              "type": "string"
+            },
+            "nome_cliente": {
+              "type": "string"
+            },
+            "tipo_lavoro": {
+              "type": "string"
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "stato": {
+              "type": "string",
+              "enum": [
+                "aperto",
+                "in_corso",
+                "sospeso",
+                "chiuso"
+              ]
+            },
+            "data_apertura": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "data_chiusura": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tecnico_assegnato": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "cognome": {
+                      "type": "string"
+                    },
+                    "telefono": {
+                      "type": "string"
+                    },
+                    "telegram_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "squadra": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer"
+                            },
+                            "nome": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "extra_fields": {
+              "type": "object"
+            },
+            "data_appuntamento": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note_appuntamento": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "motivo_rinvio": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "pioggia",
+                    "cavo_finito",
+                    "scala_insufficiente",
+                    "cliente_assente",
+                    "problema_logistico",
+                    "altro"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "404": {},
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "deleteWork",
+      "method": "DELETE",
+      "path": "/works/{work_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {},
+        "403": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "createManualWork",
+      "method": "POST",
+      "path": "/manual/works",
+      "input": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "object",
+            "required": [
+              "numero_wr",
+              "operatore",
+              "indirizzo"
+            ],
+            "properties": {
+              "numero_wr": {
+                "type": "string"
+              },
+              "nome_cliente": {
+                "type": "string"
+              },
+              "indirizzo": {
+                "type": "string"
+              },
+              "operatore": {
+                "type": "string"
+              },
+              "tipo_lavoro": {
+                "type": "string",
+                "enum": [
+                  "Installazione",
+                  "Attivazione",
+                  "Riparazione",
+                  "Manutenzione",
+                  "Installazione FTTH",
+                  "Manutenzione FTTH",
+                  "Test Connessione"
+                ]
+              },
+              "telefono_cliente": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              },
+              "stato": {
+                "type": "string",
+                "enum": [
+                  "aperto",
+                  "in_corso",
+                  "sospeso",
+                  "chiuso"
+                ]
+              },
+              "tecnico_assegnato": {
+                "type": "integer"
+              },
+              "extra_fields": {
+                "type": "object"
+              },
+              "data_appuntamento": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note_appuntamento": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "integer"
+            },
+            "numero_wr": {
+              "type": "string"
+            }
+          }
+        },
+        "400": {},
+        "500": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getTechnicians",
+      "method": "GET",
+      "path": "/technicians/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "nome": {
+                "type": "string"
+              },
+              "cognome": {
+                "type": "string"
+              },
+              "telefono": {
+                "type": "string"
+              },
+              "telegram_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "squadra": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "nome": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getTeams",
+      "method": "GET",
+      "path": "/teams/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "nome": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getWeeklyStats",
+      "method": "GET",
+      "path": "/stats/weekly",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "closed_this_week": {
+              "type": "integer"
+            },
+            "suspended": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getClosedByOperator",
+      "method": "GET",
+      "path": "/stats/closed_by_operator",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operatore": {
+                "type": "string"
+              },
+              "closed": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getClosedByTechnician",
+      "method": "GET",
+      "path": "/stats/closed_by_technician",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tecnico": {
+                "type": "string"
+              },
+              "closed": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getDailyClosedStats",
+      "method": "GET",
+      "path": "/stats/daily_closed",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "closed": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getYearlyStats",
+      "method": "GET",
+      "path": "/stats/yearly",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "type": "string",
+                "format": "date"
+              },
+              "closed": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getDocuments",
+      "method": "GET",
+      "path": "/documents/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "filename": {
+                "type": "string"
+              },
+              "upload_date": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "parsed": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getModems",
+      "method": "GET",
+      "path": "/modems/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "serial_number": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "vdsl",
+                  "ftth",
+                  "gpon",
+                  "adsl"
+                ]
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "disponibile",
+                  "assegnato",
+                  "installato",
+                  "guasto"
+                ]
+              },
+              "location": {
+                "type": "string"
+              },
+              "work_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "installation_notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "technician_notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "wifi_ssid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "wifi_password": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "createModem",
+      "method": "POST",
+      "path": "/modems/",
+      "input": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "object",
+            "required": [
+              "serial_number",
+              "model",
+              "type"
+            ],
+            "properties": {
+              "serial_number": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "vdsl",
+                  "ftth",
+                  "gpon",
+                  "adsl"
+                ]
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            }
+          }
+        },
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getModemById",
+      "method": "GET",
+      "path": "/modems/{modem_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "modem_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modem_id"
+        ]
+      },
+      "parameter_locations": {
+        "modem_id": "path"
+      },
+      "parameter_metadata": {
+        "modem_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "vdsl",
+                "ftth",
+                "gpon",
+                "adsl"
+              ]
+            },
+            "manufacturer": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "disponibile",
+                "assegnato",
+                "installato",
+                "guasto"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "work_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "installation_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "technician_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_ssid": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_password": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "updateModem",
+      "method": "PUT",
+      "path": "/modems/{modem_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "modem_id": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "installation_notes": {
+                "type": "string"
+              },
+              "technician_notes": {
+                "type": "string"
+              },
+              "wifi_ssid": {
+                "type": "string"
+              },
+              "wifi_password": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "modem_id",
+          "body"
+        ]
+      },
+      "parameter_locations": {
+        "modem_id": "path"
+      },
+      "parameter_metadata": {
+        "modem_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "vdsl",
+                "ftth",
+                "gpon",
+                "adsl"
+              ]
+            },
+            "manufacturer": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "disponibile",
+                "assegnato",
+                "installato",
+                "guasto"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "work_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "installation_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "technician_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_ssid": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_password": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "installModem",
+      "method": "PUT",
+      "path": "/modems/{modem_id}/install",
+      "input": {
+        "type": "object",
+        "properties": {
+          "modem_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modem_id"
+        ]
+      },
+      "parameter_locations": {
+        "modem_id": "path"
+      },
+      "parameter_metadata": {
+        "modem_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "assignModemToWork",
+      "method": "PUT",
+      "path": "/works/{work_id}/modem/{modem_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "modem_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id",
+          "modem_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path",
+        "modem_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {},
+        "modem_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {},
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getWorkEquipment",
+      "method": "GET",
+      "path": "/works/{work_id}/equipment",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "work_id": {
+              "type": "integer"
+            },
+            "modem": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "serial_number": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "vdsl",
+                        "ftth",
+                        "gpon",
+                        "adsl"
+                      ]
+                    },
+                    "manufacturer": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "disponibile",
+                        "assegnato",
+                        "installato",
+                        "guasto"
+                      ]
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "work_id": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "installation_notes": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "technician_notes": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "wifi_ssid": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "wifi_password": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ont": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "serial_number": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "manufacturer": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "disponibile",
+                        "assegnato",
+                        "installato",
+                        "guasto"
+                      ]
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "work_id": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "installation_notes": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "technician_notes": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "wifi_ssid": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "wifi_password": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "optical_power": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "modem_delivered": {
+              "type": "boolean"
+            },
+            "ont_delivered": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "markEquipmentDelivered",
+      "method": "PUT",
+      "path": "/works/{work_id}/equipment/delivered",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "modem_delivered": {
+            "type": "boolean"
+          },
+          "ont_delivered": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path",
+        "modem_delivered": "query",
+        "ont_delivered": "query"
+      },
+      "parameter_metadata": {
+        "work_id": {},
+        "modem_delivered": {},
+        "ont_delivered": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getONTs",
+      "method": "GET",
+      "path": "/onts/",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "serial_number": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "disponibile",
+                  "assegnato",
+                  "installato",
+                  "guasto"
+                ]
+              },
+              "location": {
+                "type": "string"
+              },
+              "work_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "installation_notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "technician_notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "wifi_ssid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "wifi_password": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "optical_power": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "createONT",
+      "method": "POST",
+      "path": "/onts/",
+      "input": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "object",
+            "required": [
+              "serial_number",
+              "model"
+            ],
+            "properties": {
+              "serial_number": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "parameter_locations": {},
+      "parameter_metadata": {},
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            }
+          }
+        },
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getONTById",
+      "method": "GET",
+      "path": "/onts/{ont_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "ont_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ont_id"
+        ]
+      },
+      "parameter_locations": {
+        "ont_id": "path"
+      },
+      "parameter_metadata": {
+        "ont_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "manufacturer": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "disponibile",
+                "assegnato",
+                "installato",
+                "guasto"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "work_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "installation_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "technician_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_ssid": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_password": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "optical_power": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "updateONT",
+      "method": "PUT",
+      "path": "/onts/{ont_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "ont_id": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "installation_notes": {
+                "type": "string"
+              },
+              "technician_notes": {
+                "type": "string"
+              },
+              "wifi_ssid": {
+                "type": "string"
+              },
+              "wifi_password": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "ont_id",
+          "body"
+        ]
+      },
+      "parameter_locations": {
+        "ont_id": "path"
+      },
+      "parameter_metadata": {
+        "ont_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "serial_number": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "manufacturer": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "disponibile",
+                "assegnato",
+                "installato",
+                "guasto"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "work_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "installation_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "technician_notes": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_ssid": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "wifi_password": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "optical_power": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "installONT",
+      "method": "PUT",
+      "path": "/onts/{ont_id}/install",
+      "input": {
+        "type": "object",
+        "properties": {
+          "ont_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ont_id"
+        ]
+      },
+      "parameter_locations": {
+        "ont_id": "path"
+      },
+      "parameter_metadata": {
+        "ont_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "assignONTToWork",
+      "method": "PUT",
+      "path": "/works/{work_id}/ont/{ont_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "ont_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id",
+          "ont_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path",
+        "ont_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {},
+        "ont_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {},
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "notifyWorkAssignment",
+      "method": "POST",
+      "path": "/works/{work_id}/notify",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {},
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "assignTechnicianToWork",
+      "method": "PUT",
+      "path": "/works/{work_id}/assign/{technician_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "technician_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "work_id",
+          "technician_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path",
+        "technician_id": "path"
+      },
+      "parameter_metadata": {
+        "work_id": {},
+        "technician_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "404": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "getCalendar",
+      "method": "GET",
+      "path": "/calendar/",
+      "input": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "stato": {
+            "type": "string"
+          },
+          "tecnico_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "parameter_locations": {
+        "from": "query",
+        "to": "query",
+        "stato": "query",
+        "tecnico_id": "query"
+      },
+      "parameter_metadata": {
+        "from": {},
+        "to": {},
+        "stato": {},
+        "tecnico_id": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            },
+            "total": {
+              "type": "integer"
+            },
+            "appointments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "work_id": {
+                    "type": "integer"
+                  },
+                  "numero_wr": {
+                    "type": "string"
+                  },
+                  "nome_cliente": {
+                    "type": "string"
+                  },
+                  "indirizzo": {
+                    "type": "string"
+                  },
+                  "tipo_lavoro": {
+                    "type": "string"
+                  },
+                  "stato": {
+                    "type": "string"
+                  },
+                  "data_appuntamento": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "note_appuntamento": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "motivo_rinvio": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tecnico": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tecnico_id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "telefono_cliente": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    },
+    {
+      "name": "updateAppointment",
+      "method": "PUT",
+      "path": "/calendar/{work_id}",
+      "input": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "integer"
+          },
+          "data_appuntamento": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note_appuntamento": {
+            "type": "string"
+          },
+          "motivo_rinvio": {
+            "type": "string",
+            "enum": [
+              "pioggia",
+              "cavo_finito",
+              "scala_insufficiente",
+              "cliente_assente",
+              "problema_logistico",
+              "altro"
+            ]
+          }
+        },
+        "required": [
+          "work_id"
+        ]
+      },
+      "parameter_locations": {
+        "work_id": "path",
+        "data_appuntamento": "query",
+        "note_appuntamento": "query",
+        "motivo_rinvio": "query"
+      },
+      "parameter_metadata": {
+        "work_id": {},
+        "data_appuntamento": {},
+        "note_appuntamento": {},
+        "motivo_rinvio": {}
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "work_id": {
+              "type": "integer"
+            },
+            "numero_wr": {
+              "type": "string"
+            },
+            "data_appuntamento": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "note_appuntamento": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "motivo_rinvio": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "404": {},
+        "400": {}
+      },
+      "security": [
+        {
+          "ApiKeyAuth": []
+        }
+      ],
+      "authentication_verified": false
+    }
+  ]
+}

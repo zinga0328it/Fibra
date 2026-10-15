@@ -4,6 +4,11 @@
       "type": "stdio",
       "command": "${workspaceFolder}/target/debug/ftth-lia-mcp",
       "args": ["--mock"]
+    },
+    "lia-fibra-actions-mock": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/target/debug/ftth-lia-mcp",
+      "args": ["--mock-actions"]
     }
   }
 }

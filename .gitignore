@@ -1,4 +1,6 @@
 /target/
+/.tools/
+__pycache__/
 .env
 .env.*
 !.env.example

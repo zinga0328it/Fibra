@@ -41,7 +41,9 @@ pub struct LiaServer {
 
 impl LiaServer {
     pub fn mock() -> Self {
-        Self { backend: Arc::new(MockBackend::default()) }
+        Self {
+            backend: Arc::new(MockBackend::default()),
+        }
     }
 }
 
@@ -76,14 +78,16 @@ fn result(value: Result<Value, ReadError>) -> Result<CallToolResult, ErrorData> 
     match value {
         Ok(data) => {
             let envelope = json!({"simulated": true, "data": data});
-            let mut response = CallToolResult::success(vec![ContentBlock::text(envelope.to_string())]);
+            let mut response =
+                CallToolResult::success(vec![ContentBlock::text(envelope.to_string())]);
             response.structured_content = Some(envelope);
             Ok(response)
         }
         Err(ReadError::InvalidInput) => Err(ErrorData::invalid_params("invalid_input", None)),
         Err(error) => {
             let envelope = json!({"simulated": true, "error": error.code()});
-            let mut response = CallToolResult::error(vec![ContentBlock::text(envelope.to_string())]);
+            let mut response =
+                CallToolResult::error(vec![ContentBlock::text(envelope.to_string())]);
             response.structured_content = Some(envelope);
             Ok(response)
         }
@@ -92,43 +96,113 @@ fn result(value: Result<Value, ReadError>) -> Result<CallToolResult, ErrorData> 
 
 #[tool_router]
 impl LiaServer {
-    #[tool(description = "Cerca lavori e materiali per testo. Solo dati SIMULATI; massimo 20 risultati.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn search(&self, Parameters(input): Parameters<SearchInput>) -> Result<CallToolResult, ErrorData> {
+    #[tool(
+        description = "Cerca lavori e materiali per testo. Solo dati SIMULATI; massimo 20 risultati.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn search(
+        &self,
+        Parameters(input): Parameters<SearchInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         result(self.backend.search(&input.query, input.limit.unwrap_or(10)).map(|documents| {
             json!({"results": documents.into_iter().map(document_value).collect::<Vec<_>>()})
         }))
     }
 
-    #[tool(description = "Legge un lavoro o materiale SIMULATO tramite document_id restituito da search, ad esempio work_7 o material_3. Non usare il numero WR come ID.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn fetch(&self, Parameters(input): Parameters<FetchInput>) -> Result<CallToolResult, ErrorData> {
+    #[tool(
+        description = "Legge un lavoro o materiale SIMULATO tramite document_id restituito da search, ad esempio work_7 o material_3. Non usare il numero WR come ID.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn fetch(
+        &self,
+        Parameters(input): Parameters<FetchInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         result(self.backend.fetch(&input.document_id).map(document_value))
     }
 
-    #[tool(description = "Cerca una WR SIMULATA per numero esatto, passato come stringa, ad esempio 103579742. Non cerca per ID interno.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn cerca_wr(&self, Parameters(input): Parameters<WrInput>) -> Result<CallToolResult, ErrorData> {
+    #[tool(
+        description = "Cerca una WR SIMULATA per numero esatto, passato come stringa, ad esempio 103579742. Non cerca per ID interno.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn cerca_wr(
+        &self,
+        Parameters(input): Parameters<WrInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         result(self.backend.find_wr(&input.numero_wr).map(work_value))
     }
 
-    #[tool(description = "Legge lo stato di una WR SIMULATA per numero esatto. Non modifica il lavoro.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn stato_wr(&self, Parameters(input): Parameters<WrInput>) -> Result<CallToolResult, ErrorData> {
-        result(self.backend.find_wr(&input.numero_wr).map(|work| {
-            json!({"numero_wr": work.numero_wr, "stato": work.stato})
+    #[tool(
+        description = "Legge lo stato di una WR SIMULATA per numero esatto. Non modifica il lavoro.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn stato_wr(
+        &self,
+        Parameters(input): Parameters<WrInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        result(
+            self.backend
+                .find_wr(&input.numero_wr)
+                .map(|work| json!({"numero_wr": work.numero_wr, "stato": work.stato})),
+        )
+    }
+
+    #[tool(
+        description = "Controlla SOLO il backend simulato locale. NON verifica disponibilita o autenticazione di AAA, ALEX o ZINGA reali.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn stato_api(
+        &self,
+        Parameters(_input): Parameters<EmptyInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        result(self.backend.health().map(|()| {
+            json!({
+                "mock_backend": "ok",
+                "production_checked": false,
+                "aaa": "not_checked",
+                "zinga": "not_checked",
+                "alex": "not_checked"
+            })
         }))
     }
 
-    #[tool(description = "Controlla SOLO il backend simulato locale. NON verifica disponibilita o autenticazione di AAA, ALEX o ZINGA reali.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn stato_api(&self, Parameters(_input): Parameters<EmptyInput>) -> Result<CallToolResult, ErrorData> {
-        result(self.backend.health().map(|()| json!({
-            "mock_backend": "ok",
-            "production_checked": false,
-            "aaa": "not_checked",
-            "zinga": "not_checked",
-            "alex": "not_checked"
-        })))
-    }
-
-    #[tool(description = "Conta le WR SIMULATE raggruppandole per stato. Non accede al gestionale reale.", annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false))]
-    fn riepilogo_wr(&self, Parameters(_input): Parameters<EmptyInput>) -> Result<CallToolResult, ErrorData> {
+    #[tool(
+        description = "Conta le WR SIMULATE raggruppandole per stato. Non accede al gestionale reale.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    fn riepilogo_wr(
+        &self,
+        Parameters(_input): Parameters<EmptyInput>,
+    ) -> Result<CallToolResult, ErrorData> {
         result(self.backend.counts().map(|counts| {
             let totale: usize = counts.iter().map(|(_, count)| count).sum();
             json!({
@@ -139,12 +213,16 @@ impl LiaServer {
     }
 }
 
-#[tool_handler(name = "lia-fibra", version = "0.1.0", instructions = "Ambiente di prova: tutti i risultati sono simulati. Non presentarli come dati reali del gestionale. Nessuna scrittura o rotazione chiavi disponibile.")]
+#[tool_handler(
+    name = "lia-fibra",
+    version = "0.1.0",
+    instructions = "Ambiente di prova: tutti i risultati sono simulati. Non presentarli come dati reali del gestionale. Nessuna scrittura o rotazione chiavi disponibile."
+)]
 impl ServerHandler for LiaServer {}
 
 pub fn mock_http_router() -> axum::Router {
     use rmcp::transport::streamable_http_server::{
-        StreamableHttpService, StreamableHttpServerConfig, session::local::LocalSessionManager,
+        StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
     };
     let service = StreamableHttpService::new(
         || Ok(LiaServer::mock()),

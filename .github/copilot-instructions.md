@@ -1,5 +1,10 @@
 # Continuita' del lavoro
 
+- GitHub zinga0328it/Fibra: l'utente ha confermato che main e' il ramo di AAA.
+  Il MCP Rust viene pubblicato separatamente su aaa-mcp nello stesso repository,
+  con albero e cronologia propri. Non fare merge fra i due progetti.
+  Gli altri rami appartengono agli altri PC: non modificarli o cancellarli.
+  Usare destinazioni esplicite per i push; niente force, mirror o push --all.
 - Prima di modificare l'integrazione Lia Fibra/MCP, leggere
   [stato e diario operativo](../obsidian/MCP-Lia-Fibra/STATO-E-DIARIO.md).
   La sezione corrente prevale sulla cronologia: non riproporre domande su

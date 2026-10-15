@@ -10,8 +10,13 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
   Non richiedere nuovamente topologia, chiavi o autorizzazioni gia' documentate.
 - Workspace gestionale: /home/aaa/fibra, branch main. MCP corrente:
   /home/aaa/ftth-lia-mcp, branch mcp/http-adapter-validation, repository distinto
-  senza remoto configurato alla verifica del 2026-10-16. La cartella MCP/ del
+  con destinazione GitHub aaa-mcp nello stesso zinga0328it/Fibra. La cartella MCP/ del
   gestionale e la sua guida PUBLIC_DEPLOYMENT.md descrivono l'esperimento precedente.
+- L'utente ha confermato esplicitamente: main e' AAA. Ha richiesto il nuovo ramo
+  aaa-mcp per il progetto Rust, non un nuovo repository GitHub. I due checkout
+  locali restano separati e aaa-mcp ha albero e cronologia propri: niente merge
+  nel gestionale. Gli altri rami appartengono agli altri PC: non toccarli.
+  Push solo con destinazioni esplicite; vietati force, mirror, --all e cancellazioni.
 - Istruzioni automatiche .github/copilot-instructions.md presenti in entrambi
   i repository e collegate a questo diario. Le credenziali non vanno versionate.
 - Prossimo limite operativo noto: MCP e tunnel sono processi avviati da terminale;
@@ -24,7 +29,7 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
   tutti i 17 GET e i 6 helper reali; catalogo ChatGPT aggiornato. Nessuna scrittura
   di collaudo sui dati reali. Rilanciare solo i controlli pertinenti alle nuove modifiche.
 
-## Salvataggio Git del 2026-10-16
+## Cronologia: salvataggio locale del 2026-10-16
 
 - MCP: commit e7abb91 sul branch mcp/http-adapter-validation, con profilo live,
   adattamento contratto, test e istruzioni di continuita'. Working tree pulito
@@ -39,7 +44,8 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
   deselected. Nessun accesso al DB di produzione o invio di notifiche.
 - Controllo dei segreti nel delta di entrambi i repository PASS, senza stampare
   valori. Non inclusi backup, database, log, credenziali o dati dei clienti.
-- Nessun push eseguito. Il working tree del gestionale resta intenzionalmente
+- In questa prima fase nessun push eseguito; la pubblicazione e' stata poi
+  autorizzata sui rami indicati sopra. Il working tree del gestionale resta intenzionalmente
   modificato per il lavoro preesistente; non ripulirlo automaticamente.
 
 ## Aggiornamento 2026-10-16: profilo operativo completo

@@ -19,15 +19,61 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
   Push solo con destinazioni esplicite; vietati force, mirror, --all e cancellazioni.
 - Istruzioni automatiche .github/copilot-instructions.md presenti in entrambi
   i repository e collegate a questo diario. Le credenziali non vanno versionate.
-- Prossimo limite operativo noto: MCP e tunnel sono processi avviati da terminale;
-  l'avvio automatico dopo reboot non e' stato configurato in questo intervento.
-  Non considerare gli identificativi di processo registrati una prova di stato futuro.
+- Persistenza configurata dopo lo spegnimento causato dalla chiusura terminale:
+  servizi systemd utente lia-fibra-mcp e lia-fibra-tunnel, entrambi enabled,
+  linger=yes verificato. MCP attivo e ripartenza dopo crash verificata.
+  Tunnel ancora in attesa della chiave OpenAI da inserire privatamente:
+  vedere la sezione immediatamente sotto. Non dichiararlo operativo finche'
+  /readyz non restituisce 200. Non e' stato eseguito un reboot del PC.
 - Git: salvare soltanto i cambiamenti dell'intervento. Nel gestionale esistono
   numerose modifiche precedenti e file locali sensibili: niente git add globale.
   I commit delle correzioni API devono escludere il delta preesistente al backup.
 - Verifiche gia' effettuate: 77 test Rust, Clippy, 4 regressioni API isolate,
   tutti i 17 GET e i 6 helper reali; catalogo ChatGPT aggiornato. Nessuna scrittura
   di collaudo sui dati reali. Rilanciare solo i controlli pertinenti alle nuove modifiche.
+
+## Persistenza systemd del 2026-10-16
+
+Richiesta esplicita dell'utente: riaccendere MCP/tunnel e farli partire al boot.
+All'inizio nessun listener su 16033/16034; ftth.service era attivo e non e' stato
+riavviato. Non modificati rete, bot, database, GPT originale o tunnel remoto.
+
+- `loginctl --no-ask-password enable-linger aaa` riuscito senza sudo/password;
+  `loginctl show-user aaa -p Linger` restituisce `Linger=yes`.
+- Unita' in /home/aaa/.config/systemd/user/lia-fibra-mcp.service e
+  lia-fibra-tunnel.service; entrambe enabled su default.target.
+  Restart=always, pausa 10 secondi, nessun limite di tentativi al boot.
+- MCP: launcher /home/aaa/ftth-lia-mcp/scripts/run_live.py, /usr/bin/python3
+  con dotenv disponibile. Legge API_GPTS dal .env noto senza stamparla e passa
+  FTTH_API_KEY al figlio. Binario operativo in .tools/runtime/ftth-lia-mcp,
+  copiato dall'ultima build verificata, separato da target/debug.
+- Tunnel: stesso client v0.0.16 e stesso profilo/tunnel/app ChatGPT. Aspetta
+  il listener MCP fino a 60s. Chiave tramite riferimento file, non argomento
+  contenente il valore. Nessun nuovo tunnel/app/chiave creato.
+- BLOCCO RESIDUO: CONTROL_PLANE_API_KEY e OPENAI_API_KEY assenti nell'ambiente
+  corrente, nel manager systemd e nel dotenv noto. Nessuna configurazione in
+  ~/.config/tunnel-client. Non cercate credenziali in log, chat o backup.
+  Il tunnel non e' stato avviato senza credenziale e readiness non collaudata.
+- Primo inserimento soltanto in terminale, input nascosto:
+  `bash /home/aaa/ftth-lia-mcp/scripts/configure-tunnel-key.sh`.
+  Salva ~/.config/lia-fibra/tunnel-api-key (600, directory 700), fuori da Git,
+  e avvia il servizio tunnel. Non chiedere/incollare la chiave nella chat.
+
+Verifiche PASS: systemd-analyze delle due unita', launcher con chiave sintetica
+e assente, bash -n dello script, MCP reale catalogo 38 e stato_api HTTP200,
+simulated=false/live_read_write. SIGKILL mirato al solo MCP: systemd ha
+riavviato autonomamente il processo, active/running, NRestarts=1 e nuovo PID.
+ftth.service rimasto attivo. Nessuna scrittura di prova o notifica reale.
+Avvio al boot configurato, ma reboot effettivo non eseguito.
+
+Comandi: `systemctl --user status lia-fibra-mcp lia-fibra-tunnel`,
+`systemctl --user restart lia-fibra-mcp lia-fibra-tunnel`,
+`curl --fail --silent http://127.0.0.1:16034/readyz`.
+Log con journalctl --user sulle sole due unita'; non abilitare log HTTP raw.
+Template e dettagli in /home/aaa/ftth-lia-mcp/deploy/README.md.
+Backup intervento: /home/aaa/ftth-lia-mcp/.tools/backups/systemd-20261016.
+Rollback: `systemctl --user disable --now lia-fibra-tunnel lia-fibra-mcp`;
+non disabilitare linger senza controllare gli altri servizi utente.
 
 ## Pubblicazione GitHub verificata il 2026-10-16
 

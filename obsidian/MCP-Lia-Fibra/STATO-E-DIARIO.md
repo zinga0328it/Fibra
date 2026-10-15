@@ -22,9 +22,8 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
 - Persistenza configurata dopo lo spegnimento causato dalla chiusura terminale:
   servizi systemd utente lia-fibra-mcp e lia-fibra-tunnel, entrambi enabled,
   linger=yes verificato. MCP attivo e ripartenza dopo crash verificata.
-  Tunnel ancora in attesa della chiave OpenAI da inserire privatamente:
-  vedere la sezione immediatamente sotto. Non dichiararlo operativo finche'
-  /readyz non restituisce 200. Non e' stato eseguito un reboot del PC.
+  Tunnel attivo, credenziale inserita privatamente e /readyz HTTP 200 verificato.
+  Non e' stato eseguito un reboot del PC.
 - Git: salvare soltanto i cambiamenti dell'intervento. Nel gestionale esistono
   numerose modifiche precedenti e file locali sensibili: niente git add globale.
   I commit delle correzioni API devono escludere il delta preesistente al backup.
@@ -50,19 +49,28 @@ riavviato. Non modificati rete, bot, database, GPT originale o tunnel remoto.
 - Tunnel: stesso client v0.0.16 e stesso profilo/tunnel/app ChatGPT. Aspetta
   il listener MCP fino a 60s. Chiave tramite riferimento file, non argomento
   contenente il valore. Nessun nuovo tunnel/app/chiave creato.
-- BLOCCO RESIDUO: CONTROL_PLANE_API_KEY e OPENAI_API_KEY assenti nell'ambiente
+- Blocco iniziale RISOLTO: CONTROL_PLANE_API_KEY e OPENAI_API_KEY assenti nell'ambiente
   corrente, nel manager systemd e nel dotenv noto. Nessuna configurazione in
   ~/.config/tunnel-client. Non cercate credenziali in log, chat o backup.
-  Il tunnel non e' stato avviato senza credenziale e readiness non collaudata.
-- Primo inserimento soltanto in terminale, input nascosto:
+  La credenziale e' stata poi inserita con input nascosto direttamente nel
+  terminale; file 600 e directory 700 verificati. Tunnel active/running,
+  readiness HTTP 200 verificata dopo la correzione del riferimento nel profilo.
+- Inserimento/aggiornamento soltanto in terminale, input nascosto:
   `bash /home/aaa/ftth-lia-mcp/scripts/configure-tunnel-key.sh`.
   Salva ~/.config/lia-fibra/tunnel-api-key (600, directory 700), fuori da Git,
   e avvia il servizio tunnel. Non chiedere/incollare la chiave nella chat.
+- Il client v0.0.16 risolve i riferimenti del YAML prima degli override CLI:
+  il vecchio env:CONTROL_PLANE_API_KEY impediva l'avvio anche con --control-plane.api-key.
+  Corretto il solo riferimento nel profilo locale in
+  file:/home/aaa/.config/lia-fibra/tunnel-api-key; backup del profilo conservato.
+  Nessun valore segreto nel YAML o nelle unita'.
 
 Verifiche PASS: systemd-analyze delle due unita', launcher con chiave sintetica
 e assente, bash -n dello script, MCP reale catalogo 38 e stato_api HTTP200,
 simulated=false/live_read_write. SIGKILL mirato al solo MCP: systemd ha
 riavviato autonomamente il processo, active/running, NRestarts=1 e nuovo PID.
+Ripetuto SIGKILL sul solo tunnel: anche questo ripartito autonomamente con
+nuovo PID e NRestarts=1, active/running e readiness nuovamente HTTP 200.
 ftth.service rimasto attivo. Nessuna scrittura di prova o notifica reale.
 Avvio al boot configurato, ma reboot effettivo non eseguito.
 

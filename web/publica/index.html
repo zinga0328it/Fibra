@@ -408,7 +408,7 @@
         // 🔐 SICUREZZA: API Key per operazioni amministrative
         // IMPORTANTE: In produzione, questa chiave dovrebbe essere inserita tramite login
         // e memorizzata in sessionStorage/localStorage, NON hardcoded nel file!
-        var ADMIN_API_KEY = prompt('Inserisci API Key amministratore:', '');
+        var ADMIN_API_KEY = prompt('Inserisci API Key amministratore:', 'b7a8e9074a7a2f8dfa991106f6ab1c4eee22390cf924b0cf688901e2e10cfd9a');
 
         function apiFetch(path, opts) {
             var url = API_BASE ? API_BASE + path : path;

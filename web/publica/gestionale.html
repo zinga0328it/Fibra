@@ -937,7 +937,7 @@
 
         // 🔐 SICUREZZA: API Key per operazioni amministrative
         // var ADMIN_API_KEY = prompt('Inserisci API Key amministratore:', '');
-        var ADMIN_API_KEY = 'JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU='; // Temporaneamente hardcoded per test
+        var ADMIN_API_KEY = prompt("Inserisci la chiave API", "");
 
         function apiFetchSecure(path, opts) {
             var url = API_BASE ? API_BASE + path : path;

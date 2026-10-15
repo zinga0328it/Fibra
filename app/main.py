@@ -11,6 +11,7 @@ from app.utils.bot_commands import set_bot_commands_async, get_token_from_env, B
 from app.database import engine
 from app.models import models
 from pythonjsonlogger import jsonlogger
+from app.utils.rate_limiter import check_api_flood
 
 try:
 	models.Base.metadata.create_all(bind=engine)
@@ -50,7 +51,7 @@ except Exception:
 	pass
 
 # Include routers
-from app.routes import works, technicians, teams, stats, auth, telegram, documents, health, manual, debug, onts, modems, sync
+from app.routes import works, technicians, teams, stats, auth, telegram, documents, health, manual, debug, onts, modems, sync, calendar, geo
 from telegram_endpoints import router as telegram_router
 app.include_router(works.router)
 app.include_router(technicians.router)
@@ -66,12 +67,31 @@ app.include_router(debug.router)
 app.include_router(onts.router)
 app.include_router(modems.router)
 app.include_router(sync.router)
+app.include_router(calendar.router)
+app.include_router(geo.router)
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
 	logging.getLogger('uvicorn.error').exception('Unhandled exception', exc_info=exc)
 	return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+	"""Anti-flood middleware: limita le richieste per IP."""
+	# Salta health check e file statici
+	path = request.url.path
+	if path.startswith("/health") or path.startswith("/static"):
+		return await call_next(request)
+	client_ip = request.client.host if request.client else "unknown"
+	if not check_api_flood(client_ip):
+		logging.getLogger("app.rate_limiter").warning("API rate limit hit for IP=%s path=%s", client_ip, path)
+		return JSONResponse(
+			status_code=429,
+			content={"detail": "Troppe richieste. Riprova tra qualche secondo."}
+		)
+	return await call_next(request)
 
 
 @app.on_event("startup")
@@ -89,10 +109,21 @@ async def set_bot_commands_on_startup():
 	commands = [
 		BotCommand("start", "Benvenuto"),
 		BotCommand("help", "Mostra comandi"),
-		BotCommand("miei_lavori", "I tuoi lavori"),
+		BotCommand("miei_lavori", "I tuoi lavori attivi"),
 		BotCommand("accetta", "Accetta un lavoro"),
 		BotCommand("rifiuta", "Rifiuta un lavoro"),
-		BotCommand("chiudi", "Chiudi un lavoro"),
+		BotCommand("sospendi", "Sospendi lavoro con motivo"),
+		BotCommand("modem", "Registra seriale modem"),
+		BotCommand("chiudi", "Chiudi lavoro con note"),
+		BotCommand("istruzioni", "Istruzioni installazione"),
+		BotCommand("sync_status", "Stato sincronizzazione"),
+		BotCommand("aggiorna_note", "Aggiorna note modem"),
+		BotCommand("modems", "Lista modem assegnati"),
+		BotCommand("configura_modem", "Config modem"),
+		BotCommand("installa_modem", "Segna modem installato"),
+		BotCommand("posizione", "Invia la tua posizione GPS"),
+		BotCommand("sos", "SOS - Chiedi aiuto"),
+		BotCommand("fine_sos", "Disattiva SOS"),
 	]
 	try:
 		await bot.set_my_commands(commands)
@@ -142,3 +173,7 @@ async def read_pc_alex_gestionale():
 @app.get("/db_viewer.html")
 async def read_db_viewer():
     return FileResponse("web/publica/db_viewer.html")
+
+@app.get("/centrale_operativa.html")
+async def read_centrale_operativa():
+    return FileResponse("web/publica/centrale_operativa.html")

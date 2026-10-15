@@ -79,7 +79,15 @@ docs/build/
 # Backup files
 *.backup
 *.backup_*
+*.bak
+*.bak.*
 *~
+
+# Local credentials and customer exports
+MCP/oauth_clients.json
+MCP/openai_config.json
+MCP/openai_mcp_config.json
+contatti_clienti_*.csv
 
 # Yggdrasil
 yggdrasil.conf

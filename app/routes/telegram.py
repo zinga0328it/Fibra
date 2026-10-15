@@ -14,6 +14,7 @@ except Exception:
     httpx = None
 import json
 from app.utils.help_text import HELP_TEXT
+from app.utils.rate_limiter import check_telegram_flood, webhook_global_limiter
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 logger = logging.getLogger("app.routes.telegram")
@@ -70,6 +71,20 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             cmd = m.group(1).lower()
             args = m.group(2) or ""
 
+    # ---- ANTI-FLOOD ----
+    # Rate limit globale webhook
+    if not webhook_global_limiter.is_allowed("webhook_global"):
+        logger.warning("Webhook global rate limit hit")
+        return {"ok": True}
+
+    # Rate limit per utente + anti doppio-click
+    if cmd:
+        flood_msg = check_telegram_flood(telegram_id, cmd)
+        if flood_msg:
+            chat_id = chat.get("id") or from_user.get("id")
+            _safe_send(chat_id, flood_msg)
+            return {"ok": True}
+
     # Process commands
     # Provide a help menu via webhook
     logger.info("Telegram webhook: cmd=%s args=%s from_user_id=%s chat_id=%s", cmd, args, telegram_id, chat.get('id'))
@@ -79,7 +94,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         chat_id = chat.get("id") or from_user.get("id")
         try:
             reply_markup = {
-                "keyboard": [["/miei_lavori", "/accetta", "/rifiuta"], ["/chiudi", "/help"]],
+                "keyboard": [["/miei_lavori", "/accetta"], ["/modem", "/chiudi"], ["/sospendi", "/rifiuta"], ["/posizione", "/sos", "/help"]],
                 "one_time_keyboard": False,
                 "resize_keyboard": True,
             }
@@ -100,12 +115,45 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         if not tech:
             _safe_send(chat.get("id") or from_user.get("id"), "Tecnico non trovato. Contatta l'admin.")
             return {"ok": True}
-        works = db.query(Work).filter(Work.tecnico_assegnato_id == tech.id).all()
+        # Tutti i lavori ATTIVI (assegnato, in_corso, sospeso) e NON archiviati
+        works = db.query(Work).filter(
+            Work.tecnico_assegnato_id == tech.id,
+            Work.stato.in_(["assegnato", "in_corso", "sospeso"]),
+            Work.archived == False,
+        ).order_by(Work.data_appuntamento.asc().nullslast()).all()
         if not works:
-            _safe_send(chat.get("id") or from_user.get("id"), "Nessun lavoro assegnato")
+            _safe_send(chat.get("id") or from_user.get("id"), "✅ Non hai lavori attivi al momento.")
             return {"ok": True}
-        lines = [f"WR {w.numero_wr} - {w.stato} - {w.indirizzo}" for w in works]
-        _safe_send(chat.get("id") or from_user.get("id"), "\n".join(lines))
+        STATO_EMOJI = {"assegnato": "🆕", "in_corso": "🔧", "sospeso": "⏸️"}
+        by_stato = {}
+        for w in works:
+            by_stato.setdefault(w.stato, []).append(w)
+        parts = []
+        for stato in ["in_corso", "assegnato", "sospeso"]:
+            gruppo = by_stato.get(stato, [])
+            if not gruppo:
+                continue
+            emoji = STATO_EMOJI.get(stato, "📋")
+            header = f"{emoji} {stato.upper().replace('_', ' ')} ({len(gruppo)}):"
+            lines = []
+            for w in gruppo:
+                line = f"📋 WR {w.numero_wr}\n📍 {w.indirizzo or 'N/D'}"
+                if w.nome_cliente:
+                    line += f"\n👤 {w.nome_cliente}"
+                if w.tipo_lavoro:
+                    line += f"\n🔧 {w.tipo_lavoro}"
+                if w.modem_sn:
+                    line += f"\n📦 Modem: {w.modem_sn}"
+                if w.motivo_rinvio:
+                    line += f"\n⚠️ Motivo: {w.motivo_rinvio}"
+                if w.note_appuntamento:
+                    line += f"\n📝 {w.note_appuntamento}"
+                if w.data_appuntamento:
+                    line += f"\n📅 {w.data_appuntamento.strftime('%d/%m/%Y %H:%M')}"
+                lines.append(line)
+            parts.append(header + "\n\n" + "\n\n".join(lines))
+        msg = f"📊 I tuoi lavori attivi: {len(works)}\n\n" + "\n\n---\n\n".join(parts)
+        _safe_send(chat.get("id") or from_user.get("id"), msg.strip())
         return {"ok": True}
 
     if cmd == "accetta":
@@ -142,21 +190,153 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             return {"ok": True, "message": "Rejected"}
     if cmd == "chiudi":
         parts = args.split() if args else []
-        if len(parts) >= 1:
+        if len(parts) < 2:
+            chat_id = chat.get("id") or from_user.get("id")
+            _safe_send(chat_id, "📝 Uso: /chiudi <WR> <note tecniche>\n\nEsempio:\n/chiudi 95005055 Installato ONT e modem, tutto ok\n\n⚠️ Le note sono obbligatorie!")
+            return {"ok": True, "message": "usage sent"}
+        if len(parts) >= 2:
             wr = parts[0]
+            note_chiusura = " ".join(parts[1:])
             work = db.query(Work).filter(Work.numero_wr == wr).first()
             if not work:
-                return {"ok": False, "message": "Work not found"}
+                _safe_send(chat.get("id") or from_user.get("id"), f"❌ Lavoro {wr} non trovato.")
+                return {"ok": True, "message": "Work not found"}
             if not tech:
                 return {"ok": False, "message": "Technician not linked"}
             if work.tecnico_assegnato_id != tech.id:
-                return {"ok": False, "message": "Work not assigned to you"}
+                _safe_send(chat.get("id") or from_user.get("id"), f"❌ Lavoro {wr} non assegnato a te.")
+                return {"ok": True, "message": "Work not assigned to you"}
+            if work.stato == "chiuso":
+                _safe_send(chat.get("id") or from_user.get("id"), "❌ Il lavoro è già chiuso.")
+                return {"ok": True, "message": "Already closed"}
             work.stato = "chiuso"
             work.data_chiusura = datetime.now()
-            event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="closed", description="Closed by tech via webhook", user_id=tech.id)
+            work.tecnico_chiusura_id = tech.id
+            work.note_chiusura = note_chiusura
+            tech.stato_posizione = "disponibile"
+            # Fix: controlla se ha altri lavori in_corso prima di liberare
+            db.flush()
+            has_in_corso = db.query(Work).filter(
+                Work.tecnico_assegnato_id == tech.id,
+                Work.stato == "in_corso",
+                Work.archived == False,
+            ).first()
+            tech.stato_posizione = "occupato" if has_in_corso else "disponibile"
+            event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="closed", description=f"Chiuso da {tech.nome} {tech.cognome} via webhook | Note: {note_chiusura}", user_id=tech.id)
             db.add(event)
             db.commit()
+            modem_info = f"📶 Modem: {work.modem_sn}\n" if work.modem_sn else ""
+            _safe_send(chat.get("id") or from_user.get("id"), f"✅ Lavoro {wr} chiuso!\n👷 {tech.nome} {tech.cognome}\n📍 {work.indirizzo or 'N/D'}\n{modem_info}📝 Note: {note_chiusura}")
             return {"ok": True, "message": "Closed"}
+
+    if cmd == "modem":
+        parts = args.split() if args else []
+        if len(parts) < 2:
+            chat_id = chat.get("id") or from_user.get("id")
+            _safe_send(chat_id, "📶 Uso: /modem <WR> <seriale modem>\n\nEsempio:\n/modem 95005055 ZTEGC4B1A2C3")
+            return {"ok": True, "message": "usage sent"}
+        wr = parts[0]
+        modem_sn = " ".join(parts[1:])
+        if not tech:
+            return {"ok": False, "message": "Technician not linked"}
+        work = db.query(Work).filter(Work.numero_wr == wr, Work.tecnico_assegnato_id == tech.id).first()
+        if not work:
+            _safe_send(chat.get("id") or from_user.get("id"), f"❌ Lavoro {wr} non trovato o non assegnato a te.")
+            return {"ok": True, "message": "Work not found"}
+        if work.stato == "chiuso":
+            _safe_send(chat.get("id") or from_user.get("id"), "❌ Il lavoro è già chiuso.")
+            return {"ok": True, "message": "Already closed"}
+        old_sn = work.modem_sn
+        work.modem_sn = modem_sn
+        event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="modem_registered", description=f"Modem SN: {modem_sn} registrato da {tech.nome} {tech.cognome}", user_id=tech.id)
+        db.add(event)
+        db.commit()
+        if old_sn:
+            _safe_send(chat.get("id") or from_user.get("id"), f"✅ Modem aggiornato per WR {wr}\n📶 Vecchio: {old_sn}\n📶 Nuovo: {modem_sn}")
+        else:
+            _safe_send(chat.get("id") or from_user.get("id"), f"✅ Modem registrato per WR {wr}\n📶 Seriale: {modem_sn}")
+        return {"ok": True, "message": "Modem saved"}
+
+    if cmd == "sospendi":
+        MOTIVI_VALIDI = ["pioggia", "cavo_finito", "scala_insufficiente", "cliente_assente", "problema_logistico", "altro"]
+        parts = args.split() if args else []
+        if len(parts) < 2:
+            motivi_str = ", ".join(MOTIVI_VALIDI)
+            chat_id = chat.get("id") or from_user.get("id")
+            _safe_send(chat_id, f"Uso: /sospendi <WR> <motivo> [data GG/MM/AAAA HH:MM]\n\nMotivi: {motivi_str}\n\nEsempio:\n/sospendi 95005055 pioggia\n/sospendi 95005055 cliente_assente 15/03/2026 10:00")
+            return {"ok": True, "message": "usage sent"}
+        wr = parts[0]
+        motivo = parts[1].lower()
+        if motivo not in MOTIVI_VALIDI:
+            _safe_send(chat.get("id") or from_user.get("id"), f"❌ Motivo '{motivo}' non valido.\nValidi: {', '.join(MOTIVI_VALIDI)}")
+            return {"ok": True, "message": "Invalid reason"}
+        nuova_data = None
+        if len(parts) >= 4:
+            data_str = f"{parts[2]} {parts[3]}"
+            try:
+                nuova_data = datetime.strptime(data_str, "%d/%m/%Y %H:%M")
+            except ValueError:
+                _safe_send(chat.get("id") or from_user.get("id"), "❌ Formato data non valido. Usa: GG/MM/AAAA HH:MM")
+                return {"ok": True, "message": "Invalid date"}
+        elif len(parts) == 3:
+            try:
+                nuova_data = datetime.strptime(parts[2], "%d/%m/%Y")
+                nuova_data = nuova_data.replace(hour=9, minute=0)
+            except ValueError:
+                _safe_send(chat.get("id") or from_user.get("id"), "❌ Formato data non valido. Usa: GG/MM/AAAA [HH:MM]")
+                return {"ok": True, "message": "Invalid date"}
+        if not tech:
+            return {"ok": False, "message": "Technician not linked"}
+        work = db.query(Work).filter(Work.numero_wr == wr, Work.tecnico_assegnato_id == tech.id).first()
+        if not work:
+            _safe_send(chat.get("id") or from_user.get("id"), f"❌ Lavoro {wr} non trovato o non assegnato a te.")
+            return {"ok": True, "message": "Work not found"}
+        if work.stato == "chiuso":
+            _safe_send(chat.get("id") or from_user.get("id"), "❌ Il lavoro è già chiuso.")
+            return {"ok": True, "message": "Already closed"}
+        work.stato = "sospeso"
+        work.motivo_rinvio = motivo
+        if nuova_data:
+            work.data_appuntamento = nuova_data
+        db.flush()
+        has_in_corso = db.query(Work).filter(
+            Work.tecnico_assegnato_id == tech.id,
+            Work.stato == "in_corso",
+            Work.archived == False,
+        ).first()
+        tech.stato_posizione = "occupato" if has_in_corso else "disponibile"
+        desc = f"Sospeso da {tech.nome} {tech.cognome} | Motivo: {motivo}"
+        if nuova_data:
+            desc += f" | Nuovo appuntamento: {nuova_data.strftime('%d/%m/%Y %H:%M')}"
+        event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="suspended", description=desc, user_id=tech.id)
+        db.add(event)
+        db.commit()
+        msg = f"⏸️ Lavoro {wr} sospeso\n⚠️ Motivo: {motivo}"
+        if nuova_data:
+            msg += f"\n📅 Nuovo appuntamento: {nuova_data.strftime('%d/%m/%Y %H:%M')}"
+        _safe_send(chat.get("id") or from_user.get("id"), msg)
+        return {"ok": True, "message": "Suspended"}
+
+    if cmd == "posizione":
+        chat_id = chat.get("id") or from_user.get("id")
+        if not tech:
+            _safe_send(chat_id, "❌ Tecnico non trovato.")
+            return {"ok": True}
+        if tech.lat and tech.lng:
+            _safe_send(chat_id, f"📍 Ultima posizione:\nLat: {tech.lat}\nLng: {tech.lng}\n🕐 {tech.last_position_update or 'N/D'}")
+        else:
+            _safe_send(chat_id, "📍 Nessuna posizione registrata.\nInvia la tua posizione per aggiornarla.")
+        return {"ok": True}
+
+    if cmd == "sos":
+        chat_id = chat.get("id") or from_user.get("id")
+        if not tech:
+            _safe_send(chat_id, "❌ Tecnico non trovato.")
+            return {"ok": True}
+        tech.stato_posizione = "sos"
+        db.commit()
+        _safe_send(chat_id, "🆘 SOS attivato! Il tuo stato è stato impostato su SOS.\nContatta il coordinatore per assistenza.")
+        return {"ok": True}
     # Default response
     return {"ok": True}
 

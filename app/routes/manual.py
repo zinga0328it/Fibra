@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Work, Technician, WorkEvent
 from app.utils.auth import auth_required
+from app.utils.geo import geocode_address_sync
 from datetime import datetime
 import logging
 from typing import Optional
@@ -57,7 +58,7 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
     work.numero_wr = numero_wr
     work.operatore = payload.get('operatore') or payload.get('impresa') or payload.get('IMPRESA')
     work.indirizzo = payload.get('indirizzo') or payload.get('INDIRIZZO')
-    work.nome_cliente = payload.get('cliente') or payload.get('NOME_CLIENTE') or payload.get('COGNOME_CLIENTE')
+    work.nome_cliente = payload.get('nome_cliente') or payload.get('cliente') or payload.get('NOME_CLIENTE') or payload.get('COGNOME_CLIENTE')
     work.tipo_lavoro = payload.get('tipo_lavoro') or payload.get('tipo') or payload.get('TIPOLOGIA_SERVIZIO')
     work.stato = payload.get('stato') or payload.get('STATO_WR') or 'aperto'
     
@@ -73,15 +74,35 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
         parsed = parse_datetime(data_inizio)
         if parsed:
             work.data_apertura = parsed
+    if not work.data_apertura:
+        work.data_apertura = datetime.now()
     data_fine = payload.get('data_fine') or payload.get('FINE_APPUNTAMENTO')
     if data_fine:
         parsed = parse_datetime(data_fine)
         if parsed:
             work.data_chiusura = parsed
 
+    # Calendario appuntamenti
+    data_appuntamento = payload.get('data_appuntamento')
+    if data_appuntamento:
+        parsed = parse_datetime(data_appuntamento)
+        if parsed:
+            work.data_appuntamento = parsed
+    work.note_appuntamento = payload.get('note_appuntamento')
+    work.motivo_rinvio = payload.get('motivo_rinvio')
+
     # link technician if provided by name or ID
+    tecnico_id_direct = payload.get('tecnico_assegnato_id')
+    if tecnico_id_direct:
+        try:
+            tid = int(tecnico_id_direct)
+            tech = db.query(Technician).filter(Technician.id == tid).first()
+            if tech:
+                work.tecnico_assegnato_id = tech.id
+        except Exception:
+            pass
     tecnico = payload.get('tecnico') or payload.get('Tecnico')
-    if tecnico:
+    if tecnico and not work.tecnico_assegnato_id:
         # If numeric id
         try:
             tid = int(tecnico)
@@ -99,7 +120,7 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
             work.tecnico_assegnato_id = tech.id
 
     # Keep any extra fields in JSON
-    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO', 'requires_ont', 'requires_modem', 'ont_cost', 'modem_cost'}
+    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'tecnico_assegnato_id', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO', 'requires_ont', 'requires_modem', 'ont_cost', 'modem_cost', 'data_appuntamento', 'note_appuntamento', 'motivo_rinvio'}
     extra = {k: v for k, v in payload.items() if k not in known}
     if extra:
         work.extra_fields = extra
@@ -116,4 +137,16 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
         db.rollback()
         logger.exception('Failed to insert manual work: %s', e)
         raise HTTPException(status_code=500, detail='DB error')
+
+    # Geocoding automatico dell'indirizzo
+    if work.indirizzo and not work.lat:
+        try:
+            coords = geocode_address_sync(work.indirizzo)
+            if coords:
+                work.lat, work.lng = coords
+                db.commit()
+                logger.info('Geocoded work %d: %s -> (%.6f, %.6f)', work.id, work.indirizzo, work.lat, work.lng)
+        except Exception as e:
+            logger.warning('Geocoding failed for work %d: %s', work.id, e)
+
     return { 'ok': True, 'id': work.id, 'numero_wr': work.numero_wr }

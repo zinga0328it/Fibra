@@ -32,6 +32,7 @@ File `.env`:
 YGG_HOST=200:421e:6385:4a8b:dca7:cfb:197f:e9c3
 YGG_PORT=8600
 YGG_API_KEY=ftth_ygg_secret_2025
+API_GPTS=seconda-chiave-opzionale
 ```
 
 ### 2. Avvio manuale (test)

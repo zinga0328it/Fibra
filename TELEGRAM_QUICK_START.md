@@ -28,7 +28,7 @@ Il tecnico deve:
 1. Cercare il bot su Telegram (vedi nome con: `python get_bot_info.py`)
 2. Inviare `/start`
 3. Usare i comandi:
-   - `/miei_lavori` - Vedi lavori assegnati
+   - `/miei_lavori` - Vedi **lavori sospesi** assegnati (esclude chiusi/archiviati)
    - `/accetta WR123` - Accetta lavoro
    - `/rifiuta WR123` - Rifiuta lavoro  
    - `/chiudi WR123` - Chiudi lavoro completato

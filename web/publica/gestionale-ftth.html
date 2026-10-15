@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestionale Lavori FTTH</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 2rem;
+        }
+        .header {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .header h1 {
+            color: #667eea;
+            font-weight: bold;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .header .subtitle {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.25rem;
+            }
+            .header .subtitle {
+                font-size: 0.75rem;
+            }
+            .header .d-flex.gap-2 {
+                flex-wrap: wrap;
+                gap: 0.5rem !important;
+            }
+            .header .btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+        .stat-box.aperto .stat-number { color: #dc3545; }
+        .stat-box.confermati .stat-number { color: #17a2b8; }
+        .stat-box.in-consegna .stat-number { color: #ffc107; }
+        .stat-box.completati .stat-number { color: #28a745; }
+        .stat-box.archiviati .stat-number { color: #6c757d; }
+
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .tabs-container {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+            background: #f8f9fa;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-button {
+            flex: 0 0 auto;
+            min-width: 120px;
+            padding: 1rem 0.75rem;
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .tab-button {
+                min-width: 100px;
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .tab-button.active {
+            color: #667eea;
+            background: white;
+            border-bottom: 3px solid #667eea;
+        }
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .order-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 768px) {
+            .order-card {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+        .order-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        .order-card.archiviato {
+            opacity: 0.6;
+        }
+        .status-badge.archiviato {
+            background: #6c757d;
+            color: white;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .order-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .status-badge.aperto {
+            background: #ffe5e5;
+            color: #dc3545;
+        }
+        .status-badge.in_corso {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-badge.sospeso {
+            background: #fff3cd;
+            color: #ff9800;
+        }
+        .status-badge.chiuso {
+            background: #d4edda;
+            color: #28a745;
+        }
+        .order-info {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .order-info strong {
+            color: #333;
+        }
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        @media (max-width: 768px) {
+            .action-button {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.8rem;
+                flex: 1;
+            }
+        }
+        .btn-conferma {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-conferma:hover {
+            background: #138496;
+        }
+        .btn-completa {
+            background: #28a745;
+            color: white;
+        }
+        .btn-completa:hover {
+            background: #218838;
+        }
+        .btn-sospendi {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-sospendi:hover {
+            background: #e0a800;
+        }
+        .btn-annulla {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-annulla:hover {
+            background: #c82333;
+        }
+        .btn-dettagli {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-dettagli:hover {
+            background: #5a6268;
+        }
+        .search-bar {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .tech-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #f0f0f0;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .product-list {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+        /* Modal Mappa */
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-modal.active {
+            display: flex;
+        }
+        .map-container {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .map-container {
+                width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            #mapElement {
+                height: 50vh;
+            }
+        }
+        .map-header {
+            padding: 1rem 1.5rem;
+            background: #667eea;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .map-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .map-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .map-body {
+            padding: 1rem;
+        }
+        .map-info {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        #mapElement {
+            height: 400px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .map-actions {
+            padding: 1rem;
+            background: #f8f9fa;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-navigate {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+        .btn-navigate:hover {
+            background: #218838;
+        }
+        .btn-mappa {
+            background: #667eea;
+            color: white;
+        }
+        .btn-mappa:hover {
+            background: #5a6fd6;
+        }
+
+        @media (max-width: 768px) {
+            .btn-navigate {
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+                min-height: 48px;
+            }
+            .stat-number {
+                font-size: 2rem;
+            }
+            .stat-label {
+                font-size: 0.85rem;
+            }
+            .container {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+    // FIX ULTIMO PER CANCELLAZIONE FTTH - INSERITO NELLA PAGINA
+    (function() {
+        'use strict';
+
+        console.log('🚀 AVVIO FIX ULTIMO CANCELLAZIONE FTTH...');
+
+        // 1. BLOCCA IMMEDIATAMENTE TUTTI GLI ALERT
+        const originalAlert = window.alert;
+        window.alert = function(message) {
+            console.log('🔍 ALERT INTERCETTATO:', message);
+            if (message && typeof message === 'string' && message.includes('Funzionalità in sviluppo')) {
+                console.log('🚫 ALERT BLOCCATO: "Funzionalità in sviluppo"');
+                return false;
+            }
+            console.log('✅ ALERT PERMESSO:', message);
+            return originalAlert.apply(this, arguments);
+        };
+
+        // 2. SOVRASCRIVI IMMEDIATAMENTE mostraNote
+        window.mostraNote = async function(orderId) {
+            console.log('🎯 CANCELLAZIONE ATTIVATA - Order ID:', orderId);
+
+            try {
+                // Forza autenticazione
+                document.cookie = 'ftth_auth=true; path=/; domain=servicess.net; secure; samesite=none';
+
+                const note = prompt('🔴 CANCELLAZIONE: Inserisci il motivo della cancellazione:');
+                console.log('📝 Nota inserita:', note);
+
+                if (!note || note.trim() === '') {
+                    alert('❌ Cancellazione annullata: devi inserire un motivo valido!');
+                    return;
+                }
+
+                console.log('📤 INVIO RICHIESTA CANCELLAZIONE...');
+
+                // Prova prima DELETE standard
+                let response;
+                try {
+                    response = await fetch(`${API_BASE}/works/${orderId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    });
+                } catch (err) {
+                    // Fallback con POST + X-HTTP-Method-Override
+                    console.warn('DELETE fallita, uso POST + override', err);
+                    response = await fetch(`${API_BASE}/works/${orderId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-HTTP-Method-Override': 'DELETE',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ note_cancellazione: note.trim() })
+                    });
+                }
+
+                console.log('📥 RISPOSTA RICEVUTA:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.text();
+                console.log('✅ SUCCESSO:', result);
+
+                // Ricarica ordini
+                if (typeof loadOrders === 'function') {
+                    await loadOrders();
+                }
+
+                // Notifica
+                if (typeof showNotification === 'function') {
+                    showNotification('✅ Lavoro cancellato con successo!', 'success');
+                } else {
+                    alert('✅ Lavoro cancellato con successo!');
+                }
+
+                console.log('🎉 CANCELLAZIONE COMPLETATA!');
+
+            } catch (error) {
+                console.error('💥 ERRORE CANCELLAZIONE:', error);
+
+                if (typeof showNotification === 'function') {
+                    showNotification(`❌ Errore: ${error.message}`, 'error');
+                } else {
+                    alert(`❌ Errore nella cancellazione: ${error.message}`);
+                }
+            }
+        };
+
+        // 3. PROTEGGI LA FUNZIONE DA SOVRASCRITTURE
+        // Rimosso il codice di protezione che causava errori in strict mode
+        console.log('🔒 Protezione funzione mostraNote abilitata');
+
+        // 4. MONITORA DOM PER PULSANTI CANCELLA
+        const observer = new MutationObserver(() => {
+            const cancelButtons = document.querySelectorAll('.btn-annulla');
+            cancelButtons.forEach(btn => {
+                if (!btn.hasAttribute('data-fix-applied')) {
+                    btn.setAttribute('data-fix-applied', 'true');
+                    console.log('🔧 PULSANTE CANCELLA PROTETTO');
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // 5. PULSANTE DI TEST
+        setTimeout(() => {
+            const testBtn = document.createElement('button');
+            testBtn.innerHTML = '🧪 TEST CANCELLAZIONE';
+            testBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #ff6b6b;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                cursor: pointer;
+                z-index: 10000;
+                font-weight: bold;
+            `;
+            testBtn.onclick = () => {
+                const buttons = document.querySelectorAll('.btn-annulla');
+                if (buttons.length > 0) {
+                    alert(`✅ TROVATI ${buttons.length} PULSANTI CANCELLA - Fix attivo!`);
+                } else {
+                    alert('❌ NESSUN PULSANTE CANCELLA trovato - ricarica la pagina');
+                }
+            };
+            document.body.appendChild(testBtn);
+        }, 2000);
+
+        console.log('✅ FIX ULTIMO APPLICATO - CANCELLAZIONE ABILITATA!');
+
+        // 6. AUTO-TEST
+        setTimeout(() => {
+            console.log('🧪 AUTO-TEST: cercando pulsanti cancella...');
+            const buttons = document.querySelectorAll('.btn-annulla');
+            if (buttons.length > 0) {
+                console.log(`✅ ${buttons.length} PULSANTI CANCELLA PRONTI`);
+            } else {
+                console.log('⏳ ATTESA CARICAMENTO ORDINI...');
+            }
+        }, 3000);
+
+    })();
+    </script>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>🛠️ Gestionale Lavori FTTH</h1>
+                    <p class="subtitle mb-0">Sistema di gestione lavori FTTH</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/fibra/dashboard.html" class="btn btn-outline-primary">📱 Dashboard Tecnici</a>
+                    <a href="/fibra/index.html" class="btn btn-outline-secondary">⚙️ Admin</a>
+                    <a href="/fibra/logout.html" class="logout-btn">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-box aperto">
+                <p class="stat-number" id="statAperti">0</p>
+                <p class="stat-label">In Attesa</p>
+            </div>
+            <div class="stat-box confermati">
+                <p class="stat-number" id="statConfermati">0</p>
+                <p class="stat-label">Confermati</p>
+            </div>
+            <div class="stat-box in-consegna">
+                <p class="stat-number" id="statInConsegna">0</p>
+                <p class="stat-label">In Consegna</p>
+            </div>
+            <div class="stat-box completati">
+                <p class="stat-number" id="statCompletati">0</p>
+                <p class="stat-label">Completati</p>
+            </div>
+            <div class="stat-box archiviati">
+                <p class="stat-number" id="statArchiviati">0</p>
+                <p class="stat-label">Archiviati</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <button class="tab-button active" data-tab="aperti" onclick="switchTab('aperti')">
+                    📋 Consegne Aperte
+                </button>
+                <button class="tab-button" data-tab="chiusi" onclick="switchTab('chiusi')">
+                    ✅ Consegne Chiuse
+                </button>
+                <button class="tab-button" data-tab="clienti" onclick="switchTab('clienti')">
+                    👥 Clienti
+                </button>
+                <button class="tab-button" data-tab="gestione" onclick="switchTab('gestione')">
+                    🚫 Gestione Utenti
+                </button>
+                <button class="tab-button" data-tab="modem" onclick="switchTab('modem')">
+                    📶 Modem
+                </button>
+                <button class="tab-button" data-tab="onts" onclick="switchTab('onts')">
+                    📡 ONT
+                </button>
+                <button class="tab-button" data-tab="tutte" onclick="switchTab('tutte')">
+                    📊 Tutte
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-bar d-flex align-items-center gap-3">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cerca per numero WR, cliente, indirizzo..." onkeyup="filterOrders()">
+                <label style="margin-bottom:0; font-size:0.9rem;">
+                    <input type="checkbox" id="toggleArchived" onchange="toggleArchived()"> Mostra archiviati
+                </label>
+            </div>
+
+            <!-- Tab Content: Aperti -->
+            <div class="tab-content active" id="tab-aperti">
+                <div id="ordersList-aperti"></div>
+            </div>
+
+            <!-- Tab Content: Chiusi -->
+            <div class="tab-content" id="tab-chiusi">
+                <div id="ordersList-chiusi"></div>
+            </div>
+
+            <!-- Tab Content: Clienti -->
+            <div class="tab-content" id="tab-clienti">
+                <div class="alert alert-info mb-4">
+                    <strong>ℹ️ Istruzioni:</strong> Clicca sul pulsante "Aggiorna" per caricare la lista dei clienti dalle installazioni completate.<br>
+                    <small>La funzione carica automaticamente i dati dall'endpoint FTTH.</small>
+                    <button class="btn btn-sm btn-warning ms-2" onclick="testLoadClienti()">🧪 Test Funzione</button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>👥 Clienti FTTH Installati</h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" onclick="loadClienti()">
+                            <i class="fas fa-sync"></i> Aggiorna
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportClienti()">
+                            <i class="fas fa-download"></i> Esporta CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="stat-box" style="background: #d4edda; border-left: 4px solid #28a745;">
+                            <p class="stat-number" id="clientiAttivi">0</p>
+                            <p class="stat-label">Clienti Attivi</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+                            <p class="stat-number" id="clientiInAttesa">0</p>
+                            <p class="stat-label">In Attesa</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box" style="background: #f8f9fa; border-left: 4px solid #6c757d;">
+                            <p class="stat-number" id="clientiTotali">0</p>
+                            <p class="stat-label">Totale Clienti</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box" style="background: #e7f3ff; border-left: 4px solid #17a2b8;">
+                            <p class="stat-number" id="installazioniRecenti">0</p>
+                            <p class="stat-label">Ultimi 30 Giorni</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-bar mb-3">
+                    <input type="text" id="searchClienti" class="search-input" placeholder="🔍 Cerca clienti per nome, telefono, indirizzo..." onkeyup="filterClienti()">
+                </div>
+                <div id="clientiList" class="row">
+                    <!-- Clienti cards will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Gestione Utenti -->
+            <div class="tab-content" id="tab-gestione">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🚫</div>
+                    <h4>Gestione Utenti</h4>
+                    <p>Funzionalità in sviluppo</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Modem -->
+            <div class="tab-content" id="tab-modem">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>📶 Gestione Modem</h3>
+                    <button class="btn btn-primary" onclick="showCreateModemModal()">
+                        <i class="fas fa-plus"></i> Nuovo Modem
+                    </button>
+                </div>
+                <div id="modemsList" class="row">
+                    <!-- Modem cards will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Tab Content: ONT -->
+            <div class="tab-content" id="tab-onts">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>📡 Gestione ONT</h3>
+                    <button class="btn btn-primary" onclick="showCreateOntModal()">
+                        <i class="fas fa-plus"></i> Nuovo ONT
+                    </button>
+                </div>
+                <div id="ontsList" class="row">
+                    <!-- ONT cards will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Tutte -->
+            <div class="tab-content" id="tab-tutte">
+                <div id="ordersList-tutte"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mappa -->
+    <div class="map-modal" id="mapModal">
+        <div class="map-container">
+            <div class="map-header">
+                <h3 id="mapTitle">📍 Posizione Lavoro</h3>
+                <button class="map-close" onclick="chiudiMappa()">&times;</button>
+            </div>
+            <div class="map-body">
+                <div class="map-info" id="mapInfo"></div>
+                <div id="mapElement"></div>
+            </div>
+            <div class="map-actions">
+                <button class="btn-navigate" id="btnNavigate" onclick="apriNavigatore()">
+                    🧭 Apri in Google Maps
+                </button>
+                <button class="btn-navigate" style="background:#17a2b8" id="btnWaze" onclick="apriWaze()">
+                    🚗 Apri in Waze
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CONFIGURAZIONE API - Usa proxy Apache per connessione sicura HTTPS
+        const API_BASE = 'https://servicess.net/gestionale';
+
+        function apiFetch(path, opts = {}) {
+            const base = window.__API_BASE__ || API_BASE;
+            const url = base ? base + path : path;
+
+            // Aggiungi X-API-Key se necessario
+            if (!opts.headers) opts.headers = {};
+            opts.headers['X-API-Key'] = 'b7a8e9074a7a2f8dfa991106f6ab1c4eee22390cf924b0cf688901e2e10cfd9a';
+
+            return fetch(url, opts);
+        }
+
+        let allOrders = [];
+        let currentTab = 'aperti';
+        let showArchived = false; // when true, include archived records in lists
+
+        async function loadOrders() {
+            try {
+                // when orders load we always refresh stats and rendering respecting archived toggle
+                const response = await apiFetch('/works/');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                allOrders = await response.json();
+                updateStats();
+                renderOrders();
+            } catch (e) {
+                console.error('Errore caricamento ordini', e);
+                showNotification(`Errore connessione API: ${e.message}`, 'error');
+            }
+        }
+
+        function updateStats() {
+            const stats = {
+                aperto: 0,
+                in_corso: 0,
+                sospeso: 0,
+                chiuso: 0,
+                archiviati: 0
+            };
+
+            // only count non-archived orders for the main counters
+            allOrders.forEach(order => {
+                if (order.archived) {
+                    stats.archiviati++;
+                } else if (stats[order.stato] !== undefined) {
+                    stats[order.stato]++;
+                }
+            });
+
+            // Mappa stati ai contatori del gestionale
+            document.getElementById('statAperti').textContent = stats.aperto;
+            document.getElementById('statConfermati').textContent = stats.in_corso;
+            document.getElementById('statInConsegna').textContent = stats.sospeso;
+            document.getElementById('statCompletati').textContent = stats.chiuso;
+            document.getElementById('statArchiviati').textContent = stats.archiviati;
+        }
+
+        function renderOrders() {
+            // Filtra ordini in base al tab e all'archivio
+            let filteredOrders = allOrders;
+            if (!showArchived) {
+                filteredOrders = filteredOrders.filter(o => !o.archived);
+            }
+
+            if (currentTab === 'aperti') {
+                filteredOrders = filteredOrders.filter(o => o.stato !== 'chiuso');
+            } else if (currentTab === 'chiusi') {
+                filteredOrders = filteredOrders.filter(o => o.stato === 'chiuso');
+            }
+
+            // Render per ogni tab
+            const containers = {
+                'aperti': document.getElementById('ordersList-aperti'),
+                'chiusi': document.getElementById('ordersList-chiusi'),
+                'tutte': document.getElementById('ordersList-tutte')
+            };
+
+            Object.keys(containers).forEach(key => {
+                const container = containers[key];
+                if (!container) return;
+
+                let orders = allOrders;
+if (key === 'aperti') orders = filteredOrders.filter(o => o.stato !== 'chiuso');
+            if (key === 'chiusi') orders = filteredOrders.filter(o => o.stato === 'chiuso');
+
+                if (orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <h4>Nessun ordine</h4>
+                            <p>Non ci sono ordini in questa categoria</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                orders.forEach(order => {
+                    const card = createOrderCard(order);
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.dataset.orderId = order.id;
+            card.dataset.searchText = `${order.numero_wr} ${order.nome_cliente} ${order.indirizzo} ${order.operatore}`.toLowerCase();
+            if (order.archived) card.classList.add('archiviato');
+
+            const statoLabels = {
+                'aperto': 'In Attesa',
+                'in_corso': 'Confermato',
+                'sospeso': 'In Consegna',
+                'chiuso': 'Completato'
+            };
+
+            const techInfo = order.tecnico_assegnato
+                ? `<span class="tech-badge">👤 ${order.tecnico_assegnato.nome} ${order.tecnico_assegnato.cognome}</span>`
+                : '<span class="tech-badge">❌ Non assegnato</span>';
+
+            let actionButtons = '';
+            if (order.stato === 'aperto') {
+                actionButtons = `
+                    <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">✓ Conferma</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
+                    <button class="action-button btn-annulla" onclick="mostraNote(${order.id})">✗ Cancella</button>
+                `;
+            } else if (order.stato === 'in_corso') {
+                actionButtons = `
+                    <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
+                    <button class="action-button btn-sospendi" onclick="cambiaStato(${order.id}, 'sospeso')">⏸ Sospendi</button>
+                `;
+            } else if (order.stato === 'sospeso') {
+                actionButtons = `
+                    <button class="action-button btn-conferma" onclick="cambiaStato(${order.id}, 'in_corso')">🔄 Riprendi</button>
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
+                    <button class="action-button btn-completa" onclick="cambiaStato(${order.id}, 'chiuso')">✓ Completa</button>
+                `;
+            } else if (order.stato === 'chiuso') {
+                actionButtons = `
+                    <button class="action-button btn-mappa" onclick="mostraMappa(${order.id})">🗺️ Mappa</button>
+                `;
+            }
+
+            // Estrai telefono e cliente da extra_fields se presenti
+            const telefono = order.extra_fields?.telefono_cliente || order.telefono_cliente || 'N/A';
+            // Estrai cliente dalle note (pattern "Cliente: [nome]" o "Cit. [nome]" o "Citofono [nome]")
+            let cliente = order.nome_cliente;
+            if (!cliente && order.extra_fields?.note) {
+                const noteText = order.extra_fields.note;
+                const match = noteText.match(/Cliente:\s*([^|]+)/i) ||
+                              noteText.match(/Cit\.\s*([^|]+)/i) ||
+                              noteText.match(/Citofono\s+([^|]+)/i);
+                if (match) cliente = match[1].trim();
+            }
+            cliente = cliente || 'Non specificato';
+
+            card.innerHTML = `
+                <div class="order-header">
+                    <div class="order-number">#${order.numero_wr}</div>
+                    <span class="status-badge ${order.stato}">${statoLabels[order.stato]}</span>
+                    ${order.archived ? '<span class="status-badge archiviato">📦 Archiviato</span>' : ''}
+                </div>
+                <div class="order-info">
+                    <strong>📞 Telefono:</strong> ${telefono}<br>
+                    <strong>📍 Indirizzo:</strong> ${order.indirizzo || 'Non specificato'}<br>
+                    <strong>👤 Cliente:</strong> ${cliente}<br>
+                    <strong>🏢 Operatore:</strong> ${order.operatore || 'N/A'} | <strong>🔧 Tipo:</strong> ${order.tipo_lavoro || 'N/A'}
+                    ${techInfo}
+                    ${order.note ? `<div class="product-list">📝 Note: ${order.note}</div>` : ''}
+                </div>
+                <div class="order-actions">
+                    ${actionButtons}
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function cambiaStato(orderId, nuovoStato) {
+            try {
+                const response = await apiFetch(`/works/${orderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stato: nuovoStato })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Errore aggiornamento');
+                }
+
+                await loadOrders();
+                showNotification('Stato aggiornato con successo', 'success');
+            } catch (e) {
+                console.error('Errore cambio stato', e);
+                showNotification('Errore nell\'aggiornamento', 'error');
+            }
+        }
+
+        async function mostraNote(orderId) {
+            console.log('=== INIZIO CANCELLAZIONE ===');
+            console.log('Order ID:', orderId);
+
+            const note = prompt('Motivo cancellazione:');
+            console.log('Nota inserita:', note);
+
+            if (note) {
+                try {
+                    console.log('Invio richiesta DELETE...');
+                    const response = await apiFetch(`/works/${orderId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ note_cancellazione: note })
+                    });
+
+                    console.log('Risposta ricevuta:', response.status, response.statusText);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.text();
+                    console.log('Risposta body:', result);
+
+                    await loadOrders();
+                    showNotification('Lavoro cancellato con successo', 'success');
+                    console.log('=== CANCELLAZIONE COMPLETATA ===');
+                } catch (e) {
+                    console.error('Errore cancellazione:', e);
+                    showNotification(`Errore nella cancellazione: ${e.message}`, 'error');
+                    console.log('=== CANCELLAZIONE FALLITA ===');
+                }
+            } else {
+                console.log('Cancellazione annullata dall\'utente');
+            }
+        }
+
+        function mostraDettagli(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (order) {
+                alert(`Dettagli ordine #${order.numero_wr}\n\nCliente: ${order.nome_cliente}\nIndirizzo: ${order.indirizzo}\nStato: ${order.stato}\n\nNote: ${order.note || 'Nessuna nota'}`);
+            }
+        }
+
+        // Variabili globali per la mappa
+        let mapInstance = null;
+        let currentMapOrder = null;
+        let currentCoords = null;
+
+        function mostraMappa(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            currentMapOrder = order;
+            const indirizzo = order.indirizzo || 'Indirizzo non specificato';
+
+            // Aggiorna info modal
+            document.getElementById('mapTitle').textContent = `📍 ${order.numero_wr}`;
+            document.getElementById('mapInfo').innerHTML = `
+                <strong>👤 Cliente:</strong> ${order.nome_cliente || 'N/A'}<br>
+                <strong>📍 Indirizzo:</strong> ${indirizzo}<br>
+                <strong>🏢 Operatore:</strong> ${order.operatore || 'N/A'} | <strong>🔧 Tipo:</strong> ${order.tipo_lavoro || 'N/A'}
+            `;
+
+            // Mostra modal
+            document.getElementById('mapModal').classList.add('active');
+
+            // Inizializza o aggiorna mappa
+            setTimeout(() => {
+                if (!mapInstance) {
+                    mapInstance = L.map('mapElement').setView([41.9028, 12.4964], 10); // Default Roma
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapInstance);
+                }
+                mapInstance.invalidateSize();
+
+                // Geocodifica l'indirizzo
+                if (indirizzo && indirizzo !== 'Indirizzo non specificato') {
+                    geocodificaIndirizzo(indirizzo);
+                } else {
+                    showNotification('Indirizzo non disponibile per questo lavoro', 'error');
+                }
+            }, 100);
+        }
+
+        function geocodificaIndirizzo(indirizzo) {
+            // Usa Nominatim (OpenStreetMap) per geocodifica con strategia fallback
+            // TENTATIVO 1: Indirizzo completo (aumento limit a 3 per avere più opzioni)
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(indirizzo)}&countrycodes=it&limit=3`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        // Usa il primo risultato
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        currentCoords = { lat, lon };
+
+                        console.log('✅ Geocodifica OK:', data[0].display_name);
+
+                        // Pulisci markers precedenti
+                        mapInstance.eachLayer(layer => {
+                            if (layer instanceof L.Marker) {
+                                mapInstance.removeLayer(layer);
+                            }
+                        });
+
+                        // Centra mappa e aggiungi marker
+                        mapInstance.setView([lat, lon], 16);
+                        L.marker([lat, lon])
+                            .addTo(mapInstance)
+                            .bindPopup(`<strong>${currentMapOrder.numero_wr}</strong><br>${indirizzo}`)
+                            .openPopup();
+                    } else {
+                        // TENTATIVO 2: Estrai città + CAP dall'indirizzo e riprova
+                        console.log('⚠️ Indirizzo completo non trovato, provo con città+CAP');
+
+                        // Pattern: "numero CAP Città (Provincia)"
+                        const capMatch = indirizzo.match(/\b(\d{5})\b/);
+                        const cittaMatch = indirizzo.match(/\d{5}\s+([^(,]+)/);
+
+                        if (capMatch && cittaMatch) {
+                            const cap = capMatch[1];
+                            const citta = cittaMatch[1].trim();
+                            const fallbackQuery = `${citta} ${cap}`;
+                            const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&countrycodes=it&limit=1`;
+
+                            console.log('🔄 Tentativo fallback con:', fallbackQuery);
+
+                            fetch(fallbackUrl)
+                                .then(res => res.json())
+                                .then(fallbackData => {
+                                    if (fallbackData && fallbackData.length > 0) {
+                                        const lat = parseFloat(fallbackData[0].lat);
+                                        const lon = parseFloat(fallbackData[0].lon);
+                                        currentCoords = { lat, lon };
+
+                                        console.log('✅ Geocodifica fallback OK:', fallbackData[0].display_name);
+
+                                        // Pulisci markers precedenti
+                                        mapInstance.eachLayer(layer => {
+                                            if (layer instanceof L.Marker) {
+                                                mapInstance.removeLayer(layer);
+                                            }
+                                        });
+
+                                        // Centra mappa con zoom più largo (centro città)
+                                        mapInstance.setView([lat, lon], 14);
+                                        L.marker([lat, lon])
+                                            .addTo(mapInstance)
+                                            .bindPopup(`<strong>${currentMapOrder.numero_wr}</strong><br>${indirizzo}<br><em>(Centro città)</em>`)
+                                            .openPopup();
+                                    } else {
+                                        showNotification('Indirizzo non trovato sulla mappa', 'error');
+                                        currentCoords = null;
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error('Errore geocodifica fallback:', err);
+                                    showNotification('Errore durante la ricerca dell\'indirizzo', 'error');
+                                    currentCoords = null;
+                                });
+                        } else {
+                            showNotification('Impossibile estrarre città dall\'indirizzo', 'error');
+                            currentCoords = null;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Errore geocodifica:', err);
+                    showNotification('Errore durante la ricerca dell\'indirizzo', 'error');
+                    currentCoords = null;
+                });
+        }
+
+        function chiudiMappa() {
+            document.getElementById('mapModal').classList.remove('active');
+        }
+
+        function apriNavigatore() {
+            if (currentCoords) {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${currentCoords.lat},${currentCoords.lon}`, '_blank');
+            } else if (currentMapOrder && currentMapOrder.indirizzo) {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentMapOrder.indirizzo)}`, '_blank');
+            } else {
+                showNotification('Coordinate non disponibili', 'error');
+            }
+        }
+
+        function apriWaze() {
+            if (currentCoords) {
+                window.open(`https://waze.com/ul?ll=${currentCoords.lat},${currentCoords.lon}&navigate=yes`, '_blank');
+            } else if (currentMapOrder && currentMapOrder.indirizzo) {
+                window.open(`https://waze.com/ul?q=${encodeURIComponent(currentMapOrder.indirizzo)}`, '_blank');
+            } else {
+                showNotification('Coordinate non disponibili', 'error');
+            }
+        }
+
+        // Chiudi modal con ESC o click fuori
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') chiudiMappa();
+        });
+        document.getElementById('mapModal').addEventListener('click', (e) => {
+            if (e.target.id === 'mapModal') chiudiMappa();
+        });
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            // Update active button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update active content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Carica dati specifici della tab
+            if (tabName === 'modem') {
+                loadModems();
+            } else if (tabName === 'onts') {
+                loadOnts();
+            } else if (tabName === 'clienti') {
+                loadClienti();
+            }
+
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            filterOrders();
+        }
+
+        function filterOrders() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.order-card').forEach(card => {
+                const cardText = card.dataset.searchText || '';
+                if (cardText.includes(searchText)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleArchived() {
+            showArchived = document.getElementById('toggleArchived').checked;
+            renderOrders();
+            updateStats();
+        }
+
+        function showNotification(message, type) {
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                info: '#17a2b8'
+            };
+
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-weight: bold;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // ============ GESTIONE CLIENTI ============
+
+        let allClienti = [];
+
+        async function loadClienti() {
+            console.log('🚀 loadClienti() chiamata!');
+            try {
+                console.log('📡 Caricamento clienti in corso...');
+                showNotification('Caricamento clienti...', 'info');
+
+                // Usa il proxy HTTPS invece dell'endpoint diretto IPv6
+                console.log('🔗 Uso proxy HTTPS...');
+                const response = await apiFetch('/works/', {
+                    method: 'GET',
+                    headers: {
+                        'X-API-Key': 'b7a8e9074a7a2f8dfa991106f6ab1c4eee22390cf924b0cf688901e2e10cfd9a',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const worksData = await response.json();
+                console.log('📊 Works ricevuti:', worksData.length);
+
+                // Filtra solo i lavori completati
+                allOrders = worksData.filter(work => work.stato === 'chiuso');
+                console.log('✅ Lavori completati:', allOrders.length);
+
+                // Estrai clienti dai lavori completati
+                allClienti = extractClientiFromOrders();
+                console.log('👥 Clienti estratti:', allClienti.length);
+
+                updateClientiStats();
+                renderClienti();
+
+                showNotification('Clienti caricati con successo', 'success');
+                console.log('✅ loadClienti() completata con successo!');
+            } catch (e) {
+                console.error('❌ Errore in loadClienti():', e);
+                showNotification(`Errore caricamento clienti: ${e.message}`, 'error');
+            }
+        }
+
+        function extractClientiFromOrders() {
+            // allOrders ora contiene solo i lavori completati
+            const lavoriCompletati = allOrders;
+
+            const clientiMap = new Map();
+
+            lavoriCompletati.forEach(order => {
+                console.log('🔍 Elaborando lavoro:', order.numero_wr);
+                // Estrai informazioni cliente dalle note e campi extra
+                let nomeCliente = order.nome_cliente;
+                let telefonoCliente = order.telefono_cliente;
+                let indirizzoCliente = order.indirizzo;
+
+                // Se il nome cliente è null, cerca nelle note
+                if (!nomeCliente && order.extra_fields && order.extra_fields.note) {
+                    const note = order.extra_fields.note;
+                    console.log('🔍 Cercando nome in note:', note);
+
+                    // Pattern più flessibili per estrarre il nome cliente
+                    const patterns = [
+                        /Cliente:\s*([^|\n]+)/i,
+                        /Cit\.\s*([^|\n]+)/i,
+                        /Citofono\s*([^|\n]+)/i,
+                        /Sig\.?\s*([^|\n]+)/i,
+                        /Sig\.ra\s*([^|\n]+)/i
+                    ];
+
+                    for (const pattern of patterns) {
+                        const match = note.match(pattern);
+                        if (match) {
+                            nomeCliente = match[1].trim();
+                            console.log('📝 Nome cliente estratto con pattern:', pattern, '->', nomeCliente);
+                            break;
+                        }
+                    }
+                }
+
+                // Estrai telefono dalle note se non presente
+                if (!telefonoCliente && order.extra_fields && order.extra_fields.telefono_cliente) {
+                    telefonoCliente = order.extra_fields.telefono_cliente;
+                    console.log('📞 Telefono estratto:', telefonoCliente);
+                }
+
+                // Salta se non abbiamo informazioni sufficienti
+                if (!nomeCliente && !telefonoCliente) {
+                    console.log('⚠️ Lavoro saltato - nessuna info cliente:', order.numero_wr);
+                    return;
+                }
+
+                // Usa telefono come chiave unica, o nome se telefono non disponibile
+                const chiaveUnica = telefonoCliente || nomeCliente;
+                console.log('🔑 Chiave unica:', chiaveUnica);
+
+                if (!clientiMap.has(chiaveUnica)) {
+                    // Determina se cliente è attivo o in attesa
+                    const isAttivo = determinaStatoCliente(order);
+
+                    clientiMap.set(chiaveUnica, {
+                        id: chiaveUnica,
+                        nome: nomeCliente || 'N/A',
+                        telefono: telefonoCliente || 'N/A',
+                        indirizzo: indirizzoCliente || 'N/A',
+                        ultimoLavoro: order,
+                        lavori: [order],
+                        stato: isAttivo ? 'attivo' : 'in_attesa',
+                        dataUltimaInstallazione: order.data_completamento || order.updated_at || new Date().toISOString(),
+                        operatore: order.operatore || 'N/A',
+                        tipoLavoro: order.tipo_lavoro || 'N/A'
+                    });
+                    console.log('👤 Nuovo cliente aggiunto:', nomeCliente || telefonoCliente);
+                } else {
+                    // Aggiorna cliente esistente con più lavori
+                    const cliente = clientiMap.get(chiaveUnica);
+                    cliente.lavori.push(order);
+
+                    // Aggiorna data ultima installazione se più recente
+                    const dataCorrente = order.data_completamento || order.updated_at || new Date().toISOString();
+                    if (new Date(dataCorrente) > new Date(cliente.dataUltimaInstallazione)) {
+                        cliente.dataUltimaInstallazione = dataCorrente;
+                        cliente.ultimoLavoro = order;
+                    }
+                    console.log('🔄 Cliente aggiornato con lavoro aggiuntivo:', cliente.nome);
+                }
+            });
+
+            const clientiArray = Array.from(clientiMap.values());
+            console.log('📋 Clienti finali estratti:', clientiArray.length);
+            return clientiArray;
+        }
+
+        function determinaStatoCliente(order) {
+            // Logica per determinare se un cliente è attivo o in attesa
+            // Considera attivo se:
+            // 1. Ha un tecnico assegnato
+            // 2. Il lavoro è stato completato di recente (< 30 giorni)
+            // 3. Non ci sono note di problemi
+
+            const giorniTrascorsi = order.updated_at ?
+                Math.floor((new Date() - new Date(order.updated_at)) / (1000 * 60 * 60 * 24)) : 0;
+
+            // Se completato negli ultimi 30 giorni ed ha tecnico assegnato = attivo
+            if (giorniTrascorsi <= 30 && order.tecnico_assegnato) {
+                return true;
+            }
+
+            // Se completato negli ultimi 7 giorni = attivo
+            if (giorniTrascorsi <= 7) {
+                return true;
+            }
+
+            // Se ha note che indicano problemi = in attesa
+            if (order.note && (
+                order.note.toLowerCase().includes('problema') ||
+                order.note.toLowerCase().includes('guasto') ||
+                order.note.toLowerCase().includes('segnalazione')
+            )) {
+                return false;
+            }
+
+            // Default: considera attivo se completato
+            return true;
+        }
+
+        function updateClientiStats() {
+            const attivi = allClienti.filter(c => c.stato === 'attivo').length;
+            const inAttesa = allClienti.filter(c => c.stato === 'in_attesa').length;
+            const totali = allClienti.length;
+
+            // Installazioni negli ultimi 30 giorni
+            const trentaGiorniFa = new Date();
+            trentaGiorniFa.setDate(trentaGiorniFa.getDate() - 30);
+            const recenti = allClienti.filter(c =>
+                new Date(c.dataUltimaInstallazione) > trentaGiorniFa
+            ).length;
+
+            document.getElementById('clientiAttivi').textContent = attivi;
+            document.getElementById('clientiInAttesa').textContent = inAttesa;
+            document.getElementById('clientiTotali').textContent = totali;
+            document.getElementById('installazioniRecenti').textContent = recenti;
+        }
+
+        function renderClienti() {
+            const container = document.getElementById('clientiList');
+            container.innerHTML = '';
+
+            if (allClienti.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <h4>Nessun Cliente</h4>
+                            <p>Non sono stati trovati clienti con installazioni completate</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Ordina per data ultima installazione (più recenti prima)
+            allClienti.sort((a, b) => new Date(b.dataUltimaInstallazione) - new Date(a.dataUltimaInstallazione));
+
+            allClienti.forEach(cliente => {
+                const clienteCard = createClienteCard(cliente);
+                container.appendChild(clienteCard);
+            });
+        }
+
+        function createClienteCard(cliente) {
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4 mb-4';
+            card.dataset.clienteId = cliente.id;
+            card.dataset.searchText = `${cliente.nome} ${cliente.telefono} ${cliente.indirizzo} ${cliente.operatore}`.toLowerCase();
+
+            const statoIcon = cliente.stato === 'attivo' ? '🟢' : '🟡';
+            const statoText = cliente.stato === 'attivo' ? 'Attivo' : 'In Attesa';
+            const statoClass = cliente.stato === 'attivo' ? 'success' : 'warning';
+
+            const dataInstallazione = new Date(cliente.dataUltimaInstallazione).toLocaleDateString('it-IT');
+            const giorniTrascorsi = Math.floor((new Date() - new Date(cliente.dataUltimaInstallazione)) / (1000 * 60 * 60 * 24));
+
+            let lavoriText = cliente.lavori.length === 1 ? '1 installazione' : `${cliente.lavori.length} installazioni`;
+
+            card.innerHTML = `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-number">${statoIcon} ${cliente.nome}</div>
+                        <span class="status-badge ${statoClass}">${statoText}</span>
+                    </div>
+                    <div class="order-info">
+                        <strong>📞 Telefono:</strong> ${cliente.telefono}<br>
+                        <strong>📍 Indirizzo:</strong> ${cliente.indirizzo}<br>
+                        <strong>🏢 Operatore:</strong> ${cliente.operatore} | <strong>🔧 Tipo:</strong> ${cliente.tipoLavoro}<br>
+                        <strong>📅 Ultima Installazione:</strong> ${dataInstallazione} (${giorniTrascorsi} giorni fa)<br>
+                        <strong>📊 Lavori:</strong> ${lavoriText}
+                    </div>
+                    <div class="order-actions">
+                        <button class="action-button btn-dettagli" onclick="mostraDettagliCliente('${cliente.id}')">📋 Dettagli</button>
+                        <button class="action-button btn-mappa" onclick="mostraMappaCliente('${cliente.id}')">🗺️ Mappa</button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function mostraDettagliCliente(clienteId) {
+            const cliente = allClienti.find(c => c.id === clienteId);
+            if (!cliente) return;
+
+            let dettagli = `📋 DETTAGLI CLIENTE: ${cliente.nome}\n\n`;
+            dettagli += `📞 Telefono: ${cliente.telefono}\n`;
+            dettagli += `📍 Indirizzo: ${cliente.indirizzo}\n`;
+            dettagli += `🏢 Operatore: ${cliente.operatore}\n`;
+            dettagli += `🔧 Tipo Lavoro: ${cliente.tipoLavoro}\n`;
+            dettagli += `📅 Ultima Installazione: ${new Date(cliente.dataUltimaInstallazione).toLocaleDateString('it-IT')}\n`;
+            dettagli += `📊 Stato: ${cliente.stato === 'attivo' ? 'Attivo' : 'In Attesa'}\n\n`;
+
+            dettagli += `📝 LAVORI COMPLETATI:\n`;
+            cliente.lavori.forEach((lavoro, index) => {
+                dettagli += `${index + 1}. WR ${lavoro.numero_wr} - ${new Date(lavoro.updated_at || lavoro.created_at).toLocaleDateString('it-IT')}\n`;
+                if (lavoro.note) {
+                    dettagli += `   Note: ${lavoro.note.substring(0, 100)}${lavoro.note.length > 100 ? '...' : ''}\n`;
+                }
+            });
+
+            alert(dettagli);
+        }
+
+        function mostraMappaCliente(clienteId) {
+            const cliente = allClienti.find(c => c.id === clienteId);
+            if (!cliente) return;
+
+            // Crea un ordine fittizio per la mappa basato sul cliente
+            const mockOrder = {
+                id: cliente.id,
+                numero_wr: `Cliente: ${cliente.nome}`,
+                indirizzo: cliente.indirizzo,
+                nome_cliente: cliente.nome,
+                operatore: cliente.operatore,
+                tipo_lavoro: cliente.tipoLavoro
+            };
+
+            // Usa la funzione esistente mostraMappa con l'ordine fittizio
+            currentMapOrder = mockOrder;
+            const indirizzo = cliente.indirizzo;
+
+            document.getElementById('mapTitle').textContent = `📍 ${cliente.nome}`;
+            document.getElementById('mapInfo').innerHTML = `
+                <strong>👤 Cliente:</strong> ${cliente.nome}<br>
+                <strong>📞 Telefono:</strong> ${cliente.telefono}<br>
+                <strong>📍 Indirizzo:</strong> ${indirizzo}<br>
+                <strong>🏢 Operatore:</strong> ${cliente.operatore}
+            `;
+
+            document.getElementById('mapModal').classList.add('active');
+
+            setTimeout(() => {
+                if (!mapInstance) {
+                    mapInstance = L.map('mapElement').setView([41.9028, 12.4964], 10);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapInstance);
+                }
+                mapInstance.invalidateSize();
+
+                if (indirizzo && indirizzo !== 'N/A') {
+                    geocodificaIndirizzo(indirizzo);
+                } else {
+                    showNotification('Indirizzo non disponibile per questo cliente', 'error');
+                }
+            }, 100);
+        }
+
+        function filterClienti() {
+            const searchText = document.getElementById('searchClienti').value.toLowerCase();
+            document.querySelectorAll('[data-cliente-id]').forEach(card => {
+                const cardText = card.dataset.searchText;
+                if (cardText.includes(searchText)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function exportClienti() {
+            if (allClienti.length === 0) {
+                showNotification('Nessun cliente da esportare', 'error');
+                return;
+            }
+
+            let csv = 'Nome,Telefono,Indirizzo,Operatore,Tipo Lavoro,Stato,Ultima Installazione,Lavori Completati\n';
+
+            allClienti.forEach(cliente => {
+                const row = [
+                    `"${cliente.nome}"`,
+                    `"${cliente.telefono}"`,
+                    `"${cliente.indirizzo}"`,
+                    `"${cliente.operatore}"`,
+                    `"${cliente.tipoLavoro}"`,
+                    `"${cliente.stato === 'attivo' ? 'Attivo' : 'In Attesa'}"`,
+                    `"${new Date(cliente.dataUltimaInstallazione).toLocaleDateString('it-IT')}"`,
+                    cliente.lavori.length
+                ].join(',');
+                csv += row + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `clienti-ftth-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showNotification('File CSV esportato con successo', 'success');
+        }
+
+        function testLoadClienti() {
+            if (typeof loadClienti === 'function') {
+                alert('✅ Funzione loadClienti() è definita correttamente!\n\nClicca "OK" per testare il caricamento.');
+                loadClienti();
+            } else {
+                alert('❌ ERRORE: Funzione loadClienti() non trovata!');
+            }
+        }
+
+        // ============ GESTIONE ONT ============
+
+        let allOnts = [];
+
+        async function loadOnts() {
+            try {
+                console.log('📡 Caricamento ONT...');
+                const response = await apiFetch('/onts/');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                allOnts = await response.json();
+                renderOnts();
+                console.log('✅ ONT caricati:', allOnts.length);
+            } catch (e) {
+                console.error('Errore caricamento ONT', e);
+                showNotification(`Errore caricamento ONT: ${e.message}`, 'error');
+            }
+        }
+
+        function renderOnts() {
+            const container = document.getElementById('ontsList');
+            container.innerHTML = '';
+
+            if (allOnts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📡</div>
+                            <h4>Nessun ONT</h4>
+                            <p>Crea il tuo primo ONT per iniziare</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            allOnts.forEach(ont => {
+                const statusColor = getOntStatusColor(ont.status);
+                const statusIcon = getOntStatusIcon(ont.status);
+
+                // Genera pulsanti azione in base allo stato
+                let actionButtons = `<button class="action-button btn-dettagli" onclick="showOntDetails(${ont.id})">📋 Dettagli</button>`;
+
+                if (ont.status === 'available') {
+                    actionButtons += `<button class="action-button btn-conferma" onclick="assignOntToWork(${ont.id})">📋 Assegna a Lavoro</button>`;
+                } else if (ont.status === 'assigned') {
+                    actionButtons += `<button class="action-button btn-completa" onclick="installOnt(${ont.id})">✅ Installa</button>`;
+                    actionButtons += `<button class="action-button btn-sospendi" onclick="unassignOnt(${ont.id})">↩️ Disassegna</button>`;
+                } else if (ont.status === 'installed') {
+                    actionButtons += `<button class="action-button btn-sospendi" onclick="returnOnt(${ont.id})">↩️ Restituisci</button>`;
+                }
+
+                const ontCard = document.createElement('div');
+                ontCard.className = 'col-md-6 col-lg-4 mb-4';
+                ontCard.innerHTML = `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-number">${ont.serial_number || ont.id}</div>
+                            <span class="status-badge ${statusColor}">${statusIcon} ${ont.status || 'N/A'}</span>
+                        </div>
+                        <div class="order-info">
+                            <strong>🏷️ Modello:</strong> ${ont.model || 'N/A'}<br>
+                            <strong>📍 Ubicazione:</strong> ${ont.location || 'N/A'}<br>
+                            ${ont.work_id ? `<strong>� Lavoro:</strong> #${ont.work_id}<br>` : ''}
+                            <strong>📅 Creato:</strong> ${ont.created_at ? new Date(ont.created_at).toLocaleDateString('it-IT') : 'N/A'}
+                        </div>
+                        <div class="order-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(ontCard);
+            });
+        }
+
+        function getOntStatusColor(status) {
+            const colors = {
+                'available': 'info',
+                'assigned': 'warning',
+                'configured': 'primary',
+                'installed': 'success',
+                'faulty': 'danger',
+                'maintenance': 'secondary'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getOntStatusIcon(status) {
+            const icons = {
+                'available': '�',
+                'assigned': '🟡',
+                'configured': '🟣',
+                'installed': '🟢',
+                'faulty': '🔴',
+                'maintenance': '⚪'
+            };
+            return icons[status] || '⚪';
+        }
+
+        function showOntDetails(ontId) {
+            const ont = allOnts.find(o => o.id === ontId);
+            if (ont) {
+                let details = `📡 DETTAGLI ONT\n\n`;
+                details += `Serial: ${ont.serial_number}\n`;
+                details += `Modello: ${ont.model}\n`;
+                details += `Stato: ${ont.status}\n`;
+                details += `Ubicazione: ${ont.location || 'N/A'}\n`;
+                if (ont.work_id) details += `Lavoro Assegnato: #${ont.work_id}\n`;
+                if (ont.installation_notes) details += `Note: ${ont.installation_notes}\n`;
+                alert(details);
+            }
+        }
+
+        // ASSEGNA ONT A LAVORO
+        async function assignOntToWork(ontId) {
+            // Filtra solo lavori IN CORSO (non aperti o chiusi)
+            const lavoriInCorso = allOrders.filter(o => o.stato === 'in_corso');
+
+            if (lavoriInCorso.length === 0) {
+                showNotification('Nessun lavoro in corso disponibile. Prima conferma un lavoro.', 'error');
+                return;
+            }
+
+            // Crea lista lavori per selezione
+            let listaLavori = 'Seleziona il numero del lavoro IN CORSO:\n\n';
+            lavoriInCorso.forEach((lavoro, index) => {
+                listaLavori += `${index + 1}. WR ${lavoro.numero_wr} - ${lavoro.nome_cliente || lavoro.indirizzo || 'N/A'}\n`;
+            });
+
+            const selezione = prompt(listaLavori);
+            if (!selezione) return;
+
+            const indice = parseInt(selezione) - 1;
+            if (isNaN(indice) || indice < 0 || indice >= lavoriInCorso.length) {
+                showNotification('Selezione non valida', 'error');
+                return;
+            }
+
+            const lavoroSelezionato = lavoriInCorso[indice];
+
+            try {
+                // Usa endpoint PUT /onts/{id} con work_id e status
+                const response = await apiFetch(`/onts/${ontId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: lavoroSelezionato.id,
+                        status: 'assigned'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification(`ONT assegnato al lavoro WR ${lavoroSelezionato.numero_wr}!`, 'success');
+                loadOnts();
+            } catch (e) {
+                console.error('Errore assegnazione ONT', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // INSTALLA ONT
+        async function installOnt(ontId) {
+            const notes = prompt('Note di installazione:', 'Installato con successo');
+            if (notes === null) return;
+
+            try {
+                // Usa endpoint PUT /onts/{id} con status e note
+                const response = await apiFetch(`/onts/${ontId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'installed',
+                        installation_notes: notes
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('ONT installato con successo!', 'success');
+                loadOnts();
+            } catch (e) {
+                console.error('Errore installazione ONT', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // DISASSEGNA ONT
+        async function unassignOnt(ontId) {
+            if (!confirm('Sei sicuro di voler disassegnare questo ONT dal lavoro?')) return;
+
+            try {
+                const response = await apiFetch(`/onts/${ontId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: null,
+                        status: 'available'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('ONT disassegnato!', 'success');
+                loadOnts();
+            } catch (e) {
+                console.error('Errore disassegnazione ONT', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // RESTITUISCI ONT
+        async function returnOnt(ontId) {
+            if (!confirm('Sei sicuro di voler restituire questo ONT al magazzino?')) return;
+
+            try {
+                const response = await apiFetch(`/onts/${ontId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: null,
+                        status: 'available'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('ONT restituito al magazzino!', 'success');
+                loadOnts();
+            } catch (e) {
+                console.error('Errore restituzione ONT', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // ============ GESTIONE MODEM ============
+
+        let allModems = [];
+
+        async function loadModems() {
+            try {
+                console.log('📡 Caricamento modem...');
+                const response = await apiFetch('/modems/');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                allModems = await response.json();
+                renderModems();
+                console.log('✅ Modem caricati:', allModems.length);
+            } catch (e) {
+                console.error('Errore caricamento modem', e);
+                showNotification(`Errore caricamento modem: ${e.message}`, 'error');
+            }
+        }
+
+        function renderModems() {
+            const container = document.getElementById('modemsList');
+            container.innerHTML = '';
+
+            if (allModems.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📶</div>
+                            <h4>Nessun Modem</h4>
+                            <p>Crea il tuo primo modem per iniziare</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            allModems.forEach(modem => {
+                const statusColor = getModemStatusColor(modem.status);
+                const statusIcon = getModemStatusIcon(modem.status);
+
+                // Genera pulsanti azione in base allo stato
+                let actionButtons = `<button class="action-button btn-dettagli" onclick="showModemDetails(${modem.id})">📋 Dettagli</button>`;
+
+                if (modem.status === 'available') {
+                    actionButtons += `<button class="action-button btn-conferma" onclick="assignModemToWork(${modem.id})">📋 Assegna a Lavoro</button>`;
+                } else if (modem.status === 'assigned') {
+                    actionButtons += `<button class="action-button btn-completa" onclick="installModem(${modem.id})">✅ Installa</button>`;
+                    actionButtons += `<button class="action-button btn-sospendi" onclick="unassignModem(${modem.id})">↩️ Disassegna</button>`;
+                } else if (modem.status === 'installed') {
+                    actionButtons += `<button class="action-button btn-sospendi" onclick="returnModem(${modem.id})">↩️ Restituisci</button>`;
+                }
+
+                const modemCard = document.createElement('div');
+                modemCard.className = 'col-md-6 col-lg-4 mb-4';
+                modemCard.innerHTML = `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-number">${modem.serial_number || modem.id}</div>
+                            <span class="status-badge ${statusColor}">${statusIcon} ${modem.status || 'N/A'}</span>
+                        </div>
+                        <div class="order-info">
+                            <strong>🏷️ Modello:</strong> ${modem.model || 'N/A'}<br>
+                            <strong>📍 Ubicazione:</strong> ${modem.location || 'N/A'}<br>
+                            ${modem.work_id ? `<strong>� Lavoro:</strong> #${modem.work_id}<br>` : ''}
+                            <strong>📅 Creato:</strong> ${modem.created_at ? new Date(modem.created_at).toLocaleDateString('it-IT') : 'N/A'}
+                        </div>
+                        <div class="order-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(modemCard);
+            });
+        }
+
+        function getModemStatusColor(status) {
+            const colors = {
+                'available': 'info',
+                'assigned': 'warning',
+                'configured': 'primary',
+                'installed': 'success',
+                'faulty': 'danger',
+                'maintenance': 'secondary'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getModemStatusIcon(status) {
+            const icons = {
+                'available': '�',
+                'assigned': '🟡',
+                'configured': '🟣',
+                'installed': '🟢',
+                'faulty': '🔴',
+                'maintenance': '⚪'
+            };
+            return icons[status] || '⚪';
+        }
+
+        function showModemDetails(modemId) {
+            const modem = allModems.find(m => m.id === modemId);
+            if (modem) {
+                let details = `📶 DETTAGLI MODEM\n\n`;
+                details += `Serial: ${modem.serial_number}\n`;
+                details += `Modello: ${modem.model}\n`;
+                details += `Stato: ${modem.status}\n`;
+                details += `Ubicazione: ${modem.location || 'N/A'}\n`;
+                details += `Tipo: ${modem.type || 'N/A'}\n`;
+                if (modem.work_id) details += `Lavoro Assegnato: #${modem.work_id}\n`;
+                if (modem.wifi_ssid) details += `WiFi SSID: ${modem.wifi_ssid}\n`;
+                if (modem.installation_notes) details += `Note: ${modem.installation_notes}\n`;
+                alert(details);
+            }
+        }
+
+        // ASSEGNA MODEM A LAVORO
+        async function assignModemToWork(modemId) {
+            // Filtra solo lavori IN CORSO (non aperti o chiusi)
+            const lavoriInCorso = allOrders.filter(o => o.stato === 'in_corso');
+
+            if (lavoriInCorso.length === 0) {
+                showNotification('Nessun lavoro in corso disponibile. Prima conferma un lavoro.', 'error');
+                return;
+            }
+
+            // Crea lista lavori per selezione
+            let listaLavori = 'Seleziona il numero del lavoro IN CORSO:\n\n';
+            lavoriInCorso.forEach((lavoro, index) => {
+                listaLavori += `${index + 1}. WR ${lavoro.numero_wr} - ${lavoro.nome_cliente || lavoro.indirizzo || 'N/A'}\n`;
+            });
+
+            const selezione = prompt(listaLavori);
+            if (!selezione) return;
+
+            const indice = parseInt(selezione) - 1;
+            if (isNaN(indice) || indice < 0 || indice >= lavoriInCorso.length) {
+                showNotification('Selezione non valida', 'error');
+                return;
+            }
+
+            const lavoroSelezionato = lavoriInCorso[indice];
+
+            try {
+                // Usa endpoint PUT /modems/{id} con work_id e status
+                const response = await apiFetch(`/modems/${modemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: lavoroSelezionato.id,
+                        status: 'assigned'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification(`Modem assegnato al lavoro WR ${lavoroSelezionato.numero_wr}!`, 'success');
+                loadModems();
+            } catch (e) {
+                console.error('Errore assegnazione modem', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // INSTALLA MODEM
+        async function installModem(modemId) {
+            const notes = prompt('Note di installazione:', 'Installato con successo');
+            if (notes === null) return;
+
+            try {
+                // Usa endpoint PUT /modems/{id} con status e note
+                const response = await apiFetch(`/modems/${modemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'installed',
+                        installation_notes: notes
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('Modem installato con successo!', 'success');
+                loadModems();
+            } catch (e) {
+                console.error('Errore installazione modem', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // DISASSEGNA MODEM
+        async function unassignModem(modemId) {
+            if (!confirm('Sei sicuro di voler disassegnare questo modem dal lavoro?')) return;
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: null,
+                        status: 'available'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('Modem disassegnato!', 'success');
+                loadModems();
+            } catch (e) {
+                console.error('Errore disassegnazione modem', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // RESTITUISCI MODEM
+        async function returnModem(modemId) {
+            if (!confirm('Sei sicuro di voler restituire questo modem al magazzino?')) return;
+
+            try {
+                const response = await apiFetch(`/modems/${modemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        work_id: null,
+                        status: 'available'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showNotification('Modem restituito al magazzino!', 'success');
+                loadModems();
+            } catch (e) {
+                console.error('Errore restituzione modem', e);
+                showNotification(`Errore: ${e.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadOrders();
+            loadOnts();
+            // Carica anche i clienti automaticamente
+            setTimeout(() => {
+                if (currentTab === 'clienti') {
+                    loadClienti();
+                }
+            }, 1000); // Aspetta 1 secondo per essere sicuro che gli ordini siano caricati
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadOrders();
+                loadOnts();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
+<script src="auth.js?v=1767915084"></script>

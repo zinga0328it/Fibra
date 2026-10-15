@@ -14,6 +14,7 @@ BOT_COMMANDS = [
     {"command": "miei_lavori", "description": "I tuoi lavori"},
     {"command": "accetta", "description": "Accetta un lavoro"},
     {"command": "rifiuta", "description": "Rifiuta un lavoro"},
+    {"command": "sospendi", "description": "Sospendi lavoro con motivo e data"},
     {"command": "chiudi", "description": "Chiudi un lavoro"},
 ]
 

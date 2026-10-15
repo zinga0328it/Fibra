@@ -122,6 +122,52 @@ def test_create_team_and_technician_and_work():
 
     telegram_utils.send_message_to_telegram = fake_send
 
+    # create and suspend a work lacking appointment to reproduce misalignment bug
+    tmp_uns = {"numero_wr": "UNSCHED1", "operatore": "OpenFiber", "indirizzo": "Via NoDate 1", "nome_cliente": "ACME", "tipo_lavoro": "attivazione"}
+    res = client.post("/works/", json=tmp_uns, headers=headers)
+    assert res.status_code == 200
+    uns_id = res.json().get("id")
+    res = client.put(f"/works/{uns_id}/assign/{tech_id}", headers=headers)
+    assert res.status_code == 200
+    res = client.put(f"/works/{uns_id}", json={"stato": "sospeso"}, headers=headers)
+    assert res.status_code == 200
+
+    # now query /telegram/webhook with /miei_lavori and check message includes warning
+    webhook_payload_uns = {
+        "update_id": 123456,
+        "message": {
+            "message_id": 99,
+            "from": {"id": int(tg_id), "is_bot": False, "first_name": "Tech"},
+            "chat": {"id": int(tg_id), "type": "private"},
+            "date": 1600000010,
+            "text": "/miei_lavori"
+        }
+    }
+    res = client.post("/telegram/webhook", json=webhook_payload_uns)
+    assert res.status_code == 200
+    assert res.json().get("ok") is True
+    assert any("Data appuntamento non impostata" in t[1] or "📅 N/D" in t[1] for t in notified)
+
+    # --- SOSPESO FILTERING ---
+    # /miei_lavori should show ONLY sospeso + non-archived works
+    # create two additional works, set both to sospeso
+    w_rm = {"numero_wr": "WRRM1", "operatore": "Op", "indirizzo": "Via A", "nome_cliente": "X", "tipo_lavoro": "attivazione"}
+    w_to = {"numero_wr": "WRTO1", "operatore": "Op", "indirizzo": "Via B", "nome_cliente": "Y", "tipo_lavoro": "attivazione"}
+    res = client.post("/works/", json=w_rm, headers=headers); assert res.status_code == 200; rm_id = res.json().get("id")
+    res = client.post("/works/", json=w_to, headers=headers); assert res.status_code == 200; to_id = res.json().get("id")
+    # assign both to technician
+    res = client.put(f"/works/{rm_id}/assign/{tech_id}", headers=headers); assert res.status_code == 200
+    res = client.put(f"/works/{to_id}/assign/{tech_id}", headers=headers); assert res.status_code == 200
+    # set both to sospeso so they appear in /miei_lavori
+    res = client.put(f"/works/{rm_id}", json={"stato": "sospeso"}, headers=headers); assert res.status_code == 200
+    res = client.put(f"/works/{to_id}", json={"stato": "sospeso"}, headers=headers); assert res.status_code == 200
+    # query again, both sospeso works should appear
+    notified.clear()
+    res = client.post("/telegram/webhook", json=webhook_payload_uns)
+    assert res.status_code == 200
+    assert any("WRRM1" in t[1] for t in notified)
+    assert any("WRTO1" in t[1] for t in notified)
+
     # Create a second work to test webhook
     tmp2 = {"numero_wr": "TESTWR2", "operatore": "OpenFiber", "indirizzo": "Via Test 2", "nome_cliente": "ACME", "tipo_lavoro": "attivazione"}
     res = client.post("/works/", json=tmp2, headers=headers)
@@ -171,7 +217,7 @@ def test_create_team_and_technician_and_work():
 
     # Ensure the bot notification was triggered
     assert len(notified) >= 1
-    assert notified[0][0] == tg_id
+    assert str(notified[0][0]) == str(tg_id)
 
     # Simulate webhook to request help
     webhook_payload_help = {
@@ -188,7 +234,7 @@ def test_create_team_and_technician_and_work():
     assert res.status_code == 200
     assert res.json().get("ok") is True
     # Ensure the bot sent the help text
-    assert any("Mostra questo messaggio di aiuto" in t[1] for t in notified)
+    assert any("BOT FTTH - COMANDI" in t[1] for t in notified)
 
     # Simulate webhook to request help with bot mention
     webhook_payload_help_mention = {
@@ -204,7 +250,7 @@ def test_create_team_and_technician_and_work():
     res = client.post("/telegram/webhook", json=webhook_payload_help_mention)
     assert res.status_code == 200
     assert res.json().get("ok") is True
-    assert any("Mostra questo messaggio di aiuto" in t[1] for t in notified)
+    assert any("BOT FTTH - COMANDI" in t[1] for t in notified)
 
     # Simulate webhook to close a work via /chiudi@bot
     # First create a work and assign to the technician

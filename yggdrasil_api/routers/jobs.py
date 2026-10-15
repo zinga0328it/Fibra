@@ -36,9 +36,11 @@ job_counter = 0
 
 import os
 API_KEY = os.getenv("YGG_API_KEY", "your-secure-yggdrasil-key-here")
+API_GPTS = os.getenv("API_GPTS")
 
 async def verify_key(x_key: str = Header(..., alias="X-KEY")):
-    if x_key != API_KEY:
+    valid_keys = {k for k in (API_KEY, API_GPTS) if k}
+    if x_key not in valid_keys:
         raise HTTPException(status_code=403, detail="Invalid API key")
     return x_key
 

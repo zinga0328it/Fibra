@@ -26,6 +26,7 @@ import uvicorn
 YGGDRASIL_HOST = os.getenv("YGG_HOST", "200:421e:6385:4a8b:dca7:cfb:197f:e9c3")
 YGGDRASIL_PORT = int(os.getenv("YGG_PORT", "6040"))
 API_KEY = os.getenv("YGG_API_KEY", "your-secure-yggdrasil-key-here")
+API_GPTS = os.getenv("API_GPTS")
 
 # Database configuration - point to main project database
 MAIN_PROJECT_DIR = Path(__file__).parent.parent
@@ -61,7 +62,8 @@ app.add_middleware(
 
 async def verify_api_key(x_key: str = Header(..., alias="X-KEY")):
     """Verify API key from X-KEY header"""
-    if x_key != API_KEY:
+    valid_keys = {k for k in (API_KEY, API_GPTS) if k}
+    if x_key not in valid_keys:
         raise HTTPException(status_code=403, detail="Invalid API key")
     return x_key
 

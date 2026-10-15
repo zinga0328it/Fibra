@@ -273,7 +273,7 @@
         const YGGDRASIL_IP = "200:421e:6385:4a8b:dca7:cfb:197f:e9c3";
         const API_PORT = 6030;
         const API_BASE = `http://[${YGGDRASIL_IP}]:${API_PORT}`;
-        const API_KEY = "JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=";
+        const API_KEY = prompt("Inserisci la chiave API", "");
 
         // ============ FUNZIONI API ============
         function apiFetch(path, options = {}) {

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrale Operativa FTTH</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #eee; }
+        .header {
+            background: #16213e;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f3460;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header h1 { font-size: 1.3em; color: #e94560; }
+        .header .status-bar { display: flex; gap: 20px; font-size: 0.85em; flex-wrap: wrap; }
+        .header .status-item { display: flex; align-items: center; gap: 6px; }
+        .header .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot-blue { background: #3498db; }
+        .dot-orange { background: #f39c12; }
+        .dot-red { background: #e74c3c; animation: pulse 1.5s infinite; }
+        .dot-green { background: #2ecc71; }
+        .dot-yellow { background: #f1c40f; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+        .container { display: flex; height: calc(100vh - 52px); }
+        .sidebar {
+            width: 320px;
+            background: #16213e;
+            overflow-y: auto;
+            border-right: 1px solid #0f3460;
+            padding: 12px;
+        }
+        .sidebar h3 { color: #e94560; font-size: 0.9em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #0f3460; }
+        .tech-card, .work-card {
+            background: #1a1a2e;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tech-card:hover, .work-card:hover { border-color: #e94560; transform: translateX(3px); }
+        .tech-card .name { font-weight: 600; font-size: 0.95em; }
+        .tech-card .info { font-size: 0.78em; color: #aaa; margin-top: 2px; }
+        .tech-card .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.72em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .btn-fine-sos {
+            margin-top: 8px;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.75em;
+            font-weight: 700;
+            cursor: pointer;
+            background: #2ecc71;
+            color: #000;
+        }
+        .btn-fine-sos:hover { background: #27ae60; }
+        .badge-disponibile { background: #2ecc71; color: #000; }
+        .badge-occupato { background: #f39c12; color: #000; }
+        .badge-sos { background: #e74c3c; color: #fff; animation: pulse 1.5s infinite; }
+        .badge-offline { background: #555; color: #aaa; }
+        .work-card .wr { font-weight: 600; font-size: 0.9em; color: #3498db; }
+        .work-card .addr { font-size: 0.78em; color: #aaa; }
+        .work-card .work-stato {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.72em;
+            font-weight: 600;
+        }
+        .stato-aperto { background: #2ecc71; color: #000; }
+        .stato-sospeso { background: #f1c40f; color: #000; }
+        .stato-in_corso { background: #3498db; color: #fff; }
+        #map { flex: 1; }
+        .sos-panel {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            width: 350px;
+            background: #2c0b0b;
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+        }
+        .sos-panel.active { display: block; }
+        .sos-panel h3 { color: #e74c3c; margin-bottom: 10px; }
+        .sos-panel .close-btn {
+            position: absolute; top: 8px; right: 12px;
+            background: none; border: none; color: #e74c3c; font-size: 1.3em; cursor: pointer;
+        }
+        .sos-result { background: #1a1a2e; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #e74c3c; }
+        .sos-result .name { font-weight: 600; font-size: 0.9em; }
+        .sos-result .dist { color: #e94560; font-weight: 600; font-size: 0.85em; }
+        .sos-result .phone { font-size: 0.8em; color: #aaa; margin-top: 2px; }
+        .map-controls {
+            position: fixed; bottom: 20px; right: 20px; z-index: 999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .map-controls button {
+            padding: 10px 16px; border: none; border-radius: 8px;
+            font-size: 0.85em; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .btn-refresh { background: #3498db; color: #fff; }
+        .btn-refresh:hover { background: #2980b9; }
+        .btn-sync { background: #e74c3c; color: #fff; }
+        .btn-sync:hover { background: #c0392b; }
+        .btn-center { background: #2ecc71; color: #000; }
+        .btn-center:hover { background: #27ae60; }
+        .last-update {
+            position: fixed; bottom: 20px; left: 340px;
+            background: rgba(22, 33, 62, 0.9); padding: 6px 14px;
+            border-radius: 6px; font-size: 0.75em; color: #aaa; z-index: 999;
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: #1a1a2e; }
+        .sidebar::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>🖥️ Centrale Operativa FTTH</h1>
+    <div class="status-bar">
+        <div class="status-item"><span class="dot dot-blue"></span> <span id="count-disponibili">0</span> Disponibili</div>
+        <div class="status-item"><span class="dot dot-orange"></span> <span id="count-occupati">0</span> Occupati</div>
+        <div class="status-item"><span class="dot dot-red"></span> <span id="count-sos">0</span> SOS</div>
+        <div class="status-item"><span class="dot dot-green"></span> <span id="count-aperti">0</span> Aperti</div>
+        <div class="status-item"><span class="dot dot-yellow"></span> <span id="count-sospesi">0</span> Sospesi</div>
+        <div class="status-item"><span class="dot dot-blue"></span> <span id="count-incorso">0</span> In Corso</div>
+    </div>
+</div>
+<div class="container">
+    <div class="sidebar">
+        <h3>👷 TECNICI</h3>
+        <div id="tech-list"></div>
+        <h3 style="margin-top: 16px;">📋 LAVORI ATTIVI</h3>
+        <div id="work-list"></div>
+    </div>
+    <div id="map"></div>
+</div>
+<div class="sos-panel" id="sos-panel">
+    <button class="close-btn" onclick="closeSOS()">✕</button>
+    <h3>🚨 SOS ATTIVO</h3>
+    <div id="sos-content"></div>
+</div>
+<div class="map-controls">
+    <button class="btn-refresh" onclick="fetchData()" title="Aggiorna mappa e sincronizza stato tecnici">🔄 Aggiorna</button>
+    <button class="btn-sync" onclick="syncTecniciStatus()" title="Ricalcola subito lo stato di tutti i tecnici">🔄 Sincronizza Tecnici</button>
+    <button class="btn-center" onclick="centerMap()">📍 Centra Italia</button>
+</div>
+<div class="last-update">Ultimo aggiornamento: <span id="last-update-time">--</span></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── ENDPOINT VIA APACHE PROXY (HTTPS) ───────────────────────────────
+// Apache invia le richieste a /gestionale/ → Yggdrasil IPv6 backend
+const API_BASE = '/gestionale';
+const POLL_INTERVAL = 15000; // Aggiornamento ogni 15 secondi
+const DEFAULT_CENTER = [41.9, 12.5];
+const DEFAULT_ZOOM = 10;
+
+const map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 19,
+}).addTo(map);
+
+const techLayer = L.layerGroup().addTo(map);
+const workLayer = L.layerGroup().addTo(map);
+
+function createIcon(emoji, size = 28) {
+    return L.divIcon({
+        html: `<div style="font-size:${size}px;text-align:center;line-height:${size}px;">${emoji}</div>`,
+        iconSize: [size, size], iconAnchor: [size/2, size/2], className: '',
+    });
+}
+
+const TECH_ICONS = {
+    disponibile: createIcon('🔵', 30),
+    occupato: createIcon('🟠', 30),
+    sos: createIcon('🔴', 36),
+    offline: createIcon('⚫', 24),
+};
+
+const WORK_ICONS = {
+    aperto: createIcon('📗', 24),
+    sospeso: createIcon('📙', 24),
+    in_corso: createIcon('📘', 24),
+};
+
+let currentData = { technicians: [], works: [] };
+
+async function fetchData() {
+    try {
+        // Cache-busting con timestamp query parameter
+        const cacheBuster = `?_t=${Date.now()}`;
+        const resp = await fetch(`${API_BASE}/map-data${cacheBuster}`, {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        currentData = await resp.json();
+        renderMap();
+        renderSidebar();
+        updateCounters();
+        document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('it-IT');
+    } catch (err) {
+        console.error('Errore fetch map-data:', err);
+    }
+}
+
+function renderMap() {
+    techLayer.clearLayers();
+    workLayer.clearLayers();
+
+    currentData.technicians.forEach(tech => {
+        if (tech.lat && tech.lng) {
+            const icon = TECH_ICONS[tech.stato_posizione] || TECH_ICONS.offline;
+            const marker = L.marker([tech.lat, tech.lng], { icon }).addTo(techLayer);
+            let popup = `<b>👷 ${tech.nome} ${tech.cognome}</b><br>📞 ${tech.telefono}<br>🏷️ Stato: <b>${tech.stato_posizione}</b>`;
+            if (tech.note) popup += `<br>📝 ${tech.note}`;
+            marker.bindPopup(popup);
+        }
+    });
+
+    currentData.works.forEach(work => {
+        if (work.lat && work.lng) {
+            const icon = WORK_ICONS[work.stato] || WORK_ICONS.aperto;
+            const marker = L.marker([work.lat, work.lng], { icon }).addTo(workLayer);
+            let popup = `<b>🔧 Lavoro #${work.id}</b><br>📍 ${work.indirizzo}<br>🏷️ ${work.stato}`;
+            marker.bindPopup(popup);
+        }
+    });
+}
+
+function renderSidebar() {
+    const techList = document.getElementById('tech-list');
+    techList.innerHTML = '';
+    currentData.technicians.forEach(tech => {
+        const div = document.createElement('div');
+        div.className = 'tech-card';
+        div.innerHTML = `
+            <div class="name">${tech.nome} ${tech.cognome}</div>
+            <div class="info">📞 ${tech.telefono}</div>
+            <span class="status-badge badge-${tech.stato_posizione}">${tech.stato_posizione}</span>
+            ${tech.stato_posizione === 'sos' ? `<div><button class="btn-fine-sos" onclick="clearSOS(event, ${tech.id})">🟢 Fine SOS</button></div>` : ''}
+        `;
+        div.onclick = () => centerOnTech(tech);
+        techList.appendChild(div);
+    });
+
+    const workList = document.getElementById('work-list');
+    workList.innerHTML = '';
+    currentData.works.forEach(work => {
+        const div = document.createElement('div');
+        div.className = 'work-card';
+        div.innerHTML = `
+            <div class="wr">Lavoro #${work.id}</div>
+            <div class="addr">${work.indirizzo}</div>
+            <span class="work-stato stato-${work.stato}">${work.stato}</span>
+        `;
+        div.onclick = () => centerOnWork(work);
+        workList.appendChild(div);
+    });
+}
+
+function updateCounters() {
+    const stats = {
+        disponibili: 0,
+        occupati: 0,
+        sos: 0,
+        aperti: 0,
+        sospesi: 0,
+        incorso: 0,
+    };
+
+    currentData.technicians.forEach(tech => {
+        if (tech.stato_posizione === 'disponibile') stats.disponibili++;
+        else if (tech.stato_posizione === 'occupato') stats.occupati++;
+        else if (tech.stato_posizione === 'sos') stats.sos++;
+    });
+
+    currentData.works.forEach(work => {
+        if (work.stato === 'aperto') stats.aperti++;
+        else if (work.stato === 'sospeso') stats.sospesi++;
+        else if (work.stato === 'in_corso') stats.incorso++;
+    });
+
+    document.getElementById('count-disponibili').textContent = stats.disponibili;
+    document.getElementById('count-occupati').textContent = stats.occupati;
+    document.getElementById('count-sos').textContent = stats.sos;
+    document.getElementById('count-aperti').textContent = stats.aperti;
+    document.getElementById('count-sospesi').textContent = stats.sospesi;
+    document.getElementById('count-incorso').textContent = stats.incorso;
+}
+
+function centerOnTech(tech) {
+    if (tech.lat && tech.lng) {
+        map.setView([tech.lat, tech.lng], 14);
+    }
+}
+
+function centerOnWork(work) {
+    if (work.lat && work.lng) {
+        map.setView([work.lat, work.lng], 14);
+    }
+}
+
+function centerMap() {
+    map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+}
+
+function triggerSOS(techId) {
+    const tech = currentData.technicians.find(t => t.id === techId);
+    if (!tech) return;
+
+    const distByTech = currentData.technicians
+        .filter(t => t.stato_posizione === 'disponibile' && t.id !== techId)
+        .map(t => ({
+            ...t,
+            dist: haversine(tech.lat, tech.lng, t.lat, t.lng)
+        }))
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 5);
+
+    const sosContent = document.getElementById('sos-content');
+    sosContent.innerHTML = '';
+
+    distByTech.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'sos-result';
+        div.innerHTML = `
+            <div class="name">${t.nome} ${t.cognome}</div>
+            <div class="dist">📍 ${(t.dist * 1000).toFixed(0)}m</div>
+            <div class="phone">📞 ${t.telefono}</div>
+        `;
+        sosContent.appendChild(div);
+    });
+
+    document.getElementById('sos-panel').classList.add('active');
+}
+
+function closeSOS() {
+    document.getElementById('sos-panel').classList.remove('active');
+}
+
+async function clearSOS(event, techId) {
+    if (event) event.stopPropagation();
+    try {
+        const resp = await fetch(`${API_BASE}/clear-sos/${techId}`, {
+            method: 'POST',
+            cache: 'no-cache'
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        // Leggi risposta JSON
+        const result = await resp.json();
+        console.log('clearSOS: API success, new_status =', result.new_status);
+
+        // Aggiorna subito stato locale per feedback immediato
+        const techIndex = currentData.technicians.findIndex(t => t.id === techId);
+        if (techIndex !== -1) {
+            currentData.technicians[techIndex].stato_posizione = result.new_status || 'disponibile';
+            console.log(`clearSOS: Tech ${techId} aggiornato localmente a ${currentData.technicians[techIndex].stato_posizione}`);
+        }
+
+        // Refresh immediato UI senza aspettare
+        renderMap();
+        renderSidebar();
+        updateCounters();
+
+        // Force fetch completo dopo 200ms per sincronizzare tutto
+        setTimeout(() => fetchData(), 200);
+
+        closeSOS();
+        alert('✅ SOS DISATTIVATO! La luce rossa è diventata verde.');
+    } catch (err) {
+        console.error('Errore Fine SOS:', err);
+        alert('❌ Errore durante Fine SOS: ' + err.message);
+    }
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+async function syncTecniciStatus() {
+    try {
+        console.log('Aggiornamento rapido mappa...');
+        // Aggiorna immediatamente la mappa
+        await fetchData();
+    } catch (err) {
+        console.error('Errore aggiornamento:', err);
+    }
+}
+
+// ── INIZIALIZZAZIONE ───────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('INIZIALIZZO CENTRALE OPERATIVA');
+    fetchData();
+    setInterval(fetchData, POLL_INTERVAL);
+});
+</script>
+</body>
+</html>

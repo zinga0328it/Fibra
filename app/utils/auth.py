@@ -109,9 +109,11 @@ def auth_required(roles: list[str] | None = None):
     from fastapi import Header
 
     def _auth(x_api_key: str | None = Header(None), authorization: str | None = Header(None), db: Session = Depends(get_db)):
-        API_KEY = os.getenv("API_KEY")
+        primary_api_key = os.getenv("API_KEY")
+        secondary_api_key = os.getenv("API_GPTS")
+        valid_api_keys = {k for k in (primary_api_key, secondary_api_key) if k}
         # If API key is provided and correct, allow
-        if x_api_key and API_KEY and x_api_key == API_KEY:
+        if x_api_key and x_api_key in valid_api_keys:
             return True
         # Else check Authorization header for Bearer token
         if not authorization:

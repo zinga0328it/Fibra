@@ -105,7 +105,7 @@ Una volta aggiunto il Telegram ID, il tecnico può usare:
 - `/help` - Mostra lista comandi
 
 ### Gestione Lavori
-- `/miei_lavori` - Mostra tutti i lavori assegnati
+- `/miei_lavori` - Mostra solo i lavori **sospesi** assegnati al tecnico (nivella anche archiviati)
 - `/accetta <WR>` - Accetta un lavoro (es: `/accetta 15699897`)
 - `/rifiuta <WR>` - Rifiuta un lavoro
 - `/chiudi <WR>` - Chiude un lavoro completato

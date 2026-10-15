@@ -161,18 +161,29 @@ async def handle_telegram_command(chat_id: int, text: str, user_id: int):
             await send_telegram_message_to_chat(chat_id, welcome_msg)
 
         elif text.startswith("/miei_lavori"):
-            # Get technician by telegram_id
+            # Get technician by telegram_id - mostra SOLO sospesi non archiviati
             db = SessionLocal()
             try:
                 technician = db.query(Technician).filter(Technician.telegram_id == str(user_id)).first()
                 if technician:
-                    works = db.query(Work).filter(Work.tecnico_assegnato_id == technician.id, Work.stato != "chiuso").all()
+                    works = db.query(Work).filter(
+                        Work.tecnico_assegnato_id == technician.id,
+                        Work.stato == "sospeso",
+                        Work.archived == False,
+                    ).all()
                     if works:
-                        msg = f"📋 I tuoi lavori ({len(works)}):\n\n"
+                        msg = f"⏸️ Lavori sospesi ({len(works)}):\n\n"
                         for work in works:
-                            msg += f"🔧 WR {work.numero_wr}\n📍 {work.indirizzo or 'N/D'}\n📞 {work.nome_cliente or 'N/D'}\n📅 Stato: {work.stato}\n\n"
+                            msg += f"📋 WR {work.numero_wr}\n📍 {work.indirizzo or 'N/D'}\n👤 {work.nome_cliente or 'N/D'}"
+                            if work.motivo_rinvio:
+                                msg += f"\n⚠️ Motivo: {work.motivo_rinvio}"
+                            if work.data_appuntamento:
+                                msg += f"\n📅 {work.data_appuntamento.strftime('%d/%m/%Y %H:%M')}"
+                            else:
+                                msg += "\n📅 ⚠️ Data non impostata"
+                            msg += "\n\n"
                     else:
-                        msg = "✅ Non hai lavori assegnati al momento."
+                        msg = "✅ Non hai lavori sospesi al momento."
                 else:
                     msg = "❌ Non sei registrato come tecnico. Contatta l'amministratore."
                 await send_telegram_message_to_chat(chat_id, msg)
@@ -192,7 +203,7 @@ async def handle_telegram_command(chat_id: int, text: str, user_id: int):
             parts = text.split()
             if len(parts) > 1:
                 work_number = parts[1]
-                await update_work_status(chat_id, work_number, "sospeso", user_id)
+                await update_work_status(chat_id, work_number, "aperto", user_id, unassign=True)
             else:
                 await send_telegram_message_to_chat(chat_id, "Uso: /rifiuta <numero_WR>")
 
@@ -237,7 +248,7 @@ async def send_telegram_message_to_chat(chat_id: int, text: str):
     except Exception as e:
         print(f"Error sending message: {e}")
 
-async def update_work_status(chat_id: int, work_number: str, new_status: str, user_id: int):
+async def update_work_status(chat_id: int, work_number: str, new_status: str, user_id: int, unassign: bool = False):
     """Update work status via Telegram command"""
     try:
         from app.database import SessionLocal
@@ -261,27 +272,36 @@ async def update_work_status(chat_id: int, work_number: str, new_status: str, us
             # Update work status
             old_status = work.stato
             work.stato = new_status
-            work.data_aggiornamento = datetime.utcnow()
+
+            # Se chiuso, traccia chi ha completato
+            if new_status == "chiuso":
+                work.data_chiusura = datetime.now()
+                work.tecnico_chiusura_id = technician.id
+
+            # Se rifiutato, rimuovi assegnazione
+            if unassign:
+                work.tecnico_assegnato_id = None
 
             # Create work event
             event = WorkEvent(
                 work_id=work.id,
-                technician_id=technician.id,
+                timestamp=datetime.now(),
                 event_type="status_change",
-                old_value=old_status,
-                new_value=new_status,
-                notes=f"Aggiornato via Telegram da {technician.nome} {technician.cognome}"
+                description=f"{old_status} → {new_status} via Telegram da {technician.nome} {technician.cognome}",
+                user_id=technician.id,
             )
             db.add(event)
             db.commit()
 
-            status_emoji = {"in_corso": "▶️", "sospeso": "⏸️", "chiuso": "✅"}
+            status_emoji = {"in_corso": "▶️", "sospeso": "⏸️", "chiuso": "✅", "aperto": "⏸️"}
             emoji = status_emoji.get(new_status, "🔄")
 
-            await send_telegram_message_to_chat(
-                chat_id,
-                f"{emoji} Lavoro {work_number} aggiornato a: {new_status.replace('_', ' ').title()}"
-            )
+            msg = f"{emoji} Lavoro {work_number} aggiornato a: {new_status.replace('_', ' ').title()}"
+            if new_status == "chiuso":
+                msg += f"\n👷 Completato da: {technician.nome} {technician.cognome}"
+            if unassign:
+                msg += "\nIl lavoro torna disponibile per riassegnazione."
+            await send_telegram_message_to_chat(chat_id, msg)
 
         finally:
             db.close()

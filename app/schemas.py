@@ -32,6 +32,11 @@ class TechnicianOut(BaseModel):
     telefono: str
     squadra: Optional[TeamOut]
     telegram_id: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    stato_posizione: Optional[str] = "offline"
+    tracking_attivo: bool = False
+    last_position_update: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 class TechnicianUpdate(BaseModel):
@@ -40,6 +45,10 @@ class TechnicianUpdate(BaseModel):
     telefono: Optional[str] = None
     squadra_id: Optional[int] = None
     telegram_id: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    stato_posizione: Optional[str] = None
+    tracking_attivo: Optional[bool] = None
 
     @field_validator('telefono')
     @classmethod
@@ -89,8 +98,16 @@ class WorkOut(BaseModel):
     stato: Optional[str]
     data_apertura: Optional[datetime]
     data_chiusura: Optional[datetime]
+    note_chiusura: Optional[str] = None
+    modem_sn: Optional[str] = None
+    data_appuntamento: Optional[datetime] = None
+    note_appuntamento: Optional[str] = None
+    motivo_rinvio: Optional[str] = None
     tecnico_assegnato: Optional[TechnicianOut]
     extra_fields: Optional[Dict] = None
+    archived: bool = False
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -121,6 +138,23 @@ class WorkUpdate(BaseModel):
     requires_ont: Optional[bool] = None
     modem_delivered: Optional[bool] = None
     ont_delivered: Optional[bool] = None
+    note_chiusura: Optional[str] = None
+    modem_sn: Optional[str] = None
+
+    # Calendario appuntamenti
+    data_appuntamento: Optional[datetime] = None
+    note_appuntamento: Optional[str] = None
+    motivo_rinvio: Optional[str] = None
+
+    @field_validator('motivo_rinvio')
+    @classmethod
+    def validate_motivo_rinvio(cls, v: Optional[str]):
+        if v is None:
+            return v
+        allowed = {"pioggia", "cavo_finito", "scala_insufficiente", "cliente_assente", "problema_logistico", "altro"}
+        if v not in allowed:
+            raise ValueError('Invalid motivo_rinvio')
+        return v
 
     @field_validator('stato')
     @classmethod

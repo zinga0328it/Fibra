@@ -32,6 +32,7 @@ class Work(Base):
     # Equipment requirements flags
     requires_ont = Column(Boolean, default=False)
     requires_modem = Column(Boolean, default=False)
+    archived = Column(Boolean, default=False)   # soft-delete flag
     
     # Delivery tracking
     ont_delivered = Column(Boolean, default=False)
@@ -40,6 +41,20 @@ class Work(Base):
     # Additional costs
     ont_cost = Column(Float, default=0.0)
     modem_cost = Column(Float, default=0.0)
+
+    # Geolocalizzazione (da geocoding indirizzo cliente)
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
+
+    # Note chiusura tecnico (campo libero compilato dal tecnico alla chiusura)
+    note_chiusura = Column(Text, nullable=True)
+    # Seriale modem inserito dal tecnico
+    modem_sn = Column(String, nullable=True)
+
+    # Calendario appuntamenti
+    data_appuntamento = Column(DateTime, nullable=True)
+    note_appuntamento = Column(Text, nullable=True)  # scala alta, giovedi mattina, cliente non risponde prima delle 18, ecc.
+    motivo_rinvio = Column(String, nullable=True)  # pioggia, cavo_finito, scala_insufficiente, cliente_assente, altro
 
 class Technician(Base):
     __tablename__ = "technicians"
@@ -50,6 +65,13 @@ class Technician(Base):
     telefono = Column(String)
     squadra_id = Column(Integer, ForeignKey("teams.id"))
     telegram_id = Column(String, nullable=True)
+
+    # Geolocalizzazione tecnico (stile delivery rider)
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
+    stato_posizione = Column(String, default="offline")  # disponibile, occupato, sos, offline
+    tracking_attivo = Column(Boolean, default=False)
+    last_position_update = Column(DateTime, nullable=True)
 
     squadra = relationship("Team")
 

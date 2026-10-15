@@ -45,6 +45,25 @@ def test_endpoint(name, method, url, data=None, headers=None, requires_auth=Fals
         print(f"❌ ERROR: {str(e)}")
         return False
 
+def request_json(method, url, data=None, headers=None, requires_auth=False):
+    if headers is None:
+        headers = {}
+    if requires_auth:
+        headers["X-API-Key"] = API_KEY
+
+    if method.upper() == "GET":
+        response = requests.get(url, headers=headers, timeout=10)
+    elif method.upper() == "POST":
+        headers["Content-Type"] = "application/json"
+        response = requests.post(url, json=data, headers=headers, timeout=10)
+    elif method.upper() == "PUT":
+        headers["Content-Type"] = "application/json"
+        response = requests.put(url, json=data, headers=headers, timeout=10)
+    else:
+        raise ValueError(f"Unsupported method: {method}")
+
+    return response
+
 def main():
     print("🚀 Starting FTTH API Tests on port 6030")
     print(f"Base URL: {BASE_URL}")
@@ -97,6 +116,53 @@ def main():
         "location": "Test Location"
     }
     test_endpoint("Create Modem", "POST", f"{BASE_URL}/modems/", modem_data, requires_auth=True)
+
+    # Test 10: Create and assign modem to a new work
+    unique_suffix = int(time.time())
+    assign_work_data = {
+        "numero_wr": f"TEST-ASSIGN-{unique_suffix}",
+        "operatore": "Test Assign Operator",
+        "indirizzo": "Via Assign Test 123",
+        "nome_cliente": "Assign Client",
+        "stato": "aperto",
+        "tipo_lavoro": "attivazione",
+        "note": "Work created for modem assignment test"
+    }
+    work_resp = request_json("POST", f"{BASE_URL}/works/", assign_work_data, requires_auth=True)
+    if work_resp.status_code == 200:
+        work = work_resp.json()
+        print(f"✅ Work created for assignment: id={work['id']} numero_wr={work['numero_wr']}")
+    else:
+        print(f"❌ Failed to create work for assignment: {work_resp.status_code} {work_resp.text}")
+        work = None
+
+    assign_modem_data = {
+        "serial_number": f"TEST-MODEM-ASSIGN-{unique_suffix}",
+        "model": "ZTE",
+        "type": "fiber",
+        "manufacturer": "ZTE",
+        "location": "Test Location"
+    }
+    modem_resp = request_json("POST", f"{BASE_URL}/modems/", assign_modem_data, requires_auth=True)
+    if modem_resp.status_code == 200:
+        modem = modem_resp.json()
+        print(f"✅ Modem created for assignment: id={modem['id']} serial_number={modem['serial_number']}")
+    else:
+        print(f"❌ Failed to create modem for assignment: {modem_resp.status_code} {modem_resp.text}")
+        modem = None
+
+    if work and modem:
+        assign_resp = request_json("PUT", f"{BASE_URL}/modems/{modem['id']}/assign/{work['id']}", requires_auth=True)
+        if assign_resp.status_code == 200:
+            print("✅ Modem assignment succeeded")
+            verify_resp = request_json("GET", f"{BASE_URL}/works/{work['id']}/equipment", requires_auth=True)
+            if verify_resp.status_code == 200:
+                print(f"✅ Work equipment after assignment: {verify_resp.json()}")
+            else:
+                print(f"❌ Work equipment check failed: {verify_resp.status_code} {verify_resp.text}")
+        else:
+            print(f"❌ Modem assignment failed: {assign_resp.status_code} {assign_resp.text}")
+
 
     # Test 10: Nuovo endpoint ingest (con API key)
     ingest_data = {

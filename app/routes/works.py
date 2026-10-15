@@ -21,6 +21,7 @@ import json
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 import app.utils.telegram as telegram_utils
+from app.utils.geo import geocode_address_sync
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -90,12 +91,32 @@ async def upload_work(file: UploadFile = File(...), db: Session = Depends(get_db
                 event = WorkEvent(work_id=existing.id, timestamp=datetime.now(), event_type="updated", description="Work updated from CSV", user_id=None)
                 db.add(event)
                 db.commit()
+
+                if existing.indirizzo and (existing.lat is None or existing.lng is None):
+                    try:
+                        coords = geocode_address_sync(existing.indirizzo)
+                        if coords:
+                            existing.lat, existing.lng = coords
+                            db.commit()
+                    except Exception as e:
+                        logging.getLogger('app.routes.works').warning('Geocoding failed for existing work %d: %s', existing.id, e)
+
                 works_created.append(existing)
             else:
                 work = Work(**{k: v for k, v in mapped_data.items() if k in ["numero_wr", "operatore", "indirizzo", "nome_cliente", "tipo_lavoro", "note"]}, data_apertura=datetime.now())
                 db.add(work)
                 db.commit()
                 db.refresh(work)
+
+                if work.indirizzo and (work.lat is None or work.lng is None):
+                    try:
+                        coords = geocode_address_sync(work.indirizzo)
+                        if coords:
+                            work.lat, work.lng = coords
+                            db.commit()
+                    except Exception as e:
+                        logging.getLogger('app.routes.works').warning('Geocoding failed for new CSV work %d: %s', work.id, e)
+
                 event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="created", description="Work uploaded from CSV", user_id=None)
                 db.add(event)
                 db.commit()
@@ -179,6 +200,16 @@ async def upload_work(file: UploadFile = File(...), db: Session = Depends(get_db
             event = WorkEvent(work_id=existing.id, timestamp=datetime.now(), event_type="updated", description="Work uploaded and merged", user_id=None)
             db.add(event)
             db.commit()
+
+            if existing.indirizzo and (existing.lat is None or existing.lng is None):
+                try:
+                    coords = geocode_address_sync(existing.indirizzo)
+                    if coords:
+                        existing.lat, existing.lng = coords
+                        db.commit()
+                except Exception as e:
+                    logging.getLogger('app.routes.works').warning('Geocoding failed for merged work %d: %s', existing.id, e)
+
             return existing
         else:
             work = Work(**work_kwargs, data_apertura=datetime.now())
@@ -193,6 +224,16 @@ async def upload_work(file: UploadFile = File(...), db: Session = Depends(get_db
             event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="created", description="Work uploaded", user_id=None)
             db.add(event)
             db.commit()
+
+            if work.indirizzo and (work.lat is None or work.lng is None):
+                try:
+                    coords = geocode_address_sync(work.indirizzo)
+                    if coords:
+                        work.lat, work.lng = coords
+                        db.commit()
+                except Exception as e:
+                    logging.getLogger('app.routes.works').warning('Geocoding failed for uploaded work %d: %s', work.id, e)
+
             notify_new_work(work, db)
             return work
 
@@ -214,6 +255,15 @@ def create_work(payload: WorkCreate, db: Session = Depends(get_db), current_user
     event = WorkEvent(work_id=work.id, timestamp=datetime.now(), event_type="created", description="Work created via API", user_id=None)
     db.add(event)
     db.commit()
+    # Geocoding automatico dell'indirizzo
+    if work.indirizzo and not work.lat:
+        try:
+            coords = geocode_address_sync(work.indirizzo)
+            if coords:
+                work.lat, work.lng = coords
+                db.commit()
+        except Exception as e:
+            logging.getLogger('app.routes.works').warning('Geocoding failed for work %d: %s', work.id, e)
     notify_new_work(work, db)
     return work
 
@@ -257,7 +307,6 @@ def assign_work(work_id: int, tech_id: int, db: Session = Depends(get_db), curre
 👤 <b>Cliente:</b> {work.nome_cliente or 'N/D'}
 📍 <b>Indirizzo:</b> {work.indirizzo or 'N/D'}
 🔧 <b>Tipo:</b> {work.tipo_lavoro or 'N/D'}
-📞 <b>Telefono:</b> {work.telefono_cliente or 'N/D'}
 
 💡 <i>Il lavoro è ora in corso</i>"""
             telegram_utils.send_message_to_telegram(tech.telegram_id, msg)
@@ -296,6 +345,19 @@ def update_status(work_id: int, payload: WorkStatusUpdate | None = None, db: Ses
     work.stato = new_status
     if new_status == "chiuso":
         work.data_chiusura = datetime.now()
+
+    # Aggiorna stato tecnico automaticamente in base allo stato del lavoro
+    if work.tecnico_assegnato_id:
+        tech = db.query(Technician).filter(Technician.id == work.tecnico_assegnato_id).first()
+        if tech:
+            db.flush()
+            has_in_corso = db.query(Work).filter(
+                Work.tecnico_assegnato_id == tech.id,
+                Work.stato == "in_corso",
+                Work.archived == False,
+            ).first()
+            tech.stato_posizione = "occupato" if has_in_corso else "disponibile"
+
     # Verify technician privileges: if current_user is a user, check their role
     if isinstance(current_user, bool):
         # API key used; allow
@@ -353,7 +415,7 @@ def update_work(work_id: int, payload: WorkUpdate, db: Session = Depends(get_db)
         work.stato = update_data['stato']
         if update_data['stato'] == 'chiuso':
             work.data_chiusura = datetime.now()
-    
+
     # Update equipment fields
     if 'requires_modem' in update_data:
         work.requires_modem = update_data['requires_modem']
@@ -364,6 +426,14 @@ def update_work(work_id: int, payload: WorkUpdate, db: Session = Depends(get_db)
     if 'ont_delivered' in update_data:
         work.ont_delivered = update_data['ont_delivered']
     
+    # Update calendario appuntamenti
+    if 'data_appuntamento' in update_data:
+        work.data_appuntamento = update_data['data_appuntamento']
+    if 'note_appuntamento' in update_data:
+        work.note_appuntamento = update_data['note_appuntamento']
+    if 'motivo_rinvio' in update_data:
+        work.motivo_rinvio = update_data['motivo_rinvio']
+
     db.commit()
     # Create events for meaningful changes
     if 'stato' in update_data and update_data['stato'] != old_status:
@@ -407,8 +477,7 @@ def notify_new_work(work: Work, db: Session):
 👤 <b>Cliente:</b> {work.nome_cliente or 'N/D'}
 📍 <b>Indirizzo:</b> {work.indirizzo or 'N/D'}
 🔧 <b>Tipo:</b> {work.tipo_lavoro or 'N/D'}
-📞 <b>Telefono:</b> {work.telefono_cliente or 'N/D'}
-📅 <b>Data apertura:</b> {work.data_apertura.strftime('%d/%m/%Y %H:%M') if work.data_apertura else 'N/D'}
+ <b>Data apertura:</b> {work.data_apertura.strftime('%d/%m/%Y %H:%M') if work.data_apertura else 'N/D'}
 
 💡 <i>Ricorda di confermare l'accettazione con /accetta {work.numero_wr}</i>"""
                 telegram_utils.send_message_to_telegram(tech.telegram_id, msg)

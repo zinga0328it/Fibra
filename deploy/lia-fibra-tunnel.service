@@ -1,0 +1,19 @@
+[Unit]
+Description=Lia Fibra OpenAI MCP tunnel
+Wants=lia-fibra-mcp.service
+After=lia-fibra-mcp.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=%h/ftth-lia-mcp
+ExecStart=%h/ftth-lia-mcp/.tools/tunnel-client/v0.0.16/tunnel-client run --profile-file %h/ftth-lia-mcp/.tools/tunnel-client/profiles/lia-fibra-test.yaml --control-plane.api-key file:%h/.config/lia-fibra/tunnel-api-key --mcp.startup-wait-timeout 60s --log.level warn
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=yes
+LimitCORE=0
+
+[Install]
+WantedBy=default.target

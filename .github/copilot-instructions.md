@@ -21,8 +21,11 @@
   --live enables all 32 Actions and six helpers; --live-read-only remains optional.
   Use only the fixed verified ingress
   https://servicess.net/gestionale-gpt/, client credential in FTTH_API_KEY only.
-  Never acquire relay/internal keys in the client. Only the approved API restart
-  is allowed; do not restart bot, tunnel or unrelated services.
+  Never acquire relay/internal keys in the client. On 2026-10-16 the user also
+  authorized MCP/tunnel recovery and boot persistence: user systemd units
+  lia-fibra-mcp and lia-fibra-tunnel, with linger. See deploy/README.md.
+  Do not restart bot or unrelated services. Tunnel credentials belong only in
+  ~/.config/lia-fibra/tunnel-api-key (600), entered privately in a terminal.
   Do not perform real test writes without an explicit operation/target requested
   by the user. Test mutations with synthetic loopback servers. Keep zero retries;
   unknown write outcomes require reconciliation, never blind resubmission.

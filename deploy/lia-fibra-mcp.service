@@ -1,0 +1,18 @@
+[Unit]
+Description=Lia Fibra Rust MCP (live)
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=%h/ftth-lia-mcp
+ExecStart=/usr/bin/python3 %h/ftth-lia-mcp/scripts/run_live.py
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+KillSignal=SIGINT
+UMask=0077
+NoNewPrivileges=yes
+LimitCORE=0
+
+[Install]
+WantedBy=default.target

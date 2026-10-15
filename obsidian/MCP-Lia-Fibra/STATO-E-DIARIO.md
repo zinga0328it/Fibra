@@ -29,6 +29,21 @@ Aggiornarla dopo verifiche, decisioni e modifiche significative. Non inserire se
   tutti i 17 GET e i 6 helper reali; catalogo ChatGPT aggiornato. Nessuna scrittura
   di collaudo sui dati reali. Rilanciare solo i controlli pertinenti alle nuove modifiche.
 
+## Pubblicazione GitHub verificata il 2026-10-16
+
+- Repository: https://github.com/zinga0328it/Fibra.
+- main (AAA): pubblicati ad01d40 per le correzioni API e 0afb5b7 per le istruzioni
+  sui rami. Questo diario viene aggiornato separatamente dopo la verifica del push.
+- aaa-mcp: creato e pubblicato fino a ef1fbbb, incluso e7abb91 con il MCP completo.
+  Il checkout Rust locale resta su mcp/http-adapter-validation e traccia
+  origin/aaa-mcp. Nessuna fusione dei due alberi o delle due cronologie.
+- Confrontati i riferimenti remoti prima e dopo: gli altri sei rami sono invariati.
+  Nessun force push, merge, cancellazione o modifica ai rami degli altri PC.
+- Prima pubblicazione MCP: controllo di tutte le 45 versioni di file nella
+  cronologia contro credenziali locali note e formati comuni di segreti PASS.
+- Servizi e dati reali non modificati dalla pubblicazione. Il lavoro precedente
+  non committato nel gestionale resta locale e non e' stato incluso nel push.
+
 ## Cronologia: salvataggio locale del 2026-10-16
 
 - MCP: commit e7abb91 sul branch mcp/http-adapter-validation, con profilo live,

@@ -1,5 +1,10 @@
 # Lia Fibra MCP
 
+- GitHub destination authorized by the user: zinga0328it/Fibra, branch aaa-mcp.
+  This is the standalone Rust MCP tree/history, not a merge into the backend.
+  The backend on AAA uses main in its separate local checkout. Other branches
+  belong to other PCs: never modify/delete them. Push only to the explicit
+  aaa-mcp destination; never force, mirror or push --all.
 - Before changing this integration, read the current section of
   /home/aaa/fibra/obsidian/MCP-Lia-Fibra/STATO-E-DIARIO.md and MIGRATION_REPORT.md.
   Current verified status supersedes historical entries. Do not ask again for

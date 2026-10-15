@@ -22,6 +22,10 @@ Non vengono ripetute automaticamente le scritture MCP.
 - Chiave OpenAI in `~/.config/lia-fibra/tunnel-api-key`, file 600 in cartella
   700, fuori dai repository. Il client riceve soltanto il riferimento `file:`.
   Nessun valore segreto in argomenti, unita', Git o documentazione.
+- Il profilo YAML locale deve avere `control_plane.api_key` impostato su
+  `file:/home/aaa/.config/lia-fibra/tunnel-api-key`: v0.0.16 risolve i riferimenti
+  YAML prima degli override CLI. Non lasciare il precedente riferimento env:
+  a una variabile assente. Il profilo precedente e' conservato nel backup locale.
 
 Inserimento iniziale o aggiornamento della chiave, soltanto nel terminale:
 
@@ -57,6 +61,9 @@ chiave assente. MCP installato e attivo, catalogo 38 tool e stato_api reale
 HTTP 200, `simulated=false`, `live_read_write`. Linger verificato `yes`.
 Crash simulato del solo MCP con SIGKILL: ripartenza automatica verificata,
 nuovo PID, active/running e NRestarts=1. Gestionale rimasto attivo.
-La chiave OpenAI non era presente nell'ambiente corrente, nel manager systemd
-o nel dotenv noto: il tunnel richiede il primo inserimento sicuro sopra.
+La chiave OpenAI, inizialmente assente dai contenitori noti, e' stata inserita
+privatamente nel terminale. Permessi 600/700 verificati. Corretto il riferimento
+nel profilo locale: tunnel active/running e readiness HTTP 200 verificati.
+Anche il tunnel e' stato terminato con SIGKILL per prova: riavvio automatico
+con nuovo PID, NRestarts=1 e readiness nuovamente HTTP 200.
 Nessun reboot del PC o test di scrittura reale eseguito.

@@ -409,6 +409,16 @@ def update_work(work_id: int, payload: WorkUpdate, db: Session = Depends(get_db)
         work.tipo_lavoro = update_data['tipo_lavoro']
     if 'note' in update_data:
         work.note = update_data['note']
+    if 'modem_sn' in update_data:
+        work.modem_sn = update_data['modem_sn']
+    if 'note_chiusura' in update_data:
+        work.note_chiusura = update_data['note_chiusura']
+    if 'extra_fields' in update_data:
+        work.extra_fields = update_data['extra_fields']
+    if 'telefono_cliente' in update_data:
+        extra_fields = dict(work.extra_fields or {})
+        extra_fields['telefono_cliente'] = update_data['telefono_cliente']
+        work.extra_fields = extra_fields
     if 'tecnico_assegnato_id' in update_data:
         work.tecnico_assegnato_id = update_data['tecnico_assegnato_id']
     if 'stato' in update_data:

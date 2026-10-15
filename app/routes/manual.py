@@ -49,6 +49,9 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
     numero_wr = payload.get('numero_wr') or payload.get('WR')
     if not numero_wr:
         raise HTTPException(status_code=400, detail='numero_wr is required')
+    extra_fields = payload.get('extra_fields')
+    if extra_fields is not None and not isinstance(extra_fields, dict):
+        raise HTTPException(status_code=400, detail='extra_fields must be an object or null')
 
     existing = db.query(Work).filter(Work.numero_wr == numero_wr).first()
     if existing:
@@ -61,6 +64,7 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
     work.nome_cliente = payload.get('nome_cliente') or payload.get('cliente') or payload.get('NOME_CLIENTE') or payload.get('COGNOME_CLIENTE')
     work.tipo_lavoro = payload.get('tipo_lavoro') or payload.get('tipo') or payload.get('TIPOLOGIA_SERVIZIO')
     work.stato = payload.get('stato') or payload.get('STATO_WR') or 'aperto'
+    work.note = payload.get('note')
     
     # Equipment fields
     work.requires_ont = payload.get('requires_ont', False)
@@ -120,8 +124,9 @@ def manual_create_work(payload: dict = Body(...), db: Session = Depends(get_db),
             work.tecnico_assegnato_id = tech.id
 
     # Keep any extra fields in JSON
-    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'tecnico_assegnato_id', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO', 'requires_ont', 'requires_modem', 'ont_cost', 'modem_cost', 'data_appuntamento', 'note_appuntamento', 'motivo_rinvio'}
-    extra = {k: v for k, v in payload.items() if k not in known}
+    known = {'numero_wr', 'operatore', 'indirizzo', 'nome_cliente', 'tipo_lavoro', 'stato', 'data_inizio', 'data_fine', 'tecnico', 'tecnico_assegnato_id', 'cliente', 'indirizzo', 'impresa', 'tipo', 'WR', 'Appuntamento', 'INIZIO_APPUNTAMENTO', 'FINE_APPUNTAMENTO', 'requires_ont', 'requires_modem', 'ont_cost', 'modem_cost', 'data_appuntamento', 'note_appuntamento', 'motivo_rinvio', 'note', 'extra_fields'}
+    extra = dict(extra_fields or {})
+    extra.update({key: value for key, value in payload.items() if key not in known})
     if extra:
         work.extra_fields = extra
 

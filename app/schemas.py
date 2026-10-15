@@ -131,6 +131,8 @@ class WorkUpdate(BaseModel):
     tipo_lavoro: Optional[str] = None
     stato: Optional[str] = None
     note: Optional[str] = None
+    extra_fields: Optional[Dict[str, Any]] = None
+    telefono_cliente: Optional[str] = None
     tecnico_assegnato_id: Optional[int] = None
     
     # Equipment requirements and delivery status

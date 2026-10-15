@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import tempfile
+from uuid import uuid4
 from fastapi.testclient import TestClient
 import pytest
 
@@ -48,9 +49,106 @@ def _cleanup_tmp_db():
 
 from app.main import app
 from app.database import SessionLocal
-from app.models.models import DocumentAppliedWork, Document
+from app.models.models import DocumentAppliedWork, Document, Work
 
 client = TestClient(app)
+
+
+@pytest.fixture
+def mcp_api(monkeypatch):
+    import httpx
+    import socket
+    import app.routes.works as works_routes
+    import app.routes.manual as manual_routes
+    import app.utils.telegram as telegram_utils
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("External network is forbidden in API regression tests")
+
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", no_network)
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", no_network)
+    monkeypatch.setattr(socket, "create_connection", no_network)
+    monkeypatch.setattr(works_routes, "geocode_address_sync", lambda address: None)
+    monkeypatch.setattr(manual_routes, "geocode_address_sync", lambda address: None)
+    monkeypatch.setattr(works_routes, "notify_new_work", lambda work, db: None)
+    monkeypatch.setattr(telegram_utils, "send_message_to_telegram", lambda *args, **kwargs: True)
+    return client, {"X-API-Key": os.environ["API_KEY"]}
+
+
+def test_mcp_update_persists_all_work_fields(mcp_api):
+    api, headers = mcp_api
+    created = api.post("/works/", headers=headers, json={
+        "numero_wr": f"MCP-{uuid4().hex}", "operatore": "Synthetic operator",
+        "indirizzo": "Synthetic address", "nome_cliente": "Synthetic customer",
+        "tipo_lavoro": "attivazione", "extra_fields": {"original": True},
+    })
+    assert created.status_code == 200
+    work_id = created.json()["id"]
+    update = api.put(f"/works/{work_id}", headers=headers, json={
+        "note": "Updated note", "modem_sn": "SYNTHETIC-SERIAL",
+        "note_chiusura": "Synthetic closure", "stato": "chiuso",
+        "extra_fields": {"custom": "value"}, "telefono_cliente": "000111222",
+    })
+    assert update.status_code == 200
+    persisted = api.get(f"/works/{work_id}", headers=headers).json()
+    assert persisted["modem_sn"] == "SYNTHETIC-SERIAL"
+    assert persisted["note_chiusura"] == "Synthetic closure"
+    assert persisted["note"] == "Updated note"
+    assert persisted["extra_fields"] == {"custom": "value", "telefono_cliente": "000111222"}
+    assert persisted["stato"] == "chiuso"
+    assert persisted["data_chiusura"] is not None
+
+    assert api.put(f"/works/{work_id}", headers=headers, json={"telefono_cliente": "000333444"}).status_code == 200
+    retained = api.get(f"/works/{work_id}", headers=headers).json()
+    assert retained["extra_fields"] == {"custom": "value", "telefono_cliente": "000333444"}
+    assert retained["modem_sn"] == "SYNTHETIC-SERIAL"
+
+    cleared = api.put(f"/works/{work_id}", headers=headers, json={
+        "note": None, "note_chiusura": None, "modem_sn": None, "extra_fields": None,
+    })
+    assert cleared.status_code == 200
+    persisted = api.get(f"/works/{work_id}", headers=headers).json()
+    for field in ("note", "note_chiusura", "modem_sn", "extra_fields"):
+        assert persisted[field] is None
+
+
+def test_mcp_invalid_update_does_not_change_work(mcp_api):
+    api, headers = mcp_api
+    created = api.post("/works/", headers=headers, json={
+        "numero_wr": f"MCP-{uuid4().hex}", "operatore": "Synthetic operator",
+        "indirizzo": "Synthetic address", "nome_cliente": "Synthetic customer",
+        "tipo_lavoro": "attivazione", "note": "Keep this note",
+    })
+    assert created.status_code == 200
+    work_id = created.json()["id"]
+    result = api.put(f"/works/{work_id}", headers=headers, json={"note": "Must not persist", "extra_fields": ["not-an-object"]})
+    assert result.status_code == 422
+    assert api.get(f"/works/{work_id}", headers=headers).json()["note"] == "Keep this note"
+
+
+def test_mcp_manual_creation_persists_notes_and_metadata(mcp_api):
+    api, headers = mcp_api
+    result = api.post("/manual/works", headers=headers, json={
+        "numero_wr": f"MCP-{uuid4().hex}", "operatore": "Synthetic operator",
+        "indirizzo": "Synthetic address", "nome_cliente": "Synthetic customer",
+        "note": "Manual note", "extra_fields": {"custom": "value"},
+        "telefono_cliente": "000111222", "legacy_extension": "preserved",
+    })
+    assert result.status_code == 200
+    persisted = api.get(f"/works/{result.json()['id']}", headers=headers).json()
+    assert persisted["note"] == "Manual note"
+    assert persisted["extra_fields"] == {"custom": "value", "telefono_cliente": "000111222", "legacy_extension": "preserved"}
+
+
+def test_mcp_manual_invalid_metadata_creates_no_record(mcp_api):
+    api, headers = mcp_api
+    numero_wr = f"MCP-{uuid4().hex}"
+    result = api.post("/manual/works", headers=headers, json={
+        "numero_wr": numero_wr, "extra_fields": "not-an-object",
+    })
+    assert result.status_code == 400
+    with SessionLocal() as db:
+        assert db.query(Work).filter(Work.numero_wr == numero_wr).first() is None
 
 
 def test_create_team_and_technician_and_work():

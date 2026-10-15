@@ -146,8 +146,20 @@ fn unsafe_or_implicit_startup_is_rejected() {
         vec!["--mock-actions", "--http", "[::]:6032"],
         vec!["--dev-read", "--http", "127.0.0.1:6032"],
         vec!["--dev-read", "/home/aaa/fibra"],
+        vec!["--check-live"],
+        vec!["--live-read-only", "--http", "127.0.0.1:16035"],
+        vec!["--live-read-only", "--http", "127.0.0.1:0"],
+        vec!["--live-read-only", "--http", "0.0.0.0:16035"],
+        vec!["--live-read-only", "--http", "[::]:16035"],
+        vec!["--live-read-only", "--http", "http://example.com"],
+        vec!["--live", "--http", "127.0.0.1:16035"],
+        vec!["--live", "--http", "127.0.0.1:0"],
+        vec!["--live", "--http", "0.0.0.0:16035"],
+        vec!["--live", "--http", "[::]:16035"],
+        vec!["--live", "--http", "http://example.com"],
     ] {
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_ftth-lia-mcp"))
+            .env_remove("FTTH_API_KEY")
             .args(arguments)
             .output()
             .unwrap();

@@ -32,7 +32,7 @@ pub fn contract() -> Contract {
     serde_json::from_str(include_str!("../contracts/actions.json")).expect("embedded contract")
 }
 
-fn helper_operations() -> Vec<Operation> {
+pub(crate) fn helper_operations() -> Vec<Operation> {
     let wr = json!({"type":"string","pattern":"^[0-9]{1,32}$"});
     [
         ("search",json!({"query":{"type":"string","minLength":1,"maxLength":128},"limit":{"type":["integer","null"],"minimum":1,"maximum":20}}),vec!["query"]),

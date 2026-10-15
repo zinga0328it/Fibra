@@ -2,15 +2,36 @@
 
 ## Stato effettivo
 
+Aggiornamento 2026-10-16: l'utente ha richiesto esplicitamente l'abilitazione delle
+scritture. --live collega tutte le 32 Actions e i 6 helper; --live-read-only
+mantiene il blocco delle sole scritture. 77 test Rust e Clippy superati.
+Verificati sul backend reale, tramite MCP: tutti i 17 GET e tutti i 6 helper,
+inclusi fetch di lavoro/ONT/modem, senza errori o casi saltati. Nessuna scrittura
+reale di collaudo. Profilo operativo attivo su 16033; istanza 16035 chiusa.
+Catalogo ChatGPT aggiornato e verificato nella scheda Lia Fibra TEST:
+updateWork e createManualWork descrivono scritture API REALE, helper operativi.
+L'utente ha poi autorizzato correzioni mirate delle API, backup e riavvio del
+solo ftth.service. Quattro regressioni Python PASS; riavvio effettuato
+dall'utente alle 00:58 CEST del 2026-10-16, servizio active/running.
+Health e OpenAPI via ingresso GPT verificati, inclusi i quattro campi corretti.
+MCP definitivo ricaricato su 16033: ripetuti tutti i 17 GET e i 6 helper,
+tutti HTTP 200, simulated=false, live_read_write. Tunnel readiness HTTP 200.
+
 - Fonte locale: /home/aaa/fibra/obsidian/appunti_gpt_s/gpt_s.md, OpenAPI 3.1.0.
 - 32 operationId univoci: 17 GET e 15 operazioni di scrittura/azione.
 - Profilo --mock-actions: 38 tool, con nomi originali delle 32 Actions e i sei
   helper search, fetch, cerca_wr, stato_wr, stato_api, riepilogo_wr.
 - Profilo --mock: conserva i sei tool originali e i relativi test.
 - Dati sintetici in memoria, orologio simulato fisso 2026-10-15T12:00:00Z.
-- Nessun accesso a database, API reali, chiavi o file .env. Nessun deploy.
-- Le notifiche aggiungono eventi in memoria; non inviano messaggi Telegram.
-- I documenti sono metadati fittizi, non file PDF di clienti.
+- Nessun accesso diretto a database. Profilo --live attivo sul servizio locale
+  usato dal tunnel; tutte le letture MCP verificate con HTTP 200 e simulated=false.
+  Credenziale client solo in memoria.
+- Lia Fibra TEST collegata a ChatGPT tramite Secure MCP Tunnel; 38 strumenti
+  aggiornati al profilo reale lettura/scrittura. La chiamata stato_api da ChatGPT
+  era stata verificata nel precedente profilo live_read_only; dopo il ricaricamento
+  verificati catalogo ChatGPT e chiamate reali dal client MCP locale.
+- Nei mock le notifiche aggiungono eventi in memoria e i documenti sono fittizi.
+  In --live le notifiche sono reali e possono inviare messaggi Telegram.
 - --dev-read espone project_read e project_diff solo via stdio, sulla directory
   MCP fissata in compilazione. Non espone scrittura, shell, test o commit.
 - HttpActionsTestServer collega 32 tool MCP a HttpTestAdapter, usato soltanto
@@ -20,11 +41,26 @@
 
 Copertura dei nomi e delle chiamate simulate: 32/32 Actions, piu' 6 helper.
 Traduzione MCP -> HTTP locale: 32/32 Actions, metodo/path/query/body/header.
-Equivalenza funzionale in produzione: NON verificata per nessuna Action.
+Verificati in produzione tramite MCP: tutti i 17 GET e i sei helper.
+Equivalenza funzionale completa delle 32 Actions e dei sei helper: NON verificata.
 Questo rapporto NON dichiara conclusa la migrazione e non autorizza lo spegnimento
 del GPT esistente. La copia locale deve ancora essere confrontata con il GPT attivo.
 
 ## Adattamento del contratto
+
+Il contratto originale e i simulatori restano immutati. Il profilo reale applica
+src/live_contract.rs, verificato con OpenAPI pubblico del backend e funzioni
+Python: campi nullable, date locali ISO senza fuso inventato, stati apparati in
+inglese, statistiche annuali con date YYYY-MM, alias tecnico_assegnato tradotto
+in tecnico_assegnato_id. Metadati della creazione manuale mantenuti annidati.
+Difetti backend riprodotti e corretti dopo autorizzazione: updateWork ignorava
+extra_fields, telefono_cliente, modem_sn e note_chiusura; manual/works non salvava
+Work.note e annidava erroneamente i metadati. Quattro test su SQLite temporaneo
+ora provano persistenza, omissioni/null e rifiuto degli input invalidi.
+Nessuna migrazione DB: tutte le colonne esistevano gia'.
+
+Le sezioni seguenti sulla fedelta' dell'esportazione descrivono il contratto
+originale e i profili simulati, non annullano gli adattamenti live sopra indicati.
 
 Ogni Action mantiene operationId come nome del tool. I parametri path/query
 restano campi top-level con i nomi originali. Il body JSON diventa il campo body,
@@ -149,7 +185,12 @@ cargo test --locked
 - 8 test Python: default, proprieta' applicative, nullable, vincoli, riferimenti,
   default sensibili, override dei parametri e annotazioni escluse.
 
-Ultima esecuzione: 66 test Rust e 8 test Python superati, zero fallimenti.
+Ultima esecuzione Rust: 77 test superati, inclusi undici test del profilo reale:
+32 Actions attraverso MCP/HTTP, 135 casi senza retry delle 15 scritture,
+alias/campi ignorati, esiti incerti, sei helper e collisioni ID/WR duplicati,
+prefisso/header sensibile, protezioni read-only, date locali e health UTC.
+Le guardie CLI coprono chiave mancante, bind non-loopback e porta implicita.
+Ultima esecuzione Python: 8 test superati. Nessun fallimento.
 Controllo --check: 32 contratti corrispondenti allo YAML locale.
 Nessun test chiama la produzione.
 I server HTTP di test usano porte loopback temporanee e vengono terminati.
@@ -160,6 +201,15 @@ Versioni: rustc 1.91.1 (ed61e7d7e), cargo 1.91.1 (ea2d97820),
 rustfmt 1.8.0-stable e clippy 0.1.91. Comandi riproducibili nel README.
 
 ## Sviluppo e pubblicazione
+
+Diagnosi rete del 2026-10-15: il 403 iniziale riguardava /gestionale/, rotta umana
+protetta da allowlist nella configurazione ALEX fornita. L'ingresso GPT dedicato
+e' /gestionale-gpt/ e ha superato health e statistiche via MCP, attraverso ZINGA.
+Il client invia solo X-API-Key; ALEX e ZINGA aggiungono le chiavi dei rispettivi
+salti. Nessuna acquisizione di RELAY_KEY/INTERNAL_KEY nel MCP, nessun bypass
+diretto verso ZINGA/AAA, nessun SSH o modifica ai servizi di produzione.
+Il proxy ALEX fornito usa Yggdrasil verso ZINGA; le note ZeroTier precedenti
+descrivono un piano di hardening, non un motivo per cambiare la rete funzionante.
 
 project_read legge solo src/tests Rust, scripts Python, il contratto e i documenti
 root esplicitamente autorizzati, fino a 128 KiB UTF-8. Apre ogni componente con
@@ -177,6 +227,27 @@ Nessun push, nessun repository alternativo o cambio di visibilita'.
 Commit locale comunicato nel riepilogo di consegna; nessun commit nel repository Fibra.
 
 ## Limiti e assunzioni da verificare
+
+- Collegamento reale autorizzato e attivato il 2026-10-15 per Lia Fibra TEST:
+  endpoint corretto https://servicess.net/gestionale-gpt/, ricavato dal proxy ALEX
+  fornito dall'utente. /gestionale/ e' la rotta umana con allowlist, non il nuovo
+  ingresso GPT. Nessuna modifica a proxy, broker, firewall o chiavi.
+- --check-live verifica health; --live-read-only usa FTTH_API_KEY nell'ambiente,
+  avvio vincolato a health valida e bind loopback. Il servizio mock del tunnel
+  e' stato sostituito con quello reale, senza fermare il tunnel o il GPT operativo.
+  Nessun test di scrittura reale. Nuova chiamata stato_api da ChatGPT verificata
+  con HTTP 200 e simulated=false; attivita' "Verificato lo stato dell'API Lia Fibra TEST".
+  Conversazione: https://chatgpt.com/c/6ad14f6f-b720-83eb-bab7-4c8dbc79988a.
+- Compatibilita' health: timestamp naive UTC normalizzato soltanto per getHealth.
+  Date locali delle altre risorse validate e mantenute come ricevute; verifiche
+  reali di lavori, calendario, documenti e apparati riuscite.
+- /works/ non ha filtri WR. Gli helper leggono l'elenco con limite 16 MiB,
+  esplicitato nei metadati, e cercano la stringa esatta. Duplicati: ambiguous.
+  fetch usa work_ID, ont_ID, modem_ID; material_ID senza tipo non e' un ID reale.
+  search non espone credenziali degli apparati e non restituisce risultati
+  parziali come completi in caso di errore di una collezione.
+- Scritture con esito unknown non vanno ripetute senza riconciliazione. Tutte
+  mantengono assenza di retry/redirect e annotazioni distruttive/non idempotenti.
 
 - Lo YAML non descrive tutta la logica di business e molti campi output non sono
   required: superare lo schema non prova equivalenza con l'implementazione reale.
@@ -197,6 +268,6 @@ Commit locale comunicato nel riepilogo di consegna; nessun commit nel repository
 - Gli strumenti di scrittura/esecuzione richiedono il sistema isolato del
   DEVELOPMENT_PLAN e restano assenti. Il profilo di lettura host autorizzato
   non protegge da un processo ostile con lo stesso UID o da mount ostili.
-- Restano bloccati: connessione ChatGPT, broker/API reali, pubblicazione GitHub
-  senza accesso e verifica della visibilita' privata, e disattivazione del GPT.
-  Nessuna modifica alle chiavi.
+- Restano da verificare su operazioni concordate: effetti delle scritture reali,
+  campi ignorati dal backend, pubblicazione GitHub privata senza accesso e
+  sostituzione del GPT operativo. Nessuna modifica alle chiavi o ai servizi FTTH.

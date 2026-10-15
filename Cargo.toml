@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 chrono = "0.4"
 jsonschema = { version = "0.33", default-features = false }
-reqwest = { version = "0.13", default-features = false, features = ["json"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 rustix = { version = "1", features = ["fs"] }
 sha2 = "0.10"
 similar = "2"

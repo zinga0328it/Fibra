@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "lia-fibra-mock": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/target/debug/ftth-lia-mcp",
+      "args": ["--mock"]
+    }
+  }
+}

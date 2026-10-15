@@ -1,0 +1,9 @@
+/target/
+.env
+.env.*
+!.env.example
+*.log
+*.db
+*.sqlite*
+*secret*
+*credentials*

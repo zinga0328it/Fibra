@@ -205,14 +205,14 @@ DATABASE_URL=sqlite:///./ftth.db
 
 # Sicurezza
 SECRET_KEY=your-super-secret-key-here
-API_KEY=JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=
+API_KEY=********
 
 # Telegram Bot
 TELEGRAM_BOT_TOKEN=your-bot-token
 TELEGRAM_WEBHOOK_URL=https://servicess.net/telegram/webhook
 
 # Yggdrasil
-YGGDRASIL_API_KEY=ftth_ygg_secret_2025
+YGGDRASIL_API_KEY=********
 
 # OpenAI GPT (opzionale)
 OPENAI_API_KEY=your-openai-key
@@ -231,7 +231,7 @@ OPENAI_API_KEY=your-openai-key
     SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
     
     ProxyPreserveHost On
-    RequestHeader set X-API-Key "JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+    RequestHeader set X-API-Key "********"
     
     ProxyPass /api http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
     ProxyPassReverse /api http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/
@@ -327,7 +327,7 @@ sudo systemctl status ftth telegram-bot
 # Via API Yggdrasil
 curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -H "X-API-Key: ********" \
   -d '{
     "numero_wr": "TEST-001",
     "nome_cliente": "Mario Rossi",
@@ -342,12 +342,12 @@ curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" 
 
 ```bash
 # Lista tecnici
-curl -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+curl -H "X-API-Key: ********" \
   "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/technicians"
 
 # Assegna lavoro
 curl -X PUT "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/works/1/assign/1" \
-  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+  -H "X-API-Key: ********"
 ```
 
 ---
@@ -438,7 +438,7 @@ curl -X POST "https://servicess.net/gestionale/gpt/process" \
 Tutti gli endpoint amministrativi richiedono:
 
 ```bash
--H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU="
+-H "X-API-Key: ********"
 ```
 
 ### Esempi Completi
@@ -448,7 +448,7 @@ Tutti gli endpoint amministrativi richiedono:
 ```bash
 curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -H "X-API-Key: ********" \
   -d '{
     "numero_wr": "WR-12345",
     "data_inizio": "2025-12-21T10:00:00",
@@ -465,7 +465,7 @@ curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/manual/works" 
 
 ```bash
 curl -X POST "http://[200:421e:6385:4a8b:dca7:cfb:197f:e9c3]:6030/documents/upload" \
-  -H "X-API-Key: JHzxUzdAK8LJ33Y50MDgLf5E62flYset4MYA6ELpXpU=" \
+  -H "X-API-Key: ********" \
   -F "files=@bolla.pdf"
 ```
 
